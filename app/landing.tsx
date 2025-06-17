@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { ArrowRight, Crown, Discord, Telegram, Google, Globe, MessageCircle, Mail } from "lucide-react"
+import { ArrowRight, Crown, Globe, MessageCircle, Mail } from "lucide-react"
 import { useSignIn } from "@clerk/nextjs"
 
 export default function Landing() {
@@ -26,6 +26,15 @@ export default function Landing() {
       window.location.href = "/dashboard"
     }
   }
+
+  // Clerk's authenticateWithRedirect now requires redirectUrlComplete for OAuth
+  const handleSocialSignIn = (strategy: "oauth_google" | "oauth_discord" | "oauth_facebook") => {
+    signIn?.authenticateWithRedirect({
+      strategy,
+      redirectUrl: "/dashboard",
+      redirectUrlComplete: "/dashboard"
+    });
+  };
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col justify-between relative overflow-hidden">
@@ -172,7 +181,7 @@ export default function Landing() {
             <button
               aria-label="Sign in with Google"
               className="bg-white/10 hover:bg-white/20 rounded-full p-3 transition-colors border border-white/10"
-              onClick={() => signIn?.authenticateWithRedirect({ strategy: 'oauth_google', redirectUrl: '/dashboard' })}
+              onClick={() => handleSocialSignIn("oauth_google")}
               type="button"
             >
               <Globe className="w-6 h-6 text-emerald-300" />
@@ -180,19 +189,12 @@ export default function Landing() {
             <button
               aria-label="Sign in with Discord"
               className="bg-white/10 hover:bg-white/20 rounded-full p-3 transition-colors border border-white/10"
-              onClick={() => signIn?.authenticateWithRedirect({ strategy: 'oauth_discord', redirectUrl: '/dashboard' })}
+              onClick={() => handleSocialSignIn("oauth_discord")}
               type="button"
             >
               <MessageCircle className="w-6 h-6 text-emerald-300" />
             </button>
-            <button
-              aria-label="Sign in with Telegram"
-              className="bg-white/10 hover:bg-white/20 rounded-full p-3 transition-colors border border-white/10"
-              onClick={() => signIn?.authenticateWithRedirect({ strategy: 'oauth_telegram', redirectUrl: '/dashboard' })}
-              type="button"
-            >
-              <Mail className="w-6 h-6 text-emerald-300" />
-            </button>
+            {/* Add more supported social strategies as needed */}
           </div>
         </div>
       </div>
