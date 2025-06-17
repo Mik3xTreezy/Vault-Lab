@@ -76,36 +76,48 @@ export default function Admin() {
   }
 
   useEffect(() => {
-    async function fetchUsers() {
+    async function initFetchUsers() {
       setLoadingUsers(true)
-      const res = await fetch("/api/users")
-      const data = await res.json()
-      setUsers(data)
+      try {
+        const res = await fetch("/api/users")
+        const data = await res.json()
+        setUsers(Array.isArray(data) ? data : [])
+      } catch (err) {
+        setUsers([])
+      }
       setLoadingUsers(false)
     }
-    fetchUsers()
+    initFetchUsers()
   }, [])
 
   useEffect(() => {
-    async function fetchAnalytics() {
+    async function initFetchAnalytics() {
       setLoadingAnalytics(true)
-      const res = await fetch("/api/dashboard-analytics")
-      const data = await res.json()
-      setAnalytics(data)
+      try {
+        const res = await fetch("/api/dashboard-analytics")
+        const data = await res.json()
+        setAnalytics(data && typeof data === 'object' ? data : null)
+      } catch (err) {
+        setAnalytics(null)
+      }
       setLoadingAnalytics(false)
     }
-    fetchAnalytics()
+    initFetchAnalytics()
   }, [])
 
   useEffect(() => {
-    async function fetchTasks() {
+    async function initFetchTasks() {
       setLoadingTasks(true);
-      const res = await fetch("/api/tasks");
-      const data = await res.json();
-      setTasks(data);
+      try {
+        const res = await fetch("/api/tasks");
+        const data = await res.json();
+        setTasks(Array.isArray(data) ? data : []);
+      } catch (err) {
+        setTasks([]);
+      }
       setLoadingTasks(false);
     }
-    fetchTasks();
+    initFetchTasks();
   }, []);
 
   // Task CRUD operations
