@@ -25,12 +25,14 @@ import {
   Share2,
   ArrowUpRight,
 } from "lucide-react"
+import { useUser } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from 'recharts';
 import GeoMap from "./GeoMap";
 
 export default function Dashboard() {
   const [timeRange, setTimeRange] = useState("28 Days")
+  const { user, isLoaded, isSignedIn } = useUser();
   const router = useRouter();
 
   const [analytics, setAnalytics] = useState<any>(null);
@@ -39,15 +41,22 @@ export default function Dashboard() {
   useEffect(() => {
     async function fetchAnalytics() {
       setLoading(true);
+      if (!user) return;
       const res = await fetch(`/api/dashboard-analytics?user_id=${user.id}`);
       const data = await res.json();
       setAnalytics(data);
       setLoading(false);
     }
-    if (user) fetchAnalytics();
+    if (isLoaded && isSignedIn && user) fetchAnalytics();
     // No polling here; GeoMap will handle its own polling
-  }, [user]);
+  }, [isLoaded, isSignedIn, user]);
 
+  if (!isLoaded) {
+    return <div className="text-white p-8">Loading...</div>;
+  }
+  if (!isSignedIn) {
+    return <div className="text-white p-8">Access denied.</div>;
+  }
   if (loading || !analytics) {
     return <div className="text-white p-8">Loading analytics...</div>;
   }
