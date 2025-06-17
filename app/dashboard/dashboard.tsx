@@ -386,7 +386,7 @@ export default function Dashboard() {
 
           {/* Geo Map Section */}
           <div className="mt-8">
-            <GeoMap countryData={analytics.countryData} />
+            <GeoMap countryData={analytics.countryData} userId={user.id} />
           </div>
         </div>
       </div>

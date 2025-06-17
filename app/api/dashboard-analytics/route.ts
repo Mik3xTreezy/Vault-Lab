@@ -10,6 +10,7 @@ const supabase = createClient(
 export async function GET(req: NextRequest) {
   // Get user_id from query param (for per-user analytics)
   const userId = req.nextUrl.searchParams.get("user_id") || null;
+  console.log("[DEBUG] dashboard-analytics: user_id received:", userId);
 
   // 1. Get all lockers for this user
   // const { data: lockers } = await supabase.from("lockers").select("id, title").eq("user_id", userId);
@@ -35,6 +36,7 @@ export async function GET(req: NextRequest) {
     analyticsQuery = analyticsQuery.eq('user_id', userId);
   }
   const { data: analytics, error } = await analyticsQuery;
+  console.log("[DEBUG] dashboard-analytics: analytics count:", analytics?.length);
 
   if (error) {
     console.error("Supabase error:", error);
@@ -140,6 +142,7 @@ export async function GET(req: NextRequest) {
     paymentsQuery = paymentsQuery.eq("user_id", userId);
   }
   const { data: payments, error: paymentsError } = await paymentsQuery;
+  console.log("[DEBUG] dashboard-analytics: payments count:", payments?.length);
   if (paymentsError) {
     console.error("Supabase payments error:", paymentsError);
     return NextResponse.json({ error: paymentsError.message }, { status: 500 });
@@ -154,6 +157,7 @@ export async function GET(req: NextRequest) {
     withdrawalsQuery = withdrawalsQuery.eq("user_id", userId);
   }
   const { data: withdrawals, error: withdrawalsError } = await withdrawalsQuery;
+  console.log("[DEBUG] dashboard-analytics: withdrawals count:", withdrawals?.length);
   if (withdrawalsError) {
     console.error("Supabase withdrawals error:", withdrawalsError);
     return NextResponse.json({ error: withdrawalsError.message }, { status: 500 });
@@ -176,7 +180,7 @@ export async function GET(req: NextRequest) {
 
   // --- USER REVENUE EVENTS & AVG CPM ---
   let userRevenue = 0;
-  let userEvents = [];
+  let userEvents: { amount: number|string, task_id: string, tier: string, country: string, timestamp: string }[] = [];
   let userAvgCpm = 0;
   if (userId) {
     const { data: events, error: eventsError } = await supabase

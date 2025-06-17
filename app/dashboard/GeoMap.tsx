@@ -4,27 +4,42 @@ import { scaleLinear } from "d3-scale";
 import { useEffect, useState } from "react";
 
 interface GeoMapProps {
-  countryData: Record<string, number>;
+  countryData: Record<string, number | string>;
+  userId?: string;
 }
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
-export default function GeoMap({ countryData: initialCountryData }: GeoMapProps) {
-  const [countryData, setCountryData] = useState(initialCountryData);
+// Helper to normalize all values to numbers
+function normalizeCountryData(data: Record<string, number | string>): Record<string, number> {
+  const result: Record<string, number> = {};
+  for (const [k, v] of Object.entries(data)) {
+    const num = Number(v);
+    if (!isNaN(num)) result[k] = num;
+  }
+  return result;
+}
+
+export default function GeoMap({ countryData: initialCountryData, userId }: GeoMapProps) {
+  const [countryData, setCountryData] = useState<Record<string, number>>(normalizeCountryData(initialCountryData));
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
     async function fetchCountryData() {
-      const res = await fetch("/api/dashboard-analytics");
+      const url = userId ? `/api/dashboard-analytics?user_id=${userId}` : '/api/dashboard-analytics';
+      const res = await fetch(url);
       const data = await res.json();
-      if (data.countryData) setCountryData(data.countryData);
+      if (data.countryData) {
+        setCountryData(normalizeCountryData(data.countryData));
+      }
     }
     interval = setInterval(fetchCountryData, 120000);
     return () => clearInterval(interval);
-  }, []);
+  }, [userId]);
 
+  const countryValues = Object.values(countryData);
   const colorScale = scaleLinear()
-    .domain([0, Math.max(...(Object.values(countryData) as number[])) || 1])
+    .domain([0, Math.max(1, ...countryValues)])
     .range(["#23272f", "#facc15"]); // dark to yellow
 
   return (
