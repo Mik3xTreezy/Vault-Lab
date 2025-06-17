@@ -135,7 +135,11 @@ export async function GET(req: NextRequest) {
 
   // --- REVENUE ANALYTICS ---
   // Total earnings (sum of payments)
-  const { data: payments, error: paymentsError } = await supabase.from("payments").select("amount, status");
+  let paymentsQuery = supabase.from("payments").select("amount, status, user_id");
+  if (userId) {
+    paymentsQuery = paymentsQuery.eq("user_id", userId);
+  }
+  const { data: payments, error: paymentsError } = await paymentsQuery;
   if (paymentsError) {
     console.error("Supabase payments error:", paymentsError);
     return NextResponse.json({ error: paymentsError.message }, { status: 500 });
@@ -145,7 +149,11 @@ export async function GET(req: NextRequest) {
   const cpm = views ? (totalEarnings / views) * 1000 : 0;
 
   // Total payouts (sum of completed withdrawals)
-  const { data: withdrawals, error: withdrawalsError } = await supabase.from("withdrawals").select("amount, status");
+  let withdrawalsQuery = supabase.from("withdrawals").select("amount, status, user_id");
+  if (userId) {
+    withdrawalsQuery = withdrawalsQuery.eq("user_id", userId);
+  }
+  const { data: withdrawals, error: withdrawalsError } = await withdrawalsQuery;
   if (withdrawalsError) {
     console.error("Supabase withdrawals error:", withdrawalsError);
     return NextResponse.json({ error: withdrawalsError.message }, { status: 500 });
@@ -157,8 +165,14 @@ export async function GET(req: NextRequest) {
 
   // --- RECENT TRANSACTIONS ---
   // Last 10 payments and withdrawals
-  const { data: recentPayments } = await supabase.from("payments").select("amount, type, description, created_at, status").order("created_at", { ascending: false }).limit(5);
-  const { data: recentWithdrawals } = await supabase.from("withdrawals").select("amount, method, address, requested_at, status").order("requested_at", { ascending: false }).limit(5);
+  let recentPaymentsQuery = supabase.from("payments").select("amount, type, description, created_at, status, user_id").order("created_at", { ascending: false }).limit(5);
+  let recentWithdrawalsQuery = supabase.from("withdrawals").select("amount, method, address, requested_at, status, user_id").order("requested_at", { ascending: false }).limit(5);
+  if (userId) {
+    recentPaymentsQuery = recentPaymentsQuery.eq("user_id", userId);
+    recentWithdrawalsQuery = recentWithdrawalsQuery.eq("user_id", userId);
+  }
+  const { data: recentPayments } = await recentPaymentsQuery;
+  const { data: recentWithdrawals } = await recentWithdrawalsQuery;
 
   // --- USER REVENUE EVENTS & AVG CPM ---
   let userRevenue = 0;
