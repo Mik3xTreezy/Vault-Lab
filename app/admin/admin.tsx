@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useUser } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -29,10 +30,23 @@ import {
   AlertCircle,
   CheckCircle,
 } from "lucide-react"
+import {
+  ResponsiveContainer,
+  BarChart,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Bar,
+  LineChart,
+  Line,
+  CartesianGrid,
+  Legend,
+} from 'recharts';
 
 const COLORS = ['#10b981', '#3b82f6', '#f59e42', '#6366f1', '#f43f5e', '#a3e635', '#fbbf24', '#818cf8'];
 
 export default function Admin() {
+  const { user, isLoaded, isSignedIn } = useUser();
   const [activeTab, setActiveTab] = useState("dashboard")
   const [searchQuery, setSearchQuery] = useState("")
   const [users, setUsers] = useState<any[]>([])
@@ -55,6 +69,11 @@ export default function Admin() {
       tier3: "$1.50"
     }
   });
+
+  if (!isLoaded) return <div className="text-white p-8">Loading...</div>;
+  if (!isSignedIn || user.emailAddresses[0]?.emailAddress !== "ananthu9539@gmail.com") {
+    return <div className="text-white p-8">Access denied.</div>;
+  }
 
   useEffect(() => {
     async function fetchUsers() {
@@ -198,17 +217,6 @@ export default function Admin() {
       }
     });
   };
-
-  if (!user || user.emailAddresses[0]?.emailAddress !== "ananthu9539@gmail.com") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-black text-white">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold mb-4">403 Forbidden</h1>
-          <p className="text-lg">You do not have access to this page.</p>
-        </div>
-      </div>
-    );
-  }
 
   // Sample data
   const dashboardStats = [
@@ -636,23 +644,14 @@ export default function Admin() {
             {loadingAnalytics || !analytics ? (
               <div className="text-gray-400">Loading...</div>
             ) : (
-              <MuiPieChart
-                series={[{
-                  data: Object.entries(analytics.devices || {}).map(([label, value], idx) => ({ id: idx, value: Number(value), label })),
-                  innerRadius: 30,
-                  outerRadius: 100,
-                  paddingAngle: 5,
-                  cornerRadius: 5,
-                  startAngle: -45,
-                  endAngle: 225,
-                  cx: 150,
-                  cy: 150,
-                }]}
-                width={300}
-                height={300}
-                sx={{ [`& .${pieArcLabelClasses.root}`]: { fill: '#fff', fontWeight: 500 } }}
-                slotProps={{ legend: { sx: { color: '#fff', fontWeight: 500 } } }}
-              />
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={Object.entries(analytics.devices || {}).map(([label, value], idx) => ({ id: idx, value: Number(value), label }))}>
+                  <XAxis dataKey="label" stroke="#ccc" fontSize={12} />
+                  <YAxis stroke="#ccc" fontSize={12} />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="#10b981" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             )}
           </CardContent>
         </Card>
@@ -664,23 +663,14 @@ export default function Admin() {
             {loadingAnalytics || !analytics ? (
               <div className="text-gray-400">Loading...</div>
             ) : (
-              <MuiPieChart
-                series={[{
-                  data: Object.entries(analytics.browsers || {}).map(([label, value], idx) => ({ id: idx, value: Number(value), label })),
-                  innerRadius: 30,
-                  outerRadius: 100,
-                  paddingAngle: 5,
-                  cornerRadius: 5,
-                  startAngle: -45,
-                  endAngle: 225,
-                  cx: 150,
-                  cy: 150,
-                }]}
-                width={300}
-                height={300}
-                sx={{ [`& .${pieArcLabelClasses.root}`]: { fill: '#fff', fontWeight: 500 } }}
-                slotProps={{ legend: { sx: { color: '#fff', fontWeight: 500 } } }}
-              />
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={Object.entries(analytics.browsers || {}).map(([label, value], idx) => ({ id: idx, value: Number(value), label }))}>
+                  <XAxis dataKey="label" stroke="#ccc" fontSize={12} />
+                  <YAxis stroke="#ccc" fontSize={12} />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="#10b981" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             )}
           </CardContent>
         </Card>
@@ -695,23 +685,14 @@ export default function Admin() {
             {loadingAnalytics || !analytics ? (
               <div className="text-gray-400">Loading...</div>
             ) : (
-              <MuiPieChart
-                series={[{
-                  data: Object.entries(analytics.sources || {}).map(([label, value], idx) => ({ id: idx, value: Number(value), label })),
-                  innerRadius: 30,
-                  outerRadius: 100,
-                  paddingAngle: 5,
-                  cornerRadius: 5,
-                  startAngle: -45,
-                  endAngle: 225,
-                  cx: 150,
-                  cy: 150,
-                }]}
-                width={300}
-                height={300}
-                sx={{ [`& .${pieArcLabelClasses.root}`]: { fill: '#fff', fontWeight: 500 } }}
-                slotProps={{ legend: { sx: { color: '#fff', fontWeight: 500 } } }}
-              />
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={Object.entries(analytics.sources || {}).map(([label, value], idx) => ({ id: idx, value: Number(value), label }))}>
+                  <XAxis dataKey="label" stroke="#ccc" fontSize={12} />
+                  <YAxis stroke="#ccc" fontSize={12} />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="#10b981" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             )}
           </CardContent>
         </Card>
