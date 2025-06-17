@@ -28,11 +28,13 @@ export async function GET(req: NextRequest) {
   }, {}) || {};
 
   // For now, get all analytics (remove .eq for all users, or add .eq for per-user)
-  const { data: analytics, error } = await supabase
+  let analyticsQuery = supabase
     .from("locker_analytics")
-    .select("*, locker_id")
-    // Optionally, filter by user_id if needed
-    // .eq('user_id', userId)
+    .select("*, locker_id");
+  if (userId) {
+    analyticsQuery = analyticsQuery.eq('user_id', userId);
+  }
+  const { data: analytics, error } = await analyticsQuery;
 
   if (error) {
     console.error("Supabase error:", error);
