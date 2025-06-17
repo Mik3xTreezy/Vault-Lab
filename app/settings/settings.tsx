@@ -3,8 +3,10 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Plus, Shield, Code, Users, HelpCircle, Fingerprint } from "lucide-react"
+import { useAuth } from "@clerk/nextjs"
 
 export default function Settings() {
+  const { signOut, isLoaded } = useAuth();
   const settingsItems = [
     {
       title: "Security",
@@ -122,6 +124,17 @@ export default function Settings() {
                 </Card>
               ))}
             </div>
+          </div>
+
+          {/* Log Out Button */}
+          <div className="flex justify-end mt-8">
+            <Button
+              variant="outline"
+              className="border-white/10 bg-white/5 hover:bg-white/10 text-white backdrop-blur-xl"
+              onClick={() => isLoaded && signOut()}
+            >
+              Log Out
+            </Button>
           </div>
 
           {/* Additional decorative elements matching the design */}
