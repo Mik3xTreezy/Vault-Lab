@@ -29,15 +29,10 @@ import {
   AlertCircle,
   CheckCircle,
 } from "lucide-react"
-import { useUser } from "@clerk/nextjs"
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, CartesianGrid, Legend } from 'recharts';
-import { PieChart as MuiPieChart } from '@mui/x-charts/PieChart';
-import { pieArcLabelClasses } from '@mui/x-charts/PieChart';
 
 const COLORS = ['#10b981', '#3b82f6', '#f59e42', '#6366f1', '#f43f5e', '#a3e635', '#fbbf24', '#818cf8'];
 
 export default function Admin() {
-  const { user, isLoaded } = useUser();
   const [activeTab, setActiveTab] = useState("dashboard")
   const [searchQuery, setSearchQuery] = useState("")
   const [users, setUsers] = useState<any[]>([])
@@ -204,7 +199,6 @@ export default function Admin() {
     });
   };
 
-  if (!isLoaded) return <div className="text-white p-8">Loading...</div>;
   if (!user || user.emailAddresses[0]?.emailAddress !== "ananthu9539@gmail.com") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black text-white">

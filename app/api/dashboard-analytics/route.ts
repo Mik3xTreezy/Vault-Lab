@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { getAuth } from "@clerk/nextjs/server"; // If using Clerk for user_id
 import { subDays, formatISO, format } from 'date-fns';
 
 const supabase = createClient(

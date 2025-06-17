@@ -22,7 +22,6 @@ export default function Landing() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle login/access request
     if (email) {
       window.location.href = "/dashboard"
     }

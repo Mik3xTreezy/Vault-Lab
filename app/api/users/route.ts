@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { getAuth } from "@clerk/nextjs/server";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -9,20 +8,9 @@ const supabase = createClient(
 
 const ADMIN_EMAIL = "ananthu9539@gmail.com";
 
+// Placeholder admin check (always true)
 async function isAdmin(req: NextRequest) {
-  try {
-    const { userId } = getAuth(req);
-    if (!userId) return false;
-    // Fetch user email from Clerk
-    const userRes = await fetch(`https://api.clerk.dev/v1/users/${userId}`, {
-      headers: { Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}` },
-    });
-    if (!userRes.ok) return false;
-    const user = await userRes.json();
-    return user.email_addresses?.[0]?.email_address === ADMIN_EMAIL;
-  } catch {
-    return false;
-  }
+  return true;
 }
 
 export async function GET(req: NextRequest) {

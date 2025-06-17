@@ -1,5 +1,4 @@
 import { supabase } from '@/lib/supabase';
-import { currentUser } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 function generateShortId(length = 5) {

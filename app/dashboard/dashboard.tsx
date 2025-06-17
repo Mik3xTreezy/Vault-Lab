@@ -25,14 +25,12 @@ import {
   Share2,
   ArrowUpRight,
 } from "lucide-react"
-import { useUser } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from 'recharts';
 import GeoMap from "./GeoMap";
 
 export default function Dashboard() {
   const [timeRange, setTimeRange] = useState("28 Days")
-  const { user, isLoaded } = useUser();
   const router = useRouter();
 
   const [analytics, setAnalytics] = useState<any>(null);
@@ -41,7 +39,6 @@ export default function Dashboard() {
   useEffect(() => {
     async function fetchAnalytics() {
       setLoading(true);
-      if (!user) return;
       const res = await fetch(`/api/dashboard-analytics?user_id=${user.id}`);
       const data = await res.json();
       setAnalytics(data);
