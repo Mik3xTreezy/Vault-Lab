@@ -81,8 +81,10 @@ export default function Admin() {
       try {
         const res = await fetch("/api/users")
         const data = await res.json()
+        console.log('[ADMIN DEBUG] /api/users response:', data);
         setUsers(Array.isArray(data) ? data : [])
       } catch (err) {
+        console.error('[ADMIN DEBUG] /api/users error:', err);
         setUsers([])
       }
       setLoadingUsers(false)
@@ -96,8 +98,10 @@ export default function Admin() {
       try {
         const res = await fetch("/api/dashboard-analytics")
         const data = await res.json()
+        console.log('[ADMIN DEBUG] /api/dashboard-analytics response:', data);
         setAnalytics(data && typeof data === 'object' ? data : null)
       } catch (err) {
+        console.error('[ADMIN DEBUG] /api/dashboard-analytics error:', err);
         setAnalytics(null)
       }
       setLoadingAnalytics(false)
@@ -111,8 +115,10 @@ export default function Admin() {
       try {
         const res = await fetch("/api/tasks");
         const data = await res.json();
+        console.log('[ADMIN DEBUG] /api/tasks response:', data);
         setTasks(Array.isArray(data) ? data : []);
       } catch (err) {
+        console.error('[ADMIN DEBUG] /api/tasks error:', err);
         setTasks([]);
       }
       setLoadingTasks(false);
