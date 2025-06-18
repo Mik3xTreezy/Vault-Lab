@@ -12,28 +12,39 @@ export async function GET(req: NextRequest) {
   const userId = req.nextUrl.searchParams.get("user_id") || null;
   console.log("[DEBUG] dashboard-analytics: user_id received:", userId);
 
-  // 1. Get all lockers for this user
-  // const { data: lockers } = await supabase.from("lockers").select("id, title").eq("user_id", userId);
-
-  // Fetch all lockers (id, title)
-  const { data: lockers, error: lockersError } = await supabase
-    .from("lockers")
-    .select("id, title");
-  if (lockersError) {
-    console.error("Supabase lockers error:", lockersError);
-    return NextResponse.json({ error: lockersError.message }, { status: 500 });
+  // Fetch all lockers (id, title) for this user
+  let lockerIds: string[] = [];
+  if (userId) {
+    const { data: userLockers, error: lockersError } = await supabase
+      .from("lockers")
+      .select("id, title")
+      .eq("user_id", userId);
+    if (lockersError) {
+      console.error("Supabase lockers error:", lockersError);
+      return NextResponse.json({ error: lockersError.message }, { status: 500 });
+    }
+    lockerIds = userLockers?.map((l: any) => l.id) || [];
+  } else {
+    const { data: allLockers, error: lockersError } = await supabase
+      .from("lockers")
+      .select("id, title");
+    if (lockersError) {
+      console.error("Supabase lockers error:", lockersError);
+      return NextResponse.json({ error: lockersError.message }, { status: 500 });
+    }
+    lockerIds = allLockers?.map((l: any) => l.id) || [];
   }
-  const lockerTitleMap = lockers?.reduce((acc: Record<string, string>, locker: any) => {
-    acc[locker.id] = locker.title;
+  const lockerTitleMap = lockerIds.reduce((acc: Record<string, string>, lockerId: string) => {
+    acc[lockerId] = lockerTitleMap[lockerId] || lockerId;
     return acc;
   }, {}) || {};
 
-  // For now, get all analytics (remove .eq for all users, or add .eq for per-user)
+  // Query analytics for these lockers
   let analyticsQuery = supabase
     .from("locker_analytics")
     .select("*, locker_id");
-  if (userId) {
-    analyticsQuery = analyticsQuery.eq('user_id', userId);
+  if (lockerIds.length > 0) {
+    analyticsQuery = analyticsQuery.in('locker_id', lockerIds);
   }
   const { data: analytics, error } = await analyticsQuery;
   console.log("[DEBUG] dashboard-analytics: analytics count:", analytics?.length);
@@ -138,8 +149,8 @@ export async function GET(req: NextRequest) {
   // --- REVENUE ANALYTICS ---
   // Total earnings (sum of payments)
   let paymentsQuery = supabase.from("payments").select("amount, status, user_id");
-  if (userId) {
-    paymentsQuery = paymentsQuery.eq("user_id", userId);
+  if (lockerIds.length > 0) {
+    paymentsQuery = paymentsQuery.in('locker_id', lockerIds);
   }
   const { data: payments, error: paymentsError } = await paymentsQuery;
   console.log("[DEBUG] dashboard-analytics: payments count:", payments?.length);
@@ -153,8 +164,8 @@ export async function GET(req: NextRequest) {
 
   // Total payouts (sum of completed withdrawals)
   let withdrawalsQuery = supabase.from("withdrawals").select("amount, status, user_id");
-  if (userId) {
-    withdrawalsQuery = withdrawalsQuery.eq("user_id", userId);
+  if (lockerIds.length > 0) {
+    withdrawalsQuery = withdrawalsQuery.in('locker_id', lockerIds);
   }
   const { data: withdrawals, error: withdrawalsError } = await withdrawalsQuery;
   console.log("[DEBUG] dashboard-analytics: withdrawals count:", withdrawals?.length);
@@ -171,9 +182,9 @@ export async function GET(req: NextRequest) {
   // Last 10 payments and withdrawals
   let recentPaymentsQuery = supabase.from("payments").select("amount, type, description, created_at, status, user_id").order("created_at", { ascending: false }).limit(5);
   let recentWithdrawalsQuery = supabase.from("withdrawals").select("amount, method, address, requested_at, status, user_id").order("requested_at", { ascending: false }).limit(5);
-  if (userId) {
-    recentPaymentsQuery = recentPaymentsQuery.eq("user_id", userId);
-    recentWithdrawalsQuery = recentWithdrawalsQuery.eq("user_id", userId);
+  if (lockerIds.length > 0) {
+    recentPaymentsQuery = recentPaymentsQuery.in('locker_id', lockerIds);
+    recentWithdrawalsQuery = recentWithdrawalsQuery.in('locker_id', lockerIds);
   }
   const { data: recentPayments } = await recentPaymentsQuery;
   const { data: recentWithdrawals } = await recentWithdrawalsQuery;
@@ -182,11 +193,11 @@ export async function GET(req: NextRequest) {
   let userRevenue = 0;
   let userEvents: { amount: number|string, task_id: string, tier: string, country: string, timestamp: string }[] = [];
   let userAvgCpm = 0;
-  if (userId) {
+  if (lockerIds.length > 0) {
     const { data: events, error: eventsError } = await supabase
       .from("revenue_events")
       .select("amount, task_id, tier, country, timestamp")
-      .eq("user_id", userId);
+      .in('locker_id', lockerIds);
     if (!eventsError && events && events.length > 0) {
       userRevenue = events.reduce((sum, e) => sum + Number(e.amount), 0);
       // Calculate average CPM (weighted by event count)
