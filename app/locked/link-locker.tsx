@@ -25,19 +25,11 @@ interface LinkLockerProps {
   lockerId: string
 }
 
-let useUser: any = () => ({ user: null });
-try {
-  // Dynamically import Clerk only if available (SSR-safe)
-  // @ts-ignore
-  useUser = require("@clerk/nextjs").useUser;
-} catch {}
-
 export default function LinkLocker({ title = "Premium Content Download", destinationUrl = "#", lockerId }: LinkLockerProps) {
   const [tasks, setTasks] = useState<Task[]>([])
   const [loadingTasks, setLoadingTasks] = useState(true);
 
   const hasTrackedVisit = useRef(false);
-  const { user } = useUser();
 
   // Device detection
   function getDeviceType() {
@@ -140,7 +132,7 @@ export default function LinkLocker({ title = "Premium Content Download", destina
         event_type: "task_complete",
         task_index: Number(taskId),
         extra: { country: countryCode, tier },
-        user_id: user?.id || null,
+        user_id: undefined,
       });
     }, 60000);
   }
@@ -155,7 +147,7 @@ export default function LinkLocker({ title = "Premium Content Download", destina
         locker_id: lockerId,
         event_type: "unlock",
         duration,
-        user_id: user?.id || null,
+        user_id: undefined,
       });
       window.location.href = destinationUrl
     }
@@ -168,24 +160,24 @@ export default function LinkLocker({ title = "Premium Content Download", destina
           locker_id: lockerId,
           event_type: "dropoff",
           task_index: Number(completedCount),
-          user_id: user?.id || null,
+          user_id: undefined,
         });
       }
     };
     window.addEventListener("beforeunload", handleUnload);
     return () => window.removeEventListener("beforeunload", handleUnload);
-  }, [allTasksCompleted, completedCount, lockerId, user]);
+  }, [allTasksCompleted, completedCount, lockerId]);
 
   useEffect(() => {
     if (!hasTrackedVisit.current) {
       trackLockerEvent({
         locker_id: lockerId,
         event_type: "visit",
-        user_id: user?.id || null,
+        user_id: undefined,
       });
       hasTrackedVisit.current = true;
     }
-  }, [lockerId, user]);
+  }, [lockerId]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900 text-white flex items-center justify-center p-6 relative overflow-hidden">
