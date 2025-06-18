@@ -71,7 +71,13 @@ export default function Admin() {
   });
 
   if (!isLoaded) return <div className="text-white p-8">Loading...</div>;
-  if (!isSignedIn || user.emailAddresses[0]?.emailAddress !== "ananthu9539@gmail.com") {
+  if (
+    !isSignedIn ||
+    !user ||
+    !user.emailAddresses ||
+    !user.emailAddresses[0] ||
+    user.emailAddresses[0].emailAddress !== "ananthu9539@gmail.com"
+  ) {
     return <div className="text-white p-8">Access denied.</div>;
   }
 
