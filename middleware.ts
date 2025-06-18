@@ -4,6 +4,7 @@ const isPublicRoute = createRouteMatcher([
   '/',             // Landing page is public
   '/sign-in(.*)',  // Sign-in page is public
   '/sign-up(.*)',  // Sign-up page is public
+  '/locked(.*)',   // Locked links are public
 ]);
 
 export const middleware = clerkMiddleware(async (auth, req) => {
