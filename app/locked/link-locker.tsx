@@ -170,6 +170,17 @@ export default function LinkLocker({ title = "Premium Content Download", destina
     return () => window.removeEventListener("beforeunload", handleUnload);
   }, [allTasksCompleted, completedCount, lockerId, user]);
 
+  useEffect(() => {
+    if (!hasTrackedVisit.current) {
+      trackLockerEvent({
+        locker_id: lockerId,
+        event_type: "visit",
+        user_id: user?.id || null,
+      });
+      hasTrackedVisit.current = true;
+    }
+  }, [lockerId, user]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900 text-white flex items-center justify-center p-6 relative overflow-hidden">
       {/* Subtle Background Elements */}
