@@ -6,7 +6,6 @@ import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { ChevronRight, Lock, Unlock, ExternalLink, Gift, FileText, Check, Zap, Loader2 } from "lucide-react"
 import { trackLockerEvent } from "@/lib/analytics"
-import { useUser } from "@clerk/nextjs"
 
 declare interface Task {
   id: string
@@ -25,6 +24,13 @@ interface LinkLockerProps {
   destinationUrl?: string
   lockerId: string
 }
+
+let useUser: any = () => ({ user: null });
+try {
+  // Dynamically import Clerk only if available (SSR-safe)
+  // @ts-ignore
+  useUser = require("@clerk/nextjs").useUser;
+} catch {}
 
 export default function LinkLocker({ title = "Premium Content Download", destinationUrl = "#", lockerId }: LinkLockerProps) {
   const [tasks, setTasks] = useState<Task[]>([])
