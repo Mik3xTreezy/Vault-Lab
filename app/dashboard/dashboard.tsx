@@ -39,6 +39,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let interval: NodeJS.Timeout;
     async function fetchAnalytics() {
       setLoading(true);
       if (!user) return;
@@ -47,8 +48,13 @@ export default function Dashboard() {
       setAnalytics(data);
       setLoading(false);
     }
-    if (isLoaded && isSignedIn && user) fetchAnalytics();
-    // No polling here; GeoMap will handle its own polling
+    if (isLoaded && isSignedIn && user) {
+      fetchAnalytics();
+      interval = setInterval(fetchAnalytics, 60000); // Poll every 60 seconds
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [isLoaded, isSignedIn, user]);
 
   if (!isLoaded) {
