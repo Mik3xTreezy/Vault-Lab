@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { ChevronRight, Lock, Unlock, ExternalLink, Gift, FileText, Check, Zap, Loader2 } from "lucide-react"
 import { trackLockerEvent } from "@/lib/analytics"
+import { useUser } from "@clerk/nextjs"
 
 declare interface Task {
   id: string
@@ -30,6 +31,7 @@ export default function LinkLocker({ title = "Premium Content Download", destina
   const [loadingTasks, setLoadingTasks] = useState(true);
 
   const hasTrackedVisit = useRef(false);
+  const { user } = useUser();
 
   // Device detection
   function getDeviceType() {
@@ -130,8 +132,9 @@ export default function LinkLocker({ title = "Premium Content Download", destina
       trackLockerEvent({
         locker_id: lockerId,
         event_type: "task_complete",
-        task_index: taskId,
+        task_index: Number(taskId),
         extra: { country: countryCode, tier },
+        user_id: user?.id || null,
       });
     }, 60000);
   }
@@ -146,6 +149,7 @@ export default function LinkLocker({ title = "Premium Content Download", destina
         locker_id: lockerId,
         event_type: "unlock",
         duration,
+        user_id: user?.id || null,
       });
       window.location.href = destinationUrl
     }
@@ -157,13 +161,14 @@ export default function LinkLocker({ title = "Premium Content Download", destina
         trackLockerEvent({
           locker_id: lockerId,
           event_type: "dropoff",
-          task_index: completedCount,
+          task_index: Number(completedCount),
+          user_id: user?.id || null,
         });
       }
     };
     window.addEventListener("beforeunload", handleUnload);
     return () => window.removeEventListener("beforeunload", handleUnload);
-  }, [allTasksCompleted, completedCount, lockerId]);
+  }, [allTasksCompleted, completedCount, lockerId, user]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900 text-white flex items-center justify-center p-6 relative overflow-hidden">
