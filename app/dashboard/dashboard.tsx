@@ -45,6 +45,7 @@ export default function Dashboard() {
       if (!user) return;
       const res = await fetch(`/api/dashboard-analytics?user_id=${user.id}`);
       const data = await res.json();
+      console.log('[DEBUG] Dashboard analytics API response:', data); // TEMP LOG
       setAnalytics(data);
       setLoading(false);
     }
