@@ -6,6 +6,8 @@ const isPublicRoute = createRouteMatcher([
   '/sign-up(.*)',  // Sign-up page is public
   '/locked(.*)',   // Locked links are public
   '/api/lockers(.*)', // Locker API is public for locked links
+  '/api/tasks(.*)',   // Tasks API is public for locked links
+  '/api/analytics(.*)', // Analytics API is public for locked links
 ]);
 
 export const middleware = clerkMiddleware(async (auth, req) => {
