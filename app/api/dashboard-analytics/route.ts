@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
 
   // Fetch all lockers (id, title) for this user
   let lockerIds: string[] = [];
+  let lockerTitleMap: Record<string, string> = {};
   if (userId) {
     const { data: userLockers, error: lockersError } = await supabase
       .from("lockers")
@@ -24,6 +25,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: lockersError.message }, { status: 500 });
     }
     lockerIds = userLockers?.map((l: any) => l.id) || [];
+    lockerTitleMap = (userLockers || []).reduce((acc: Record<string, string>, locker: any) => {
+      acc[locker.id] = locker.title;
+      return acc;
+    }, {});
   } else {
     const { data: allLockers, error: lockersError } = await supabase
       .from("lockers")
@@ -33,11 +38,11 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: lockersError.message }, { status: 500 });
     }
     lockerIds = allLockers?.map((l: any) => l.id) || [];
+    lockerTitleMap = (allLockers || []).reduce((acc: Record<string, string>, locker: any) => {
+      acc[locker.id] = locker.title;
+      return acc;
+    }, {});
   }
-  const lockerTitleMap = lockerIds.reduce((acc: Record<string, string>, lockerId: string) => {
-    acc[lockerId] = lockerTitleMap[lockerId] || lockerId;
-    return acc;
-  }, {}) || {};
 
   // Query analytics for these lockers
   let analyticsQuery = supabase
@@ -148,9 +153,9 @@ export async function GET(req: NextRequest) {
 
   // --- REVENUE ANALYTICS ---
   // Total earnings (sum of payments)
-  let paymentsQuery = supabase.from("payments").select("amount, status, user_id");
-  if (lockerIds.length > 0) {
-    paymentsQuery = paymentsQuery.in('locker_id', lockerIds);
+  let paymentsQuery = supabase.from("payments").select("amount, status, user_id, locker_id");
+  if (userId) {
+    paymentsQuery = paymentsQuery.eq("user_id", userId);
   }
   const { data: payments, error: paymentsError } = await paymentsQuery;
   console.log("[DEBUG] dashboard-analytics: payments count:", payments?.length);
@@ -164,8 +169,8 @@ export async function GET(req: NextRequest) {
 
   // Total payouts (sum of completed withdrawals)
   let withdrawalsQuery = supabase.from("withdrawals").select("amount, status, user_id");
-  if (lockerIds.length > 0) {
-    withdrawalsQuery = withdrawalsQuery.in('locker_id', lockerIds);
+  if (userId) {
+    withdrawalsQuery = withdrawalsQuery.eq("user_id", userId);
   }
   const { data: withdrawals, error: withdrawalsError } = await withdrawalsQuery;
   console.log("[DEBUG] dashboard-analytics: withdrawals count:", withdrawals?.length);
@@ -180,11 +185,11 @@ export async function GET(req: NextRequest) {
 
   // --- RECENT TRANSACTIONS ---
   // Last 10 payments and withdrawals
-  let recentPaymentsQuery = supabase.from("payments").select("amount, type, description, created_at, status, user_id").order("created_at", { ascending: false }).limit(5);
+  let recentPaymentsQuery = supabase.from("payments").select("amount, type, description, created_at, status, user_id, locker_id").order("created_at", { ascending: false }).limit(5);
   let recentWithdrawalsQuery = supabase.from("withdrawals").select("amount, method, address, requested_at, status, user_id").order("requested_at", { ascending: false }).limit(5);
-  if (lockerIds.length > 0) {
-    recentPaymentsQuery = recentPaymentsQuery.in('locker_id', lockerIds);
-    recentWithdrawalsQuery = recentWithdrawalsQuery.in('locker_id', lockerIds);
+  if (userId) {
+    recentPaymentsQuery = recentPaymentsQuery.eq("user_id", userId);
+    recentWithdrawalsQuery = recentWithdrawalsQuery.eq("user_id", userId);
   }
   const { data: recentPayments } = await recentPaymentsQuery;
   const { data: recentWithdrawals } = await recentWithdrawalsQuery;
