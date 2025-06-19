@@ -20,6 +20,8 @@ import {
 } from "lucide-react"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from "recharts"
+import { useUser } from "@clerk/nextjs"
+import { useRouter } from "next/navigation"
 
 function MiniChart({ data }: { data: { views: number }[] }) {
   return (
@@ -37,6 +39,8 @@ function MiniChart({ data }: { data: { views: number }[] }) {
 }
 
 export default function Vault() {
+  const { user, isLoaded, isSignedIn } = useUser()
+  const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [lockers, setLockers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -44,15 +48,16 @@ export default function Vault() {
   const [lockerAnalytics, setLockerAnalytics] = useState<any>(null)
   const [analyticsOpen, setAnalyticsOpen] = useState(false)
   const [lockerCharts, setLockerCharts] = useState<Record<string, { chartData: any[], totalViews: number }>>({})
+  const [bestPerformingLockers, setBestPerformingLockers] = useState<any[]>([])
 
-  const bestPerformingLockers = [
-    { title: "Youtube", views: "2 views", id: "qXDUiGH9m" },
-    { title: "No data", views: "No views", id: "No data" },
-    { title: "No data", views: "No views", id: "No data" },
-    { title: "No data", views: "No views", id: "No data" },
-    { title: "No data", views: "No views", id: "No data" },
-    { title: "No data", views: "No views", id: "No data" },
-  ]
+  // Authentication check
+  if (!isLoaded) {
+    return <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900 text-white flex items-center justify-center">Loading...</div>
+  }
+  if (!isSignedIn) {
+    router.push('/sign-in')
+    return null
+  }
 
   useEffect(() => {
     async function fetchLockers() {
@@ -73,8 +78,12 @@ export default function Vault() {
             .then(res => res.json())
             .then(data => ({
               id: locker.id,
+              title: locker.title,
               chartData: data.chartData || [],
               totalViews: data.overview?.views ?? 0,
+              unlocks: data.overview?.unlocks ?? 0,
+              taskCompletions: data.overview?.taskCompletions ?? 0,
+              unlockRate: data.overview?.unlockRate ?? 0,
             }))
         )
       ).then(results => {
@@ -83,6 +92,35 @@ export default function Vault() {
           charts[id] = { chartData, totalViews }
         })
         setLockerCharts(charts)
+
+        // Calculate best performing lockers
+        // Sort by a combination of views, unlocks, and task completions
+        const sortedLockers = results
+          .map(result => ({
+            ...result,
+            // Performance score: weighted combination of metrics
+            performanceScore: (result.totalViews * 1) + (result.unlocks * 2) + (result.taskCompletions * 3)
+          }))
+          .sort((a, b) => b.performanceScore - a.performanceScore)
+          .slice(0, 6) // Top 6 performers
+          .map(locker => ({
+            title: locker.title || 'Untitled',
+            views: locker.totalViews > 0 ? `${locker.totalViews} views` : 'No views',
+            id: locker.id,
+            hasData: locker.totalViews > 0
+          }))
+
+        // Fill remaining slots with "No data" if less than 6 lockers
+        while (sortedLockers.length < 6) {
+          sortedLockers.push({
+            title: "No data",
+            views: "No views",
+            id: "No data",
+            hasData: false
+          })
+        }
+
+        setBestPerformingLockers(sortedLockers)
       })
     }
   }, [loading, lockers])
@@ -110,9 +148,12 @@ export default function Vault() {
         <div className="flex items-center justify-between p-6 border-b border-white/10">
           <div>
             <h1 className="text-3xl font-bold text-white mb-1">Vault</h1>
-            <p className="text-gray-400 text-sm">apklox9539@gmail.com</p>
+            <p className="text-gray-400 text-sm">{user?.emailAddresses?.[0]?.emailAddress || 'No email'}</p>
           </div>
-          <Button className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black font-medium">
+          <Button 
+            className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black font-medium"
+            onClick={() => router.push('/create')}
+          >
             <Plus className="w-4 h-4 mr-2" />
             Create link locker
           </Button>
@@ -123,7 +164,22 @@ export default function Vault() {
           <div>
             <h2 className="text-xl font-semibold text-white mb-6">Best performing lockers</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-              {bestPerformingLockers.map((locker, index) => (
+              {loading ? (
+                // Loading skeleton
+                Array.from({ length: 6 }).map((_, index) => (
+                  <Card key={index} className="bg-white/5 backdrop-blur-xl border-white/10">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="w-8 h-8 bg-gray-600 rounded-lg animate-pulse"></div>
+                        <div className="w-12 h-3 bg-gray-600 rounded animate-pulse"></div>
+                      </div>
+                      <div className="w-20 h-4 bg-gray-600 rounded animate-pulse mb-1"></div>
+                      <div className="w-16 h-3 bg-gray-600 rounded animate-pulse"></div>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                bestPerformingLockers.map((locker, index) => (
                 <Card
                   key={index}
                   className="bg-white/5 backdrop-blur-xl border-white/10 hover:bg-white/10 transition-colors"
@@ -131,19 +187,20 @@ export default function Vault() {
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div className="w-8 h-8 bg-emerald-500/20 rounded-lg flex items-center justify-center">
-                        {locker.title === "Youtube" ? (
+                        {locker.hasData ? (
                           <Globe className="w-4 h-4 text-emerald-400" />
                         ) : (
                           <div className="w-4 h-4 bg-gray-600 rounded"></div>
                         )}
                       </div>
-                      <span className="text-xs text-gray-400">{locker.id}</span>
+                      <span className="text-xs text-gray-400 font-mono">{locker.id}</span>
                     </div>
                     <h3 className="text-white font-medium mb-1">{locker.title}</h3>
                     <p className="text-gray-400 text-sm">{locker.views}</p>
                   </CardContent>
                 </Card>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
