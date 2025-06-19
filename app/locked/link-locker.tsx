@@ -27,9 +27,10 @@ interface LinkLockerProps {
 }
 
 export default function LinkLocker({ title = "Premium Content Download", destinationUrl = "#", lockerId }: LinkLockerProps) {
-  const { user, isLoaded } = useUser();
+  const { user, isLoaded, isSignedIn } = useUser();
   const [tasks, setTasks] = useState<Task[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [userReady, setUserReady] = useState(false)
   const unlockStartTime = useRef(Date.now())
 
   // Get user's country and tier (you can implement geolocation or use a service)
@@ -37,6 +38,14 @@ export default function LinkLocker({ title = "Premium Content Download", destina
     // For now, default to US and tier1. You can implement proper geolocation later
     return { country: 'US', tier: 'tier1' };
   };
+
+  // Wait for user to be ready
+  useEffect(() => {
+    if (isLoaded) {
+      setUserReady(true);
+      console.log('[DEBUG] User state:', { isLoaded, isSignedIn, userId: user?.id });
+    }
+  }, [isLoaded, isSignedIn, user]);
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -66,9 +75,11 @@ export default function LinkLocker({ title = "Premium Content Download", destina
     }
 
     fetchTasks()
+  }, [])
 
-    // Track initial visit only when user is loaded
-    if (isLoaded && user) {
+  // Track initial visit when user is ready
+  useEffect(() => {
+    if (userReady && user) {
       console.log('[DEBUG] Tracking visit event for user:', user.id);
       trackLockerEvent({
         locker_id: lockerId,
@@ -76,7 +87,7 @@ export default function LinkLocker({ title = "Premium Content Download", destina
         user_id: user.id,
       });
     }
-  }, [lockerId, user, isLoaded])
+  }, [userReady, user, lockerId])
 
   type HandleTaskClick = (taskId: string, countryCode?: string, tier?: string) => void
 
@@ -100,13 +111,14 @@ export default function LinkLocker({ title = "Premium Content Download", destina
     // Get user location for proper revenue calculation
     const location = getUserLocation();
 
-    // Complete after 60 seconds for production
+    // Complete after 5 seconds for testing (change back to 60000 for production)
     setTimeout(() => {
       setTasks((prevTasks) =>
         prevTasks.map((task) => (task.id === taskId ? { ...task, loading: false, completed: true } : task)),
       );
-      // Track task completion with user ID - only if user is loaded
-      if (isLoaded && user) {
+      
+      // Track task completion with user ID - only if user is ready and available
+      if (userReady && user) {
         console.log('[DEBUG] Tracking task completion:', {
           locker_id: lockerId,
           event_type: "task_complete",
@@ -123,35 +135,65 @@ export default function LinkLocker({ title = "Premium Content Download", destina
           user_id: user.id,
         });
       } else {
-        console.warn('[DEBUG] User not loaded, skipping task completion tracking');
+        console.warn('[DEBUG] User not ready for task completion tracking:', { 
+          userReady, 
+          hasUser: !!user,
+          userId: user?.id 
+        });
+        
+        // Track without user ID for anonymous users
+        trackLockerEvent({
+          locker_id: lockerId,
+          event_type: "task_complete",
+          task_index: Number(taskId),
+          extra: { country: location.country, tier: location.tier },
+          user_id: null,
+        });
       }
-    }, 60000); // 60 seconds for production
+    }, 5000); // 5 seconds for testing
   }
 
   const allTasksCompleted = tasks.length > 0 && tasks.every((task) => task.completed)
   const completedCount = tasks.filter((task) => task.completed).length
 
   const handleUnlock = () => {
-    console.log('[DEBUG] Unlock button clicked:', { allTasksCompleted, user: user?.id, destinationUrl });
+    console.log('[DEBUG] Unlock button clicked:', { 
+      allTasksCompleted, 
+      userReady,
+      hasUser: !!user,
+      userId: user?.id, 
+      destinationUrl 
+    });
     
-    if (allTasksCompleted && isLoaded && user) {
+    if (allTasksCompleted) {
       const duration = Date.now() - unlockStartTime.current;
       
-      console.log('[DEBUG] Tracking unlock event:', {
-        locker_id: lockerId,
-        event_type: "unlock",
-        duration,
-        user_id: user.id,
-      });
+      // Track unlock event (with or without user)
+      if (userReady && user) {
+        console.log('[DEBUG] Tracking unlock event with user:', {
+          locker_id: lockerId,
+          event_type: "unlock",
+          duration,
+          user_id: user.id,
+        });
+        
+        trackLockerEvent({
+          locker_id: lockerId,
+          event_type: "unlock",
+          duration,
+          user_id: user.id,
+        });
+      } else {
+        console.log('[DEBUG] Tracking unlock event without user');
+        trackLockerEvent({
+          locker_id: lockerId,
+          event_type: "unlock",
+          duration,
+          user_id: null,
+        });
+      }
       
-      trackLockerEvent({
-        locker_id: lockerId,
-        event_type: "unlock",
-        duration,
-        user_id: user.id,
-      });
-      
-      // Ensure destinationUrl is valid
+      // Ensure destinationUrl is valid and redirect
       if (destinationUrl && destinationUrl !== "#") {
         console.log('[DEBUG] Redirecting to:', destinationUrl);
         window.location.href = destinationUrl;
@@ -161,11 +203,23 @@ export default function LinkLocker({ title = "Premium Content Download", destina
       }
     } else {
       console.log('[DEBUG] Unlock conditions not met:', { 
-        allTasksCompleted, 
-        isLoaded, 
-        hasUser: !!user 
+        allTasksCompleted,
+        completedCount,
+        totalTasks: tasks.length
       });
     }
+  }
+
+  // Show loading state while user authentication is loading
+  if (!userReady) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900 text-white flex items-center justify-center p-6">
+        <div className="flex justify-center items-center py-12">
+          <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
+          <span className="ml-3 text-gray-400">Loading...</span>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -187,6 +241,21 @@ export default function LinkLocker({ title = "Premium Content Download", destina
             Access Link
           </h1>
           <p className="text-gray-400 text-sm">Complete the challenges below to access your content</p>
+          
+          {/* Sign-in prompt for better revenue tracking */}
+          {userReady && !user && (
+            <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+              <p className="text-blue-300 text-sm">
+                💡 <strong>Tip:</strong> Sign in to track your earnings from completed tasks!
+              </p>
+              <button
+                onClick={() => window.location.href = '/sign-in'}
+                className="mt-2 text-blue-400 hover:text-blue-300 text-sm underline"
+              >
+                Sign in here
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Tasks Grid */}

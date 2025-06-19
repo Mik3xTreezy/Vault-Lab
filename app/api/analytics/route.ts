@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     console.log('[ANALYTICS API] Received event:', {
       locker_id,
       event_type,
-      user_id,
+      user_id: user_id || 'anonymous',
       task_index,
       duration,
       extra
@@ -46,10 +46,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: analyticsError.message }, { status: 500 });
     }
 
-    console.log('[ANALYTICS API] Analytics event inserted:', analyticsData);
+    console.log('[ANALYTICS API] Analytics event inserted successfully');
 
     // If this is a task completion, handle revenue calculation
-    if (event_type === "task_complete" && user_id && task_index !== null && extra?.country && extra?.tier) {
+    if (event_type === "task_complete" && task_index !== null && extra?.country && extra?.tier) {
       console.log('[ANALYTICS API] Processing task completion for revenue...');
       
       try {
@@ -90,77 +90,90 @@ export async function POST(req: NextRequest) {
           tier: extra.tier,
           cpmRate,
           revenue,
-          country: extra.country
+          country: extra.country,
+          hasUser: !!user_id
         });
 
-        // Insert revenue event
-        const { data: revenueData, error: revenueError } = await supabase
-          .from("revenue_events")
-          .insert({
-            user_id,
-            locker_id,
-            task_id: task_index.toString(),
-            amount: revenue,
-            country: extra.country,
-            tier: extra.tier,
-            timestamp: new Date().toISOString(),
-          })
-          .select();
-
-        if (revenueError) {
-          console.error('[ANALYTICS API] Error inserting revenue event:', revenueError);
-          return NextResponse.json({ error: revenueError.message }, { status: 500 });
-        }
-
-        console.log('[ANALYTICS API] Revenue event inserted:', revenueData);
-
-        // Update user balance
-        const { data: currentBalance, error: balanceError } = await supabase
-          .from("users")
-          .select("balance")
-          .eq("id", user_id)
-          .single();
-
-        if (balanceError) {
-          console.log('[ANALYTICS API] User not found in users table, creating...');
-          // Create user if doesn't exist
-          const { error: createUserError } = await supabase
-            .from("users")
+        // Only create revenue events and update balances for authenticated users
+        if (user_id) {
+          // Insert revenue event
+          const { data: revenueData, error: revenueError } = await supabase
+            .from("revenue_events")
             .insert({
-              id: user_id,
-              balance: revenue,
-              joined: new Date().toISOString(),
-            });
-          
-          if (createUserError) {
-            console.error('[ANALYTICS API] Error creating user:', createUserError);
-          } else {
-            console.log('[ANALYTICS API] User created with balance:', revenue);
+              user_id,
+              locker_id,
+              task_id: task_index.toString(),
+              amount: revenue,
+              country: extra.country,
+              tier: extra.tier,
+              timestamp: new Date().toISOString(),
+            })
+            .select();
+
+          if (revenueError) {
+            console.error('[ANALYTICS API] Error inserting revenue event:', revenueError);
+            return NextResponse.json({ error: revenueError.message }, { status: 500 });
           }
-        } else {
-          // Update existing user balance
-          const newBalance = (currentBalance.balance || 0) + revenue;
-          const { error: updateError } = await supabase
+
+          console.log('[ANALYTICS API] Revenue event inserted:', revenueData);
+
+          // Update user balance
+          const { data: currentBalance, error: balanceError } = await supabase
             .from("users")
-            .update({ balance: newBalance })
-            .eq("id", user_id);
+            .select("balance")
+            .eq("id", user_id)
+            .single();
 
-          if (updateError) {
-            console.error('[ANALYTICS API] Error updating user balance:', updateError);
+          if (balanceError) {
+            console.log('[ANALYTICS API] User not found in users table, creating...');
+            // Create user if doesn't exist
+            const { error: createUserError } = await supabase
+              .from("users")
+              .insert({
+                id: user_id,
+                balance: revenue,
+                joined: new Date().toISOString(),
+              });
+            
+            if (createUserError) {
+              console.error('[ANALYTICS API] Error creating user:', createUserError);
+            } else {
+              console.log('[ANALYTICS API] User created with balance:', revenue);
+            }
           } else {
-            console.log('[ANALYTICS API] User balance updated:', { 
-              oldBalance: currentBalance.balance, 
-              newBalance 
-            });
-          }
-        }
+            // Update existing user balance
+            const newBalance = (currentBalance.balance || 0) + revenue;
+            const { error: updateError } = await supabase
+              .from("users")
+              .update({ balance: newBalance })
+              .eq("id", user_id);
 
-        return NextResponse.json({ 
-          success: true, 
-          revenue_calculated: revenue,
-          cpm_rate: cpmRate,
-          tier: extra.tier
-        });
+            if (updateError) {
+              console.error('[ANALYTICS API] Error updating user balance:', updateError);
+            } else {
+              console.log('[ANALYTICS API] User balance updated:', { 
+                oldBalance: currentBalance.balance, 
+                newBalance 
+              });
+            }
+          }
+
+          return NextResponse.json({ 
+            success: true, 
+            revenue_calculated: revenue,
+            cpm_rate: cpmRate,
+            tier: extra.tier,
+            user_authenticated: true
+          });
+        } else {
+          // Anonymous user - just track the completion but no revenue
+          console.log('[ANALYTICS API] Anonymous task completion - no revenue calculated');
+          return NextResponse.json({ 
+            success: true, 
+            message: "Task completion tracked for anonymous user",
+            user_authenticated: false
+          });
+        }
       } catch (revenueError) {
         console.error('[ANALYTICS API] Error in revenue calculation:', revenueError);
         return NextResponse.json({ 
