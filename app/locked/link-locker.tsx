@@ -100,7 +100,7 @@ export default function LinkLocker({ title = "Premium Content Download", destina
     // Get user location for proper revenue calculation
     const location = getUserLocation();
 
-    // Complete after 5 seconds for testing (change back to 60000 for production)
+    // Complete after 60 seconds for production
     setTimeout(() => {
       setTasks((prevTasks) =>
         prevTasks.map((task) => (task.id === taskId ? { ...task, loading: false, completed: true } : task)),
@@ -125,7 +125,7 @@ export default function LinkLocker({ title = "Premium Content Download", destina
       } else {
         console.warn('[DEBUG] User not loaded, skipping task completion tracking');
       }
-    }, 5000); // 5 seconds for testing
+    }, 60000); // 60 seconds for production
   }
 
   const allTasksCompleted = tasks.length > 0 && tasks.every((task) => task.completed)
