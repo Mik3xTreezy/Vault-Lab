@@ -77,6 +77,7 @@ export default function Admin() {
       setLoadingUsers(true)
       try {
         const res = await fetch("/api/users")
+        if (!res.ok) throw new Error("Failed to fetch users");
         const data = await res.json()
         console.log('[ADMIN DEBUG] /api/users response:', data);
         setUsers(Array.isArray(data) ? data : [])
@@ -96,6 +97,7 @@ export default function Admin() {
       setLoadingAnalytics(true)
       try {
         const res = await fetch("/api/dashboard-analytics")
+        if (!res.ok) throw new Error("Failed to fetch analytics");
         const data = await res.json()
         console.log('[ADMIN DEBUG] /api/dashboard-analytics response:', data);
         setAnalytics(data && typeof data === 'object' ? data : null)
@@ -115,6 +117,7 @@ export default function Admin() {
       setLoadingTasks(true);
       try {
         const res = await fetch("/api/tasks");
+        if (!res.ok) throw new Error("Failed to fetch tasks");
         const data = await res.json();
         console.log('[ADMIN DEBUG] /api/tasks response:', data);
         setTasks(Array.isArray(data) ? data : []);
@@ -148,6 +151,7 @@ export default function Admin() {
     setLoadingTasks(true);
     try {
       const res = await fetch("/api/tasks");
+      if (!res.ok) throw new Error("Failed to fetch tasks");
       const data = await res.json();
       setTasks(data);
     } catch (error) {
