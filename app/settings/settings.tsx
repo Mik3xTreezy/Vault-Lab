@@ -1,10 +1,8 @@
 "use client"
 
-import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Plus, Shield, Code, Users, HelpCircle, Fingerprint, X } from "lucide-react"
+import { Plus, Shield, Code, Users, HelpCircle, Fingerprint } from "lucide-react"
 import { useAuth, useUser } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
 
@@ -12,10 +10,9 @@ export default function Settings() {
   const { signOut, isLoaded } = useAuth();
   const { user } = useUser();
   const router = useRouter();
-  const [securityModalOpen, setSecurityModalOpen] = useState(false);
 
   const handleSecurityClick = () => {
-    setSecurityModalOpen(true);
+    window.open('https://accounts.vaultlab.co/user', '_blank');
   };
 
   const settingsItems = [
@@ -163,35 +160,6 @@ export default function Settings() {
           </div>
         </div>
       </div>
-
-      {/* Security Modal */}
-      <Dialog open={securityModalOpen} onOpenChange={setSecurityModalOpen}>
-        <DialogContent className="max-w-4xl h-[80vh] bg-[#18181b] text-white border-white/10 p-0">
-          <DialogHeader className="p-6 pb-0">
-            <div className="flex items-center justify-between">
-              <DialogTitle className="text-xl font-bold">Account Security</DialogTitle>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setSecurityModalOpen(false)}
-                className="h-8 w-8 text-gray-400 hover:text-white"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </DialogHeader>
-          <div className="flex-1 p-6 pt-0">
-            <div className="w-full h-full rounded-lg overflow-hidden border border-white/10">
-              <iframe
-                src="https://accounts.vaultlab.co/user"
-                className="w-full h-full"
-                title="Account Security Settings"
-                style={{ minHeight: '500px' }}
-              />
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
