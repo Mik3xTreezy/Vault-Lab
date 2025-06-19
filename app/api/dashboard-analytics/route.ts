@@ -250,6 +250,20 @@ export async function GET(req: NextRequest) {
   const { data: recentPayments } = await recentPaymentsQuery;
   const { data: recentWithdrawals } = await recentWithdrawalsQuery;
 
+  // Get user's current balance if userId is provided
+  let userBalance = 0;
+  if (userId) {
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select("balance")
+      .eq("id", userId)
+      .single();
+    
+    if (!userError && userData) {
+      userBalance = userData.balance || 0;
+    }
+  }
+
   const responseData = {
     overview: {
       views,
@@ -271,6 +285,7 @@ export async function GET(req: NextRequest) {
     },
     userEarnings: {
       totalRevenue: userRevenue,
+      currentBalance: userBalance,
       avgCpm: userAvgCpm,
       events: userEvents,
     },

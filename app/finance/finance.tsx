@@ -1,42 +1,101 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { History, Wallet, TrendingUp, DollarSign, ArrowUpRight, Bitcoin, CreditCard, Coins, Plus } from "lucide-react"
+import { useUser } from "@clerk/nextjs"
+import { useRouter } from "next/navigation"
 
 export default function Finance() {
+  const { user, isLoaded, isSignedIn } = useUser()
+  const router = useRouter()
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null)
   const [cashoutAmount, setCashoutAmount] = useState("")
+  const [walletAddress, setWalletAddress] = useState("")
+  const [financeData, setFinanceData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [transactions, setTransactions] = useState<any[]>([])
+  const [isSubmittingCashout, setIsSubmittingCashout] = useState(false)
 
+  // Authentication check
+  if (!isLoaded) {
+    return <div className="min-h-screen text-white flex items-center justify-center">Loading...</div>
+  }
+  if (!isSignedIn) {
+    router.push('/sign-in')
+    return null
+  }
+
+  // Fetch finance data
+  useEffect(() => {
+    async function fetchFinanceData() {
+      if (!user) return
+      setLoading(true)
+      try {
+        // Fetch user's financial data from dashboard analytics
+        const financeRes = await fetch(`/api/dashboard-analytics?user_id=${user.id}`)
+        if (financeRes.ok) {
+          const data = await financeRes.json()
+          setFinanceData(data)
+        }
+
+        // Fetch withdrawal transactions
+        const transactionsRes = await fetch(`/api/withdrawals?user_id=${user.id}`)
+        if (transactionsRes.ok) {
+          const transactionData = await transactionsRes.json()
+          setTransactions(transactionData)
+        }
+      } catch (error) {
+        console.error('Error fetching finance data:', error)
+      }
+      setLoading(false)
+    }
+
+    if (user) {
+      fetchFinanceData()
+    }
+  }, [user])
+
+  // Calculate current month earnings
+  const currentMonth = new Date().toISOString().slice(0, 7) // YYYY-MM format
+  const thisMonthEarnings = financeData?.userEarnings?.events?.filter((event: any) => 
+    event.timestamp?.startsWith(currentMonth)
+  ).reduce((sum: number, event: any) => sum + Number(event.amount), 0) || 0
+
+  // Calculate pending cashouts
+  const pendingCashouts = transactions.filter(t => t.status === 'pending')
+    .reduce((sum, t) => sum + Number(t.amount), 0)
+
+  // Dynamic finance metrics
   const financeMetrics = [
     {
       title: "Current Balance",
-      value: "$1,247.50",
+      value: `$${(financeData?.userEarnings?.currentBalance || 0).toFixed(2)}`,
       icon: <Wallet className="w-5 h-5 text-emerald-400" />,
-      change: "+12.5%",
+      change: "+0%", // Could calculate based on previous period
       description: "Available for cashout",
     },
     {
       title: "Total Earnings",
-      value: "$3,892.30",
+      value: `$${(financeData?.userEarnings?.totalRevenue || 0).toFixed(2)}`,
       icon: <TrendingUp className="w-5 h-5 text-blue-400" />,
-      change: "+2550%",
+      change: "+0%", // Could calculate based on previous period
       description: "All time earnings",
     },
     {
       title: "This Month",
-      value: "$892.30",
+      value: `$${thisMonthEarnings.toFixed(2)}`,
       icon: <DollarSign className="w-5 h-5 text-purple-400" />,
-      change: "+45.2%",
-      description: "June 2024 earnings",
+      change: "+0%", // Could calculate based on previous month
+      description: `${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} earnings`,
     },
     {
       title: "Pending Cashouts",
-      value: "$0.00",
+      value: `$${pendingCashouts.toFixed(2)}`,
       icon: <CreditCard className="w-5 h-5 text-orange-400" />,
       change: "0",
       description: "Processing payments",
@@ -102,38 +161,69 @@ export default function Finance() {
     },
   ]
 
-  const recentTransactions = [
-    {
-      method: "PayPal",
-      amount: "$125.50",
-      status: "Completed",
-      date: "Jun 10, 2024",
-      statusColor: "text-green-400",
-    },
-    {
-      method: "Bitcoin",
-      amount: "$250.00",
-      status: "Processing",
-      date: "Jun 8, 2024",
-      statusColor: "text-yellow-400",
-    },
-    {
-      method: "USDC BEP20",
-      amount: "$75.25",
-      status: "Completed",
-      date: "Jun 5, 2024",
-      statusColor: "text-green-400",
-    },
-  ]
+  // Format transactions for display
+  const recentTransactions = transactions.slice(0, 3).map(transaction => ({
+    method: transaction.method || 'Unknown',
+    amount: `$${Number(transaction.amount).toFixed(2)}`,
+    status: transaction.status === 'completed' ? 'Completed' : 
+            transaction.status === 'pending' ? 'Processing' : 'Failed',
+    date: new Date(transaction.requested_at || transaction.created_at).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    }),
+    statusColor: transaction.status === 'completed' ? 'text-green-400' : 
+                 transaction.status === 'pending' ? 'text-yellow-400' : 'text-red-400',
+  }))
 
-  const handleCashoutRequest = () => {
-    if (selectedPaymentMethod && cashoutAmount) {
-      // Handle cashout request logic here
-      console.log(`Requesting cashout of ${cashoutAmount} via ${selectedPaymentMethod}`)
-      // Reset form
-      setSelectedPaymentMethod(null)
-      setCashoutAmount("")
+  const handleCashoutRequest = async () => {
+    if (!selectedPaymentMethod || !cashoutAmount || !walletAddress) return
+    
+    const amount = Number.parseFloat(cashoutAmount)
+    const availableBalance = financeData?.userEarnings?.currentBalance || 0
+    
+    if (amount < 50) {
+      alert('Minimum cashout amount is $50')
+      return
     }
+    
+    if (amount > availableBalance) {
+      alert('Insufficient balance')
+      return
+    }
+
+    setIsSubmittingCashout(true)
+    try {
+      const response = await fetch('/api/withdrawals', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: user?.id,
+          amount: amount,
+          method: selectedPaymentMethod,
+          address: walletAddress,
+        }),
+      })
+
+      if (response.ok) {
+        alert('Cashout request submitted successfully!')
+        // Reset form
+        setSelectedPaymentMethod(null)
+        setCashoutAmount("")
+        setWalletAddress("")
+        // Refresh data
+        window.location.reload()
+      } else {
+        const error = await response.json()
+        alert(`Error: ${error.message || 'Failed to submit cashout request'}`)
+      }
+    } catch (error) {
+      console.error('Cashout request error:', error)
+      alert('Failed to submit cashout request')
+    }
+    setIsSubmittingCashout(false)
   }
 
   return (
@@ -154,7 +244,9 @@ export default function Finance() {
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2 bg-emerald-500/10 backdrop-blur-xl border border-emerald-500/20 rounded-lg px-4 py-2">
               <Wallet className="w-5 h-5 text-emerald-400" />
-              <span className="text-2xl font-bold text-white">$1,247.50</span>
+              <span className="text-2xl font-bold text-white">
+                ${loading ? '0.00' : (financeData?.userEarnings?.currentBalance || 0).toFixed(2)}
+              </span>
             </div>
 
             {/* Request Cashout Dialog */}
@@ -208,6 +300,8 @@ export default function Finance() {
                         <Input
                           id="address"
                           type="text"
+                          value={walletAddress}
+                          onChange={(e) => setWalletAddress(e.target.value)}
                           placeholder={
                             selectedPaymentMethod === "PayPal" ? "Enter your PayPal email" : "Enter your wallet address"
                           }
@@ -228,7 +322,9 @@ export default function Finance() {
                           className="bg-white/5 border-white/10 text-white placeholder-gray-400 focus:border-emerald-500/50"
                         />
                         <div className="flex justify-between text-sm">
-                          <p className="text-gray-400">Available balance: $1,247.50</p>
+                          <p className="text-gray-400">
+                            Available balance: ${(financeData?.userEarnings?.currentBalance || 0).toFixed(2)}
+                          </p>
                           {cashoutAmount && Number.parseFloat(cashoutAmount) < 50 && (
                             <p className="text-red-400">Minimum $50 to cashout</p>
                           )}
@@ -237,10 +333,10 @@ export default function Finance() {
 
                       <Button
                         onClick={handleCashoutRequest}
-                        disabled={!cashoutAmount || Number.parseFloat(cashoutAmount) < 50}
+                        disabled={!cashoutAmount || !walletAddress || Number.parseFloat(cashoutAmount) < 50 || isSubmittingCashout}
                         className="w-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Request Cashout
+                        {isSubmittingCashout ? 'Submitting...' : 'Request Cashout'}
                       </Button>
                     </div>
                   )}
@@ -306,27 +402,33 @@ export default function Finance() {
             </div>
             <Card className="bg-white/5 backdrop-blur-xl border-white/10">
               <CardContent className="p-0">
-                <div className="divide-y divide-white/10">
-                  {recentTransactions.map((transaction, index) => (
-                    <div key={index} className="p-6 hover:bg-white/5 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
-                            <CreditCard className="w-5 h-5 text-gray-400" />
+                {loading ? (
+                  <div className="p-6 text-center text-gray-400">Loading transactions...</div>
+                ) : recentTransactions.length === 0 ? (
+                  <div className="p-6 text-center text-gray-400">No transactions yet</div>
+                ) : (
+                  <div className="divide-y divide-white/10">
+                    {recentTransactions.map((transaction, index) => (
+                      <div key={index} className="p-6 hover:bg-white/5 transition-colors">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+                              <CreditCard className="w-5 h-5 text-gray-400" />
+                            </div>
+                            <div>
+                              <p className="text-white font-medium">{transaction.method}</p>
+                              <p className="text-gray-400 text-sm">{transaction.date}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-white font-medium">{transaction.method}</p>
-                            <p className="text-gray-400 text-sm">{transaction.date}</p>
+                          <div className="text-right">
+                            <p className="text-white font-medium">{transaction.amount}</p>
+                            <p className={`text-sm ${transaction.statusColor}`}>{transaction.status}</p>
                           </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-white font-medium">{transaction.amount}</p>
-                          <p className={`text-sm ${transaction.statusColor}`}>{transaction.status}</p>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -360,7 +462,11 @@ export default function Finance() {
                 <p className="text-gray-400 text-sm">Track your remaining cashouts for this month</p>
               </div>
               <div className="text-right">
-                <p className="text-2xl font-bold text-white">3/3</p>
+                <p className="text-2xl font-bold text-white">
+                  {loading ? '0/3' : `${Math.max(0, 3 - transactions.filter(t => 
+                    t.requested_at?.startsWith(currentMonth) || t.created_at?.startsWith(currentMonth)
+                  ).length)}/3`}
+                </p>
                 <p className="text-gray-400 text-sm">Remaining</p>
               </div>
             </div>
