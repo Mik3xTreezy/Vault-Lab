@@ -27,4 +27,20 @@ COMMENT ON COLUMN ip_task_tracking.task_id IS 'Task ID for task-specific events 
 COMMENT ON COLUMN ip_task_tracking.locker_id IS 'Locker ID (always present for all events)';
 COMMENT ON COLUMN ip_task_tracking.event_type IS 'Type of event: visit, unlock, task_complete';
 COMMENT ON COLUMN ip_task_tracking.revenue_counted IS 'Whether this event counted for analytics (first time in 24h)';
-COMMENT ON COLUMN ip_task_tracking.completion_count IS 'Total number of this event type from this IP for this resource'; 
+COMMENT ON COLUMN ip_task_tracking.completion_count IS 'Total number of this event type from this IP for this resource';
+
+-- Step 8: Add country column to locker_analytics table for geographic analytics
+ALTER TABLE locker_analytics ADD COLUMN IF NOT EXISTS country VARCHAR(10);
+
+-- Step 9: Update existing records to extract country from extra field
+UPDATE locker_analytics 
+SET country = extra->>'country' 
+WHERE extra IS NOT NULL 
+  AND extra->>'country' IS NOT NULL 
+  AND country IS NULL;
+
+-- Step 10: Create index for better performance on country queries
+CREATE INDEX IF NOT EXISTS idx_locker_analytics_country ON locker_analytics(country);
+
+-- Step 11: Add comment for the new column
+COMMENT ON COLUMN locker_analytics.country IS 'Country code (US, GB, etc.) extracted from visitor geolocation'; 

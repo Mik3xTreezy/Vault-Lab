@@ -2,6 +2,7 @@
 import { ComposableMap, Geographies, Geography } from "react-simple-maps";
 import { scaleLinear } from "d3-scale";
 import { useEffect, useState } from "react";
+import { Globe, TrendingUp, Users, MapPin } from "lucide-react";
 
 interface GeoMapProps {
   countryData: Record<string, number | string>;
@@ -9,6 +10,81 @@ interface GeoMapProps {
 }
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
+
+// Country code to name mapping (top countries)
+const countryNames: Record<string, string> = {
+  US: "United States",
+  GB: "United Kingdom", 
+  CA: "Canada",
+  AU: "Australia",
+  DE: "Germany",
+  FR: "France",
+  IT: "Italy",
+  ES: "Spain",
+  NL: "Netherlands",
+  BE: "Belgium",
+  CH: "Switzerland",
+  AT: "Austria",
+  SE: "Sweden",
+  NO: "Norway",
+  DK: "Denmark",
+  FI: "Finland",
+  IE: "Ireland",
+  PT: "Portugal",
+  GR: "Greece",
+  PL: "Poland",
+  CZ: "Czech Republic",
+  HU: "Hungary",
+  RO: "Romania",
+  BG: "Bulgaria",
+  HR: "Croatia",
+  SI: "Slovenia",
+  SK: "Slovakia",
+  LT: "Lithuania",
+  LV: "Latvia",
+  EE: "Estonia",
+  JP: "Japan",
+  KR: "South Korea",
+  CN: "China",
+  IN: "India",
+  SG: "Singapore",
+  MY: "Malaysia",
+  TH: "Thailand",
+  ID: "Indonesia",
+  PH: "Philippines",
+  VN: "Vietnam",
+  TW: "Taiwan",
+  HK: "Hong Kong",
+  BR: "Brazil",
+  MX: "Mexico",
+  AR: "Argentina",
+  CL: "Chile",
+  CO: "Colombia",
+  PE: "Peru",
+  VE: "Venezuela",
+  UY: "Uruguay",
+  PY: "Paraguay",
+  BO: "Bolivia",
+  EC: "Ecuador",
+  ZA: "South Africa",
+  EG: "Egypt",
+  MA: "Morocco",
+  NG: "Nigeria",
+  KE: "Kenya",
+  GH: "Ghana",
+  TN: "Tunisia",
+  DZ: "Algeria",
+  IL: "Israel",
+  AE: "UAE",
+  SA: "Saudi Arabia",
+  TR: "Turkey",
+  RU: "Russia",
+  UA: "Ukraine",
+  BY: "Belarus",
+  KZ: "Kazakhstan",
+  UZ: "Uzbekistan",
+  NZ: "New Zealand",
+};
 
 // Helper to normalize all values to numbers
 function normalizeCountryData(data: Record<string, number | string>): Record<string, number> {
@@ -22,10 +98,13 @@ function normalizeCountryData(data: Record<string, number | string>): Record<str
 
 export default function GeoMap({ countryData: initialCountryData, userId }: GeoMapProps) {
   const [countryData, setCountryData] = useState<Record<string, number>>(normalizeCountryData(initialCountryData));
+  const [hoveredCountry, setHoveredCountry] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
     async function fetchCountryData() {
+      setIsLoading(true);
       try {
         const url = userId ? `/api/dashboard-analytics?user_id=${userId}` : '/api/dashboard-analytics';
         const res = await fetch(url);
@@ -36,79 +115,208 @@ export default function GeoMap({ countryData: initialCountryData, userId }: GeoM
         }
       } catch (error) {
         console.error('Error fetching country data:', error);
+      } finally {
+        setIsLoading(false);
       }
     }
+    
+    // Initial fetch
+    fetchCountryData();
+    
+    // Set up interval for updates
     interval = setInterval(fetchCountryData, 120000);
     return () => clearInterval(interval);
   }, [userId]);
 
   const countryValues = Object.values(countryData).filter((v): v is number => typeof v === 'number');
+  const totalViews = countryValues.reduce((sum, val) => sum + val, 0);
   const maxValue = countryValues.length > 0 ? Math.max(...countryValues) : 1;
+  const uniqueCountries = Object.keys(countryData).length;
+  
+  // Enhanced color scale with better gradient
   const colorScale = scaleLinear<string>()
     .domain([0, Math.max(1, maxValue)])
-    .range(["#1f2937", "#10b981"]); // dark gray to emerald (better contrast)
+    .range(["#0f172a", "#06b6d4"]); // slate-900 to cyan-500
+
+  const topCountries = Object.entries(countryData)
+    .filter(([_, views]) => views > 0)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10);
 
   return (
-    <div className="bg-white/5 backdrop-blur-xl border-white/10 rounded-lg p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-white">Geographies</h2>
-        <div className="flex items-center text-xs text-gray-400">
-          <span>Low</span>
-          <div className="flex ml-2 mr-2">
-            {Array.from({ length: 16 }).map((_, i) => (
+    <div className="bg-gradient-to-br from-slate-900/50 to-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 shadow-2xl">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-xl">
+            <Globe className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-white">Global Visitor Analytics</h2>
+            <p className="text-slate-400">Geographic distribution of your audience</p>
+          </div>
+        </div>
+        
+        {/* Live indicator */}
+        <div className="flex items-center gap-2">
+          <div className={`w-2 h-2 rounded-full ${isLoading ? 'bg-yellow-400 animate-pulse' : 'bg-green-400'}`} />
+          <span className="text-sm text-slate-400">
+            {isLoading ? 'Updating...' : 'Live'}
+          </span>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
+          <div className="flex items-center gap-3 mb-2">
+            <Users className="w-5 h-5 text-cyan-400" />
+            <span className="text-slate-300 font-medium">Total Views</span>
+          </div>
+          <div className="text-3xl font-bold text-white">{totalViews.toLocaleString()}</div>
+        </div>
+        
+        <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
+          <div className="flex items-center gap-3 mb-2">
+            <MapPin className="w-5 h-5 text-green-400" />
+            <span className="text-slate-300 font-medium">Countries</span>
+          </div>
+          <div className="text-3xl font-bold text-white">{uniqueCountries}</div>
+        </div>
+        
+        <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
+          <div className="flex items-center gap-3 mb-2">
+            <TrendingUp className="w-5 h-5 text-purple-400" />
+            <span className="text-slate-300 font-medium">Top Country</span>
+          </div>
+          <div className="text-xl font-bold text-white">
+            {topCountries.length > 0 ? (
+              <div>
+                <div>{countryNames[topCountries[0][0]] || topCountries[0][0]}</div>
+                <div className="text-sm text-slate-400 font-normal">
+                  {topCountries[0][1].toLocaleString()} views
+                </div>
+              </div>
+            ) : (
+              <div className="text-slate-500">No data</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Color Scale Legend */}
+      <div className="flex items-center justify-center mb-6">
+        <div className="flex items-center gap-4 bg-slate-800/30 rounded-full px-6 py-3">
+          <span className="text-sm text-slate-400">Low</span>
+          <div className="flex gap-1">
+            {Array.from({ length: 20 }).map((_, i) => (
               <div
                 key={i}
-                className="w-1 h-3 rounded"
+                className="w-1 h-4 rounded-full"
                 style={{ 
-                  backgroundColor: colorScale(i * (maxValue / 15)),
-                  opacity: 0.8 + (i * 0.0125) // Gradually increase opacity
+                  backgroundColor: colorScale(i * (maxValue / 19)),
                 }}
               />
             ))}
           </div>
-          <span className="text-white">High</span>
+          <span className="text-sm text-white font-medium">High</span>
         </div>
       </div>
-      <div className="flex flex-col md:flex-row gap-6 items-center">
-        {/* Map */}
-        <div className="w-full md:w-3/4 h-96 flex items-center justify-center">
-          <ComposableMap projectionConfig={{ scale: 160 }} style={{ width: "100%", height: "100%" }}>
-            <Geographies geography={geoUrl}>
-              {({ geographies }: { geographies: any[] }) =>
-                geographies.map((geo: any) => {
-                  const code = geo.properties.ISO_A2;
-                  const views = countryData[code] || 0;
+
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
+        {/* World Map */}
+        <div className="xl:col-span-3">
+          <div className="bg-slate-900/50 rounded-xl p-6 border border-slate-700/30">
+            <div className="relative h-96 w-full">
+              <ComposableMap 
+                projectionConfig={{ 
+                  scale: 160,
+                  center: [0, 20] // Slightly adjust center for better view
+                }} 
+                style={{ width: "100%", height: "100%" }}
+              >
+                <Geographies geography={geoUrl}>
+                  {({ geographies }: { geographies: any[] }) =>
+                    geographies.map((geo: any) => {
+                      const code = geo.properties.ISO_A2;
+                      const views = countryData[code] || 0;
+                      const countryName = countryNames[code] || geo.properties.NAME || code;
+                      
+                      return (
+                        <Geography
+                          key={geo.rsmKey}
+                          geography={geo}
+                          fill={views ? colorScale(views) : "#1e293b"}
+                          stroke="#334155"
+                          strokeWidth={0.5}
+                          style={{ 
+                            outline: "none",
+                            cursor: views ? "pointer" : "default"
+                          }}
+                          onMouseEnter={() => {
+                            if (views > 0) setHoveredCountry(`${countryName}: ${views.toLocaleString()} views`);
+                          }}
+                          onMouseLeave={() => setHoveredCountry(null)}
+                        />
+                      );
+                    })
+                  }
+                </Geographies>
+              </ComposableMap>
+              
+              {/* Hover Tooltip */}
+              {hoveredCountry && (
+                <div className="absolute top-4 left-4 bg-slate-900/95 text-white px-4 py-2 rounded-lg border border-slate-700 shadow-lg pointer-events-none">
+                  <div className="text-sm font-medium">{hoveredCountry}</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Top Countries List */}
+        <div className="xl:col-span-1">
+          <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50 h-full">
+            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-cyan-400" />
+              Top Countries
+            </h3>
+            
+            <div className="space-y-3 max-h-80 overflow-y-auto">
+              {topCountries.length > 0 ? (
+                topCountries.map(([code, views], index) => {
+                  const percentage = totalViews > 0 ? (views / totalViews) * 100 : 0;
+                  const countryName = countryNames[code] || code;
+                  
                   return (
-                    <Geography
-                      key={geo.rsmKey}
-                      geography={geo}
-                      fill={views ? colorScale(views) : "#23272f"}
-                      stroke="#18181b"
-                      style={{ outline: "none" }}
-                    />
+                    <div 
+                      key={code} 
+                      className="flex items-center justify-between p-3 rounded-lg bg-slate-700/30 hover:bg-slate-700/50 transition-all duration-200 border border-slate-600/30"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-xs font-bold">
+                          {index + 1}
+                        </div>
+                        <div>
+                          <div className="text-white font-medium text-sm">{countryName}</div>
+                          <div className="text-slate-400 text-xs">{percentage.toFixed(1)}% of traffic</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-cyan-400 font-bold text-sm">{views.toLocaleString()}</div>
+                        <div className="text-slate-500 text-xs">views</div>
+                      </div>
+                    </div>
                   );
                 })
-              }
-            </Geographies>
-          </ComposableMap>
-        </div>
-        {/* Country List */}
-        <div className="w-full md:w-1/3">
-          <div className="text-gray-300 font-semibold mb-2">Top Countries</div>
-          <div className="max-h-80 overflow-y-auto">
-            {Object.entries(countryData)
-              .filter(([_, views]) => views > 0) // Only show countries with views
-              .sort((a, b) => b[1] - a[1])
-              .slice(0, 20) // Limit to top 20 countries
-              .map(([code, views]) => (
-                <div key={code} className="flex items-center justify-between mb-2 p-2 rounded hover:bg-white/5 transition-colors">
-                  <span className="text-white font-medium">{code}</span>
-                  <span className="text-emerald-400 font-bold">{views.toLocaleString()} views</span>
+              ) : (
+                <div className="text-center py-8">
+                  <Globe className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+                  <div className="text-slate-500 text-sm">No visitor data available</div>
+                  <div className="text-slate-600 text-xs mt-1">Start sharing your links to see analytics</div>
                 </div>
-              ))}
-            {Object.keys(countryData).length === 0 && (
-              <div className="text-gray-500 text-sm italic">No country data available</div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>

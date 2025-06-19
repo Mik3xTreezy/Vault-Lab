@@ -24,6 +24,9 @@ export async function POST(req: NextRequest) {
     const userAgent = req.headers.get("user-agent") || "";
     const referrer = req.headers.get("referer") || "";
 
+    // Extract country from extra field for dedicated column
+    const country = extra?.country || null;
+    
     // Insert analytics event
     const { data: analyticsData, error: analyticsError } = await supabase
       .from("locker_analytics")
@@ -37,6 +40,7 @@ export async function POST(req: NextRequest) {
         referrer,
         duration,
         extra,
+        country, // Store country in dedicated column for geographic analytics
         task_index: null, // Keep this null since we're using task_id now
       })
       .select();
