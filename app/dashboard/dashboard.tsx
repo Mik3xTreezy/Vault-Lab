@@ -259,7 +259,7 @@ export default function Dashboard() {
           <Card className="bg-white/5 backdrop-blur-xl border-white/10">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-white">Analytics Overview</CardTitle>
+                <CardTitle className="text-white">Analytics & Revenue Overview</CardTitle>
                 <div className="flex items-center space-x-4 text-sm">
                   <div className="flex items-center space-x-2">
                     <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
@@ -273,21 +273,36 @@ export default function Dashboard() {
                     <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
                     <span className="text-gray-300">Tasks</span>
                   </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
+                    <span className="text-gray-300">Revenue</span>
+                  </div>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
               <div className="h-64 flex items-end justify-center relative">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={analytics.chartData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                  <LineChart data={analytics.chartData} margin={{ top: 20, right: 60, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                     <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 12 }} />
-                    <YAxis tick={{ fill: '#94a3b8', fontSize: 12 }} />
-                    <Tooltip contentStyle={{ background: '#0f172a', border: 'none', color: '#fff' }} labelStyle={{ color: '#fff' }} />
+                    <YAxis yAxisId="left" tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                    <YAxis yAxisId="right" orientation="right" tick={{ fill: '#60a5fa', fontSize: 12 }} />
+                    <Tooltip 
+                      contentStyle={{ background: '#0f172a', border: 'none', color: '#fff' }} 
+                      labelStyle={{ color: '#fff' }}
+                      formatter={(value: any, name: string) => {
+                        if (name === 'Revenue ($)') {
+                          return [`$${Number(value).toFixed(4)}`, name];
+                        }
+                        return [value, name];
+                      }}
+                    />
                     <Legend />
-                    <Line type="monotone" dataKey="views" stroke="#10b981" strokeWidth={2} dot={false} name="Views" />
-                    <Line type="monotone" dataKey="unlocks" stroke="#22c55e" strokeWidth={2} dot={false} name="Unlocks" />
-                    <Line type="monotone" dataKey="tasks" stroke="#eab308" strokeWidth={2} dot={false} name="Tasks" />
+                    <Line type="monotone" dataKey="views" stroke="#10b981" strokeWidth={2} dot={false} name="Views" yAxisId="left" />
+                    <Line type="monotone" dataKey="unlocks" stroke="#22c55e" strokeWidth={2} dot={false} name="Unlocks" yAxisId="left" />
+                    <Line type="monotone" dataKey="tasks" stroke="#eab308" strokeWidth={2} dot={false} name="Tasks" yAxisId="left" />
+                    <Line type="monotone" dataKey="revenue" stroke="#60a5fa" strokeWidth={2} dot={false} name="Revenue ($)" yAxisId="right" />
                   </LineChart>
                 </ResponsiveContainer>
               </div>

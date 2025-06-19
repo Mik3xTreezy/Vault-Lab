@@ -65,11 +65,30 @@ export async function GET(req: NextRequest) {
     const d = subDays(new Date(), 27 - i);
     return format(d, 'yyyy-MM-dd');
   });
+  
+  // Get revenue events for chart data calculation
+  let revenueEventsForChart: any[] = [];
+  if (userId && lockerIds.length > 0) {
+    const { data: chartEvents } = await supabase
+      .from("revenue_events")
+      .select("amount, timestamp")
+      .in('locker_id', lockerIds);
+    revenueEventsForChart = chartEvents || [];
+  } else {
+    const { data: chartEvents } = await supabase
+      .from("revenue_events")
+      .select("amount, timestamp");
+    revenueEventsForChart = chartEvents || [];
+  }
+  
   const chartData = days.map(date => {
     const views = analyticsData.filter(a => a.event_type === "visit" && a.timestamp && a.timestamp.startsWith(date)).length;
     const unlocks = analyticsData.filter(a => a.event_type === "unlock" && a.timestamp && a.timestamp.startsWith(date)).length;
     const tasks = analyticsData.filter(a => a.event_type === "task_complete" && a.timestamp && a.timestamp.startsWith(date)).length;
-    return { date, views, unlocks, tasks };
+    const revenue = revenueEventsForChart
+      .filter(e => e.timestamp && e.timestamp.startsWith(date))
+      .reduce((sum, e) => sum + Number(e.amount), 0);
+    return { date, views, unlocks, tasks, revenue };
   });
 
   // Aggregate metrics
