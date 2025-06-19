@@ -64,6 +64,8 @@ export default function Admin() {
     description: "",
     adUrl: "",
     devices: [] as string[],
+    completionTimeSeconds: 60, // Default 60 seconds
+    excludedBrowsers: [] as string[], // Browsers to exclude this task from
     countryRates: {
       tier1: "$4.50",
       tier2: "$2.80",
@@ -189,6 +191,8 @@ export default function Admin() {
           description: taskData.description,
           ad_url: taskData.adUrl,
           devices: taskData.devices,
+          completion_time_seconds: taskData.completionTimeSeconds,
+          excluded_browsers: taskData.excludedBrowsers,
           cpm_tier1: parseFloat(taskData.countryRates.tier1.replace("$", "")) || 0,
           cpm_tier2: parseFloat(taskData.countryRates.tier2.replace("$", "")) || 0,
           cpm_tier3: parseFloat(taskData.countryRates.tier3.replace("$", "")) || 0,
@@ -203,6 +207,8 @@ export default function Admin() {
         description: "",
         adUrl: "",
         devices: [],
+        completionTimeSeconds: 60,
+        excludedBrowsers: [],
         countryRates: {
           tier1: "$4.50",
           tier2: "$2.80",
@@ -227,8 +233,10 @@ export default function Admin() {
           id: taskId,
           title: taskData.title,
           description: taskData.description,
-          ad_url: taskData.adUrl,
+          ad_url: taskData.ad_url || taskData.adUrl,
           devices: taskData.devices,
+          completion_time_seconds: taskData.completion_time_seconds || 60,
+          excluded_browsers: taskData.excluded_browsers || [],
           cpm_tier1: parseFloat(taskData.cpm_tier1) || 0,
           cpm_tier2: parseFloat(taskData.cpm_tier2) || 0,
           cpm_tier3: parseFloat(taskData.cpm_tier3) || 0,
@@ -266,6 +274,15 @@ export default function Admin() {
       devices: checked 
         ? [...prev.devices, device]
         : prev.devices.filter((d: string) => d !== device)
+    }));
+  };
+
+  const handleBrowserChange = (browser: string, checked: boolean) => {
+    setNewTask(prev => ({
+      ...prev,
+      excludedBrowsers: checked 
+        ? [...prev.excludedBrowsers, browser]
+        : prev.excludedBrowsers.filter((b: string) => b !== browser)
     }));
   };
 
@@ -952,6 +969,41 @@ export default function Admin() {
                   ))}
                 </div>
               </div>
+              
+              <div>
+                <Label>Task Completion Time</Label>
+                <div className="flex items-center space-x-2 mt-2">
+                  <Input 
+                    type="number"
+                    className="bg-white/5 border-white/10 text-white flex-1" 
+                    placeholder="60"
+                    min="5"
+                    max="300"
+                    value={newTask.completionTimeSeconds}
+                    onChange={(e) => setNewTask(prev => ({ ...prev, completionTimeSeconds: parseInt(e.target.value) || 60 }))}
+                  />
+                  <span className="text-gray-400 text-sm">seconds</span>
+                </div>
+                <p className="text-gray-500 text-xs mt-1">Time users must wait before task completion (5-300 seconds)</p>
+              </div>
+
+              <div>
+                <Label>Exclude Browsers</Label>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {["Chrome", "Firefox", "Safari", "Edge", "Opera", "Opera GX"].map((browser) => (
+                    <label key={browser} className="flex items-center space-x-2">
+                      <input 
+                        type="checkbox" 
+                        className="rounded bg-white/5 border-white/10"
+                        checked={newTask.excludedBrowsers.includes(browser)}
+                        onChange={(e) => handleBrowserChange(browser, e.target.checked)}
+                      />
+                      <span className="text-gray-300 text-sm">{browser}</span>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-gray-500 text-xs mt-1">This task will be hidden from users using these browsers</p>
+              </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label>Tier 1 CPM</Label>
@@ -1009,7 +1061,7 @@ export default function Admin() {
             <TableHeader>
               <TableRow className="border-white/10">
                 <TableHead className="text-gray-300">Task</TableHead>
-                <TableHead className="text-gray-300">Devices</TableHead>
+                <TableHead className="text-gray-300">Settings</TableHead>
                 <TableHead className="text-gray-300">CPM Rates</TableHead>
                 <TableHead className="text-gray-300">Status</TableHead>
                 <TableHead className="text-gray-300">Actions</TableHead>
@@ -1029,12 +1081,20 @@ export default function Admin() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {task.devices.map((device: string) => (
-                        <span key={device} className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs">
-                          {device}
-                        </span>
-                      ))}
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap gap-1">
+                        {task.devices.map((device: string) => (
+                          <span key={device} className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs">
+                            {device}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="text-gray-400">⏱️ {task.completion_time_seconds || 60}s</span>
+                        {task.excluded_browsers && task.excluded_browsers.length > 0 && (
+                          <span className="text-orange-400">🚫 {task.excluded_browsers.length} browsers blocked</span>
+                        )}
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -1119,6 +1179,63 @@ export default function Admin() {
                               >
                                 Cancel
                               </Button>
+                            </div>
+                          </div>
+
+                          {/* Task Settings */}
+                          <div>
+                            <h3 className="text-lg font-semibold text-white mb-4">Task Settings</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              {/* Completion Time */}
+                              <div className="space-y-3">
+                                <label className="text-sm font-medium text-gray-300">Completion Time</label>
+                                <div className="flex items-center space-x-2">
+                                  <input
+                                    type="number"
+                                    min="5"
+                                    max="300"
+                                    className="bg-white/5 border-white/10 text-white rounded-lg px-3 py-2 w-20"
+                                    value={task.completion_time_seconds || 60}
+                                    onChange={(e) => {
+                                      const newTime = parseInt(e.target.value) || 60;
+                                      updateTask(task.id, {
+                                        ...task,
+                                        completion_time_seconds: newTime
+                                      });
+                                    }}
+                                  />
+                                  <span className="text-gray-400 text-sm">seconds</span>
+                                </div>
+                                <p className="text-gray-500 text-xs">Time users wait before task completion (5-300s)</p>
+                              </div>
+
+                              {/* Excluded Browsers */}
+                              <div className="space-y-3">
+                                <label className="text-sm font-medium text-gray-300">Excluded Browsers</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                  {["Chrome", "Firefox", "Safari", "Edge", "Opera", "Opera GX"].map((browser) => (
+                                    <label key={browser} className="flex items-center space-x-2">
+                                      <input
+                                        type="checkbox"
+                                        className="rounded bg-white/5 border-white/10"
+                                        checked={task.excluded_browsers?.includes(browser) || false}
+                                        onChange={(e) => {
+                                          const currentExcluded = task.excluded_browsers || [];
+                                          const newExcluded = e.target.checked
+                                            ? [...currentExcluded, browser]
+                                            : currentExcluded.filter((b: string) => b !== browser);
+                                          updateTask(task.id, {
+                                            ...task,
+                                            excluded_browsers: newExcluded
+                                          });
+                                        }}
+                                      />
+                                      <span className="text-gray-300 text-xs">{browser}</span>
+                                    </label>
+                                  ))}
+                                </div>
+                                <p className="text-gray-500 text-xs">Hide this task from users using these browsers</p>
+                              </div>
                             </div>
                           </div>
 

@@ -9,6 +9,20 @@ import { trackLockerEvent } from "@/lib/analytics"
 import { useUser } from "@clerk/nextjs"
 import { getUserLocationClient } from "@/lib/geolocation"
 
+// Browser detection utility
+const getBrowserName = (): string => {
+  const userAgent = navigator.userAgent;
+  
+  if (userAgent.includes('Opera GX')) return 'Opera GX';
+  if (userAgent.includes('OPR') || userAgent.includes('Opera')) return 'Opera';
+  if (userAgent.includes('Edg')) return 'Edge';
+  if (userAgent.includes('Chrome')) return 'Chrome';
+  if (userAgent.includes('Firefox')) return 'Firefox';
+  if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) return 'Safari';
+  
+  return 'Unknown';
+};
+
 declare interface Task {
   id: string
   title: string
@@ -18,6 +32,7 @@ declare interface Task {
   completed: boolean
   loading: boolean
   adUrl?: string
+  completionTimeSeconds?: number
   action: () => void
 }
 
@@ -66,7 +81,23 @@ export default function LinkLocker({ title = "Premium Content Download", destina
         const data = await res.json()
         console.log("Fetched tasks:", data)
 
-        const formattedTasks: Task[] = data.map((task: any) => ({
+        // Get user's browser
+        const userBrowser = getBrowserName();
+        console.log("User browser detected:", userBrowser);
+
+        // Filter out tasks that exclude the user's browser
+        const filteredTasks = data.filter((task: any) => {
+          const excludedBrowsers = task.excluded_browsers || [];
+          const isExcluded = excludedBrowsers.includes(userBrowser);
+          
+          if (isExcluded) {
+            console.log(`Task "${task.title}" excluded for browser: ${userBrowser}`);
+          }
+          
+          return !isExcluded;
+        });
+
+        const formattedTasks: Task[] = filteredTasks.map((task: any) => ({
           id: task.id.toString(),
           title: task.title,
           description: task.description,
@@ -75,9 +106,11 @@ export default function LinkLocker({ title = "Premium Content Download", destina
           completed: false,
           loading: false,
           adUrl: task.ad_url,
+          completionTimeSeconds: task.completion_time_seconds || 60, // Default to 60 seconds
           action: () => handleTaskClick(task.id.toString()),
         }))
 
+        console.log(`Filtered tasks: ${filteredTasks.length}/${data.length} tasks shown for ${userBrowser}`);
         setTasks(formattedTasks)
       } catch (error) {
         console.error("Error fetching tasks:", error)
@@ -133,6 +166,11 @@ export default function LinkLocker({ title = "Premium Content Download", destina
     console.log('[TASK CLICK] Task loading started for:', taskId);
 
     // Get user location for proper revenue calculation
+    const currentTask = tasks.find(t => t.id === taskId);
+    const completionTime = (currentTask?.completionTimeSeconds || 60) * 1000; // Convert to milliseconds
+    
+    console.log(`[TASK COMPLETION] Task will complete in ${completionTime/1000} seconds`);
+    
     setTimeout(async () => {
       const location = await getUserLocation();
         console.log('[TASK COMPLETION] Starting task completion process for:', taskId);
@@ -195,7 +233,7 @@ export default function LinkLocker({ title = "Premium Content Download", destina
               console.error('[TASK COMPLETION] ❌ Failed to send anonymous analytics event:', error);
             });
         }
-      }, 5000); // 5 seconds for testing
+      }, completionTime); // Use dynamic completion time from task settings
   }
 
   const allTasksCompleted = tasks.length > 0 && tasks.every((task) => task.completed)
