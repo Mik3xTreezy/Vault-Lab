@@ -14,22 +14,10 @@ async function isAdmin(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  if (req.method === "GET") {
-    // Public: anyone can fetch tasks
-    const { data, error } = await supabase.from("tasks").select("*").order("created_at", { ascending: false });
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json(data);
-  } else {
-    // Admin check for POST, PUT, DELETE
-    if (!(await isAdmin(req))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    const body = await req.json();
-    const { id, title, description, ad_url, devices, cpm_tier1, cpm_tier2, cpm_tier3, status } = body;
-    const { data, error } = await supabase.from('tasks').update({
-      title, description, ad_url, devices, cpm_tier1, cpm_tier2, cpm_tier3, status
-    }).eq('id', id).select().single();
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json(data);
-  }
+  // Public: anyone can fetch tasks
+  const { data, error } = await supabase.from("tasks").select("*").order("created_at", { ascending: false });
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json(data || []); // Return empty array if data is null/undefined
 }
 
 export async function POST(req: NextRequest) {
@@ -40,7 +28,7 @@ export async function POST(req: NextRequest) {
     { title, description, ad_url, devices, cpm_tier1, cpm_tier2, cpm_tier3, country_cpm, status }
   ]).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+  return NextResponse.json(data || null); // Return null if data is undefined
 }
 
 export async function PUT(req: NextRequest) {
@@ -51,7 +39,7 @@ export async function PUT(req: NextRequest) {
     title, description, ad_url, devices, cpm_tier1, cpm_tier2, cpm_tier3, status
   }).eq('id', id).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+  return NextResponse.json(data || null); // Return null if data is undefined
 }
 
 export async function DELETE(req: NextRequest) {
