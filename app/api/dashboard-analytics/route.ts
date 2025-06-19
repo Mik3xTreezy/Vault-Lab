@@ -29,6 +29,8 @@ export async function GET(req: NextRequest) {
       acc[locker.id] = locker.title;
       return acc;
     }, {});
+    console.log("[DEBUG] User's lockers:", userLockers);
+    console.log("[DEBUG] Locker IDs:", lockerIds);
   } else {
     const { data: allLockers, error: lockersError } = await supabase
       .from("lockers")
@@ -79,6 +81,8 @@ export async function GET(req: NextRequest) {
   const unlocks = analyticsData.filter(a => a.event_type === "unlock").length;
   const taskCompletions = analyticsData.filter(a => a.event_type === "task_complete").length;
   const unlockRate = views ? (unlocks / views) * 100 : 0;
+
+  console.log("[DEBUG] Analytics summary:", { views, unlocks, taskCompletions, unlockRate });
 
   // Content performance (per locker)
   const contentPerformance: Record<string, { title: string, views: number }> = {};
@@ -160,18 +164,26 @@ export async function GET(req: NextRequest) {
   let userEvents: { amount: number|string, task_id: string, tier: string, country: string, timestamp: string }[] = [];
   let userAvgCpm = 0;
   
-  if (lockerIds.length > 0) {
+  console.log("[DEBUG] Fetching revenue events for user:", userId);
+  console.log("[DEBUG] User's locker IDs:", lockerIds);
+  
+  if (userId) {
+    // For specific user, get revenue events by user_id directly
     const { data: events, error: eventsError } = await supabase
       .from("revenue_events")
       .select("amount, task_id, tier, country, timestamp, locker_id")
-      .in('locker_id', lockerIds);
+      .eq('user_id', userId);
+    
+    console.log("[DEBUG] Revenue events query result:", { events, eventsError });
+    
     if (!eventsError && events) {
       userRevenue = events.reduce((sum, e) => sum + Number(e.amount), 0);
       // Calculate average CPM (weighted by event count)
       userAvgCpm = events.length > 0 ? events.reduce((sum, e) => sum + (Number(e.amount) * 1000), 0) / events.length : 0;
       userEvents = events;
+      console.log("[DEBUG] User revenue calculation:", { userRevenue, userAvgCpm, eventCount: events.length });
     }
-  } else if (!userId) {
+  } else {
     // For admin view, get all revenue events
     const { data: events, error: eventsError } = await supabase
       .from("revenue_events")
@@ -186,6 +198,8 @@ export async function GET(req: NextRequest) {
   // Use revenue events for main earnings calculation instead of payments
   const totalEarnings = userRevenue;
   const cpm = taskCompletions > 0 ? userAvgCpm : 0;
+
+  console.log("[DEBUG] Final calculations:", { totalEarnings, cpm, taskCompletions });
 
   // Total payouts (sum of completed withdrawals)
   let withdrawalsQuery = supabase.from("withdrawals").select("amount, status, user_id");
@@ -224,7 +238,7 @@ export async function GET(req: NextRequest) {
   const { data: recentPayments } = await recentPaymentsQuery;
   const { data: recentWithdrawals } = await recentWithdrawalsQuery;
 
-  return NextResponse.json({
+  const responseData = {
     overview: {
       views,
       unlocks,
@@ -258,7 +272,9 @@ export async function GET(req: NextRequest) {
       payments: recentPayments || [],
       withdrawals: recentWithdrawals || [],
     },
-  });
-  // fallback in case something goes wrong
-  return NextResponse.json({ error: "Unknown error" }, { status: 500 });
+  };
+
+  console.log("[DEBUG] Final response data:", JSON.stringify(responseData, null, 2));
+
+  return NextResponse.json(responseData);
 }
