@@ -78,6 +78,14 @@ export default function Admin() {
   });
   const [selectedTasksForBulk, setSelectedTasksForBulk] = useState<number[]>([]);
 
+  // Individual CPM rate editing state
+  const [editingCpmTask, setEditingCpmTask] = useState<any>(null);
+  const [tempCpmRates, setTempCpmRates] = useState({
+    tier1: "",
+    tier2: "",
+    tier3: ""
+  });
+
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !user) return;
     
@@ -318,14 +326,6 @@ export default function Admin() {
         : prev.filter(id => id !== taskId)
     );
   };
-
-  // Individual CPM rate editing state
-  const [editingCpmTask, setEditingCpmTask] = useState<any>(null);
-  const [tempCpmRates, setTempCpmRates] = useState({
-    tier1: "",
-    tier2: "",
-    tier3: ""
-  });
 
   const startEditingCpm = (task: any) => {
     setEditingCpmTask(task);
