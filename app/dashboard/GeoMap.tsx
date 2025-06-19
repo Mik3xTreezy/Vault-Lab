@@ -44,9 +44,9 @@ export default function GeoMap({ countryData: initialCountryData, userId }: GeoM
 
   const countryValues = Object.values(countryData).filter((v): v is number => typeof v === 'number');
   const maxValue = countryValues.length > 0 ? Math.max(...countryValues) : 1;
-  const colorScale = scaleLinear()
+  const colorScale = scaleLinear<string>()
     .domain([0, Math.max(1, maxValue)])
-    .range(["#23272f", "#facc15"]); // dark to yellow
+    .range(["#1f2937", "#10b981"]); // dark gray to emerald (better contrast)
 
   return (
     <div className="bg-white/5 backdrop-blur-xl border-white/10 rounded-lg p-6">
@@ -58,8 +58,11 @@ export default function GeoMap({ countryData: initialCountryData, userId }: GeoM
             {Array.from({ length: 16 }).map((_, i) => (
               <div
                 key={i}
-                className="w-1 h-3 rounded bg-yellow-400/10"
-                style={{ background: `linear-gradient(to right, #23272f, #facc15 ${i * 6.25}%)` }}
+                className="w-1 h-3 rounded"
+                style={{ 
+                  backgroundColor: colorScale(i * (maxValue / 15)),
+                  opacity: 0.8 + (i * 0.0125) // Gradually increase opacity
+                }}
               />
             ))}
           </div>
@@ -92,14 +95,21 @@ export default function GeoMap({ countryData: initialCountryData, userId }: GeoM
         {/* Country List */}
         <div className="w-full md:w-1/3">
           <div className="text-gray-300 font-semibold mb-2">Top Countries</div>
-          {Object.entries(countryData)
-            .sort((a, b) => b[1] - a[1])
-            .map(([code, views]) => (
-              <div key={code} className="flex items-center justify-between mb-2">
-                <span className="text-white font-medium">{code}</span>
-                <span className="text-yellow-400 font-bold">{views} views</span>
-              </div>
-            ))}
+          <div className="max-h-80 overflow-y-auto">
+            {Object.entries(countryData)
+              .filter(([_, views]) => views > 0) // Only show countries with views
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 20) // Limit to top 20 countries
+              .map(([code, views]) => (
+                <div key={code} className="flex items-center justify-between mb-2 p-2 rounded hover:bg-white/5 transition-colors">
+                  <span className="text-white font-medium">{code}</span>
+                  <span className="text-emerald-400 font-bold">{views.toLocaleString()} views</span>
+                </div>
+              ))}
+            {Object.keys(countryData).length === 0 && (
+              <div className="text-gray-500 text-sm italic">No country data available</div>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -256,15 +256,26 @@ export default function Admin() {
   const deleteTask = async (taskId: number) => {
     if (!confirm("Are you sure you want to delete this task?")) return;
     try {
+      console.log('[DELETE TASK] Attempting to delete task ID:', taskId);
       const res = await fetch("/api/tasks", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: taskId })
       });
-      if (!res.ok) throw new Error("Failed to delete task");
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('[DELETE TASK] Server error:', errorText);
+        throw new Error(`Failed to delete task: ${res.status} ${errorText}`);
+      }
+      
+      const result = await res.json();
+      console.log('[DELETE TASK] Success:', result);
       await fetchTasks();
+      alert('Task deleted successfully!');
     } catch (error) {
       console.error("Error deleting task:", error);
+      alert(`Failed to delete task: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -374,6 +385,37 @@ export default function Admin() {
   const cancelEditingCpm = () => {
     setEditingCpmTask(null);
     setTempCpmRates({ tier1: "", tier2: "", tier3: "" });
+  };
+
+  const fixLegacyTasks = async () => {
+    if (!confirm("This will update all legacy tasks with default values (60s completion time, no excluded browsers). Continue?")) return;
+    
+    try {
+      const legacyTasks = tasks.filter(task => !task.completion_time_seconds && !task.excluded_browsers);
+      
+      if (legacyTasks.length === 0) {
+        alert("No legacy tasks found!");
+        return;
+      }
+      
+      console.log(`[FIX LEGACY] Fixing ${legacyTasks.length} legacy tasks`);
+      
+      const updatePromises = legacyTasks.map(task => 
+        updateTask(task.id, {
+          ...task,
+          completion_time_seconds: 60,
+          excluded_browsers: []
+        })
+      );
+      
+      await Promise.all(updatePromises);
+      await fetchTasks();
+      
+      alert(`Successfully updated ${legacyTasks.length} legacy tasks!`);
+    } catch (error) {
+      console.error("Error fixing legacy tasks:", error);
+      alert("Failed to fix legacy tasks. Please try again.");
+    }
   };
 
   // Dashboard stats using real data
@@ -914,7 +956,15 @@ export default function Admin() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold text-white">Task Management</h2>
-        <Dialog>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            className="border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10"
+            onClick={fixLegacyTasks}
+          >
+            🔧 Fix Legacy Tasks
+          </Button>
+          <Dialog>
           <DialogTrigger asChild>
             <Button className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black">
               <Plus className="w-4 h-4 mr-2" />
@@ -1052,6 +1102,7 @@ export default function Admin() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Tasks Table */}
@@ -1091,8 +1142,11 @@ export default function Admin() {
                       </div>
                       <div className="flex items-center gap-2 text-xs">
                         <span className="text-gray-400">⏱️ {task.completion_time_seconds || 60}s</span>
-                        {task.excluded_browsers && task.excluded_browsers.length > 0 && (
+                        {task.excluded_browsers && Array.isArray(task.excluded_browsers) && task.excluded_browsers.length > 0 && (
                           <span className="text-orange-400">🚫 {task.excluded_browsers.length} browsers blocked</span>
+                        )}
+                        {!task.completion_time_seconds && !task.excluded_browsers && (
+                          <span className="text-yellow-400 text-xs">⚠️ Legacy task</span>
                         )}
                       </div>
                     </div>
