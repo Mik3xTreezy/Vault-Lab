@@ -29,6 +29,7 @@ import {
   RefreshCw,
   AlertCircle,
   CheckCircle,
+  Globe,
 } from "lucide-react"
 import {
   ResponsiveContainer,
@@ -387,13 +388,14 @@ export default function Admin() {
   ]
 
   const countryCpmRates = [
-    { country: "United States", code: "US", cpm: "$4.50", multiplier: "1.8x" },
-    { country: "United Kingdom", code: "GB", cpm: "$3.80", multiplier: "1.5x" },
-    { country: "Germany", code: "DE", cpm: "$3.20", multiplier: "1.3x" },
-    { country: "Canada", code: "CA", cpm: "$3.00", multiplier: "1.2x" },
-    { country: "Australia", code: "AU", cpm: "$2.90", multiplier: "1.2x" },
-    { country: "France", code: "FR", cpm: "$2.70", multiplier: "1.1x" },
-    { country: "Other", code: "XX", cpm: "$2.50", multiplier: "1.0x" },
+    { country: "United States", code: "US", cpm: "$4.50", tier: "Tier 1", multiplier: "1.8x" },
+    { country: "United Kingdom", code: "GB", cpm: "$3.80", tier: "Tier 1", multiplier: "1.5x" },
+    { country: "Germany", code: "DE", cpm: "$3.20", tier: "Tier 1", multiplier: "1.3x" },
+    { country: "Canada", code: "CA", cpm: "$3.00", tier: "Tier 1", multiplier: "1.2x" },
+    { country: "Australia", code: "AU", cpm: "$2.90", tier: "Tier 1", multiplier: "1.2x" },
+    { country: "France", code: "FR", cpm: "$2.70", tier: "Tier 2", multiplier: "1.1x" },
+    { country: "Japan", code: "JP", cpm: "$2.60", tier: "Tier 2", multiplier: "1.1x" },
+    { country: "Other", code: "XX", cpm: "$2.50", tier: "Tier 3", multiplier: "1.0x" },
   ]
 
   const withdrawals = [
@@ -1298,10 +1300,43 @@ export default function Admin() {
         </div>
       </div>
 
+              {/* Geolocation Service Status */}
+        <Card className="bg-white/5 backdrop-blur-xl border-white/10 mb-6">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Globe className="w-5 h-5 text-blue-400" />
+              Geolocation Service Status
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white/5 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                  <span className="text-green-400 font-medium">ip-api.com</span>
+                </div>
+                <p className="text-gray-300 text-sm">Active geolocation provider</p>
+                <p className="text-white text-xs mt-1">86% accuracy • Proxy detection • €13/month unlimited</p>
+              </div>
+              <div className="bg-white/5 rounded-lg p-4">
+                <div className="text-white font-bold text-lg">3 Tiers</div>
+                <p className="text-gray-300 text-sm">Country classification</p>
+                <p className="text-white text-xs mt-1">Tier 1: 12 countries • Tier 2: 12 countries</p>
+              </div>
+              <div className="bg-white/5 rounded-lg p-4">
+                <div className="text-white font-bold text-lg">Fast & Reliable</div>
+                <p className="text-gray-300 text-sm">Location detection</p>
+                <p className="text-white text-xs mt-1">Under 50ms response • Unlimited requests</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
       {/* Country CPM Rates */}
       <Card className="bg-white/5 backdrop-blur-xl border-white/10">
         <CardHeader>
           <CardTitle className="text-white">Country-Specific CPM Rates</CardTitle>
+          <p className="text-gray-400 text-sm">Powered by ip-api.com geolocation service</p>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
@@ -1309,6 +1344,7 @@ export default function Admin() {
               <TableRow className="border-white/10">
                 <TableHead className="text-gray-300">Country</TableHead>
                 <TableHead className="text-gray-300">Code</TableHead>
+                <TableHead className="text-gray-300">Tier</TableHead>
                 <TableHead className="text-gray-300">CPM Rate</TableHead>
                 <TableHead className="text-gray-300">Multiplier</TableHead>
                 <TableHead className="text-gray-300">Actions</TableHead>
@@ -1319,6 +1355,7 @@ export default function Admin() {
                 <TableRow key={index} className="border-white/10 hover:bg-white/5">
                   <TableCell className="text-white">{country.country}</TableCell>
                   <TableCell className="text-gray-300 font-mono">{country.code}</TableCell>
+                  <TableCell className="text-cyan-400 font-medium">{country.tier}</TableCell>
                   <TableCell className="text-emerald-400 font-bold">{country.cpm}</TableCell>
                   <TableCell className="text-blue-400">{country.multiplier}</TableCell>
                   <TableCell>

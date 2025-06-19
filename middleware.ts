@@ -12,6 +12,7 @@ const isPublicRoute = createRouteMatcher([
   '/api/locker-analytics(.*)', // Locker analytics API is public
   '/api/users(.*)', // Users API is public
   '/api/withdrawals(.*)', // Withdrawals API is public
+  '/api/geolocation(.*)', // Geolocation API is public
 ]);
 
 export const middleware = clerkMiddleware(async (auth, req) => {

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { ChevronRight, Lock, Unlock, ExternalLink, Gift, FileText, Check, Zap, Loader2 } from "lucide-react"
 import { trackLockerEvent } from "@/lib/analytics"
 import { useUser } from "@clerk/nextjs"
+import { getUserLocationClient } from "@/lib/geolocation"
 
 declare interface Task {
   id: string
@@ -33,10 +34,21 @@ export default function LinkLocker({ title = "Premium Content Download", destina
   const [userReady, setUserReady] = useState(false)
   const unlockStartTime = useRef(Date.now())
 
-  // Get user's country and tier (you can implement geolocation or use a service)
-  const getUserLocation = () => {
-    // For now, default to US and tier1. You can implement proper geolocation later
-    return { country: 'US', tier: 'tier1' };
+  // Get user's country and tier using IPLocate service
+  const getUserLocation = async () => {
+    try {
+      const location = await getUserLocationClient();
+      return { 
+        country: location.countryCode, 
+        tier: location.tier,
+        isVpn: location.isVpn,
+        isProxy: location.isProxy
+      };
+    } catch (error) {
+      console.error('[LINK LOCKER] Error getting location:', error);
+      // Fallback to US/tier1 on error
+      return { country: 'US', tier: 'tier1', isVpn: false, isProxy: false };
+    }
   };
 
   // Wait for user to be ready
@@ -121,60 +133,69 @@ export default function LinkLocker({ title = "Premium Content Download", destina
     console.log('[TASK CLICK] Task loading started for:', taskId);
 
     // Get user location for proper revenue calculation
-    const location = getUserLocation();
-
-    // Complete after 5 seconds for testing (change back to 60000 for production)
-    setTimeout(() => {
-      console.log('[TASK COMPLETION] Starting task completion process for:', taskId);
-      
-      setTasks((prevTasks) =>
-        prevTasks.map((task) => (task.id === taskId ? { ...task, loading: false, completed: true } : task)),
-      );
-      
-      // Track task completion with user ID - only if user is ready and available
-      if (userReady && user) {
-        const eventData = {
-          locker_id: lockerId,
-          event_type: "task_complete",
-          task_id: taskId, // Use the actual UUID
-          extra: { country: location.country, tier: location.tier },
-          user_id: user.id,
-        };
+    setTimeout(async () => {
+      const location = await getUserLocation();
+        console.log('[TASK COMPLETION] Starting task completion process for:', taskId);
+        console.log('[TASK COMPLETION] User location detected:', location);
         
-        console.log('[TASK COMPLETION] Tracking task completion with user:', eventData);
+        setTasks((prevTasks) =>
+          prevTasks.map((task) => (task.id === taskId ? { ...task, loading: false, completed: true } : task)),
+        );
         
-        trackLockerEvent(eventData)
-          .then(() => {
-            console.log('[TASK COMPLETION] ✅ Analytics event sent successfully');
-          })
-          .catch((error) => {
-            console.error('[TASK COMPLETION] ❌ Failed to send analytics event:', error);
+        // Track task completion with user ID - only if user is ready and available
+        if (userReady && user) {
+          const eventData = {
+            locker_id: lockerId,
+            event_type: "task_complete",
+            task_id: taskId, // Use the actual UUID
+            extra: { 
+              country: location.country, 
+              tier: location.tier,
+              isVpn: location.isVpn,
+              isProxy: location.isProxy
+            },
+            user_id: user.id,
+          };
+          
+          console.log('[TASK COMPLETION] Tracking task completion with user:', eventData);
+          
+          trackLockerEvent(eventData)
+            .then(() => {
+              console.log('[TASK COMPLETION] ✅ Analytics event sent successfully');
+            })
+            .catch((error) => {
+              console.error('[TASK COMPLETION] ❌ Failed to send analytics event:', error);
+            });
+        } else {
+          const eventData = {
+            locker_id: lockerId,
+            event_type: "task_complete",
+            task_id: taskId, // Use the actual UUID instead of task_index
+            extra: { 
+              country: location.country, 
+              tier: location.tier,
+              isVpn: location.isVpn,
+              isProxy: location.isProxy
+            },
+            user_id: null,
+          };
+          
+          console.warn('[TASK COMPLETION] User not ready, tracking as anonymous:', { 
+            userReady, 
+            hasUser: !!user,
+            userId: user?.id,
+            eventData
           });
-      } else {
-        const eventData = {
-          locker_id: lockerId,
-          event_type: "task_complete",
-          task_id: taskId, // Use the actual UUID instead of task_index
-          extra: { country: location.country, tier: location.tier },
-          user_id: null,
-        };
-        
-        console.warn('[TASK COMPLETION] User not ready, tracking as anonymous:', { 
-          userReady, 
-          hasUser: !!user,
-          userId: user?.id,
-          eventData
-        });
-        
-        trackLockerEvent(eventData)
-          .then(() => {
-            console.log('[TASK COMPLETION] ✅ Anonymous analytics event sent successfully');
-          })
-          .catch((error) => {
-            console.error('[TASK COMPLETION] ❌ Failed to send anonymous analytics event:', error);
-          });
-      }
-    }, 5000); // 5 seconds for testing
+          
+          trackLockerEvent(eventData)
+            .then(() => {
+              console.log('[TASK COMPLETION] ✅ Anonymous analytics event sent successfully');
+            })
+            .catch((error) => {
+              console.error('[TASK COMPLETION] ❌ Failed to send anonymous analytics event:', error);
+            });
+        }
+      }, 5000); // 5 seconds for testing
   }
 
   const allTasksCompleted = tasks.length > 0 && tasks.every((task) => task.completed)
