@@ -44,6 +44,7 @@ export default function Dashboard() {
       setLoading(true);
       if (!user) return;
       try {
+        console.log('[DEBUG] Dashboard fetching analytics for user ID:', user.id); // Add debug log
         const res = await fetch(`/api/dashboard-analytics?user_id=${user.id}`);
         if (!res.ok) throw new Error("Failed to fetch analytics");
         const data = await res.json();
@@ -57,7 +58,7 @@ export default function Dashboard() {
     }
     if (isLoaded && isSignedIn && user) {
       fetchAnalytics();
-      interval = setInterval(fetchAnalytics, 60000); // Poll every 60 seconds
+      interval = setInterval(fetchAnalytics, 30000); // Poll every 30 seconds instead of 60
     }
     return () => {
       if (interval) clearInterval(interval);
@@ -179,13 +180,41 @@ export default function Dashboard() {
               <span className="text-green-400 text-xs font-semibold uppercase tracking-wider">Live</span>
             </span>
           </div>
-          <Button
-            className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black font-medium"
-            onClick={() => router.push("/create")}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Create link locker
-          </Button>
+          <div className="flex space-x-3">
+            <Button
+              variant="outline"
+              className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+              onClick={() => {
+                console.log('[DEBUG] Manual refresh clicked');
+                if (user) {
+                  const fetchAnalytics = async () => {
+                    setLoading(true);
+                    try {
+                      console.log('[DEBUG] Manual refresh for user ID:', user.id);
+                      const res = await fetch(`/api/dashboard-analytics?user_id=${user.id}&_t=${Date.now()}`);
+                      if (!res.ok) throw new Error("Failed to fetch analytics");
+                      const data = await res.json();
+                      console.log('[DEBUG] Manual refresh response:', data);
+                      setAnalytics(data);
+                    } catch (error) {
+                      console.error('[DEBUG] Manual refresh error:', error);
+                    }
+                    setLoading(false);
+                  };
+                  fetchAnalytics();
+                }
+              }}
+            >
+              Refresh
+            </Button>
+            <Button
+              className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black font-medium"
+              onClick={() => router.push("/create")}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create link locker
+            </Button>
+          </div>
         </div>
 
         <div className="p-6 space-y-8">
@@ -396,6 +425,23 @@ export default function Dashboard() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Debug Info - Remove in production */}
+          {analytics?.userEarnings?.events && analytics.userEarnings.events.length > 0 && (
+            <Card className="bg-blue-500/5 border-blue-500/20 mb-6">
+              <CardHeader>
+                <CardTitle className="text-blue-300 text-sm">Revenue Debug Info</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-xs text-blue-200 space-y-1">
+                  <p>Total Revenue Events: {analytics.userEarnings.events.length}</p>
+                  <p>Locker IDs: {[...new Set(analytics.userEarnings.events.map((e: any) => e.locker_id))].join(', ')}</p>
+                  <p>Revenue: ${analytics.userEarnings.totalRevenue?.toFixed(4)}</p>
+                  <p>Latest Event: {analytics.userEarnings.events[0]?.timestamp}</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Geo Map Section */}
           <div className="mt-8">

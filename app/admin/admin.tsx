@@ -358,30 +358,30 @@ export default function Admin() {
     setTempCpmRates({ tier1: "", tier2: "", tier3: "" });
   };
 
-  // Sample data
+  // Dashboard stats using real data
   const dashboardStats = [
     {
       title: "Total Users",
-      value: "12,847",
-      change: "+12.5%",
+      value: users.length.toString(),
+      change: "+0%", // You can calculate this if you add previous period data
       icon: <Users className="w-5 h-5 text-blue-400" />,
     },
     {
-      title: "Active Lockers",
-      value: "3,291",
-      change: "+8.2%",
+      title: "Task Completions",
+      value: analytics?.overview?.taskCompletions?.toString() || "0",
+      change: "+0%",
       icon: <Shield className="w-5 h-5 text-emerald-400" />,
     },
     {
       title: "Total Revenue",
-      value: "$89,247",
-      change: "+23.1%",
+      value: `$${analytics?.overview?.totalEarnings?.toFixed(2) || "0.00"}`,
+      change: "+0%",
       icon: <DollarSign className="w-5 h-5 text-green-400" />,
     },
     {
       title: "Pending Withdrawals",
-      value: "$4,892",
-      change: "-5.3%",
+      value: `$${analytics?.overview?.pendingCashouts?.toFixed(2) || "0.00"}`,
+      change: "+0%",
       icon: <Wallet className="w-5 h-5 text-orange-400" />,
     },
   ]
@@ -432,8 +432,58 @@ export default function Admin() {
     { id: "payments", label: "Payments", icon: <CreditCard className="w-4 h-4" /> },
   ]
 
+  const refreshAllData = async () => {
+    console.log('[ADMIN DEBUG] Manual refresh clicked');
+    setLoadingUsers(true);
+    setLoadingAnalytics(true);
+    setLoadingTasks(true);
+    
+    try {
+      // Refresh users
+      const usersRes = await fetch("/api/users");
+      if (usersRes.ok) {
+        const usersData = await usersRes.json();
+        console.log('[ADMIN DEBUG] Refreshed users:', usersData);
+        setUsers(Array.isArray(usersData) ? usersData : []);
+      }
+      
+      // Refresh analytics
+      const analyticsRes = await fetch("/api/dashboard-analytics");
+      if (analyticsRes.ok) {
+        const analyticsData = await analyticsRes.json();
+        console.log('[ADMIN DEBUG] Refreshed analytics:', analyticsData);
+        setAnalytics(analyticsData && typeof analyticsData === 'object' ? analyticsData : null);
+      }
+      
+      // Refresh tasks
+      const tasksRes = await fetch("/api/tasks");
+      if (tasksRes.ok) {
+        const tasksData = await tasksRes.json();
+        console.log('[ADMIN DEBUG] Refreshed tasks:', tasksData);
+        setTasks(Array.isArray(tasksData) ? tasksData : []);
+      }
+    } catch (error) {
+      console.error('[ADMIN DEBUG] Refresh error:', error);
+    }
+    
+    setLoadingUsers(false);
+    setLoadingAnalytics(false);
+    setLoadingTasks(false);
+  };
+
   const renderDashboard = () => (
     <div className="space-y-8">
+      {/* Refresh Button */}
+      <div className="flex justify-end">
+        <Button
+          variant="outline"
+          className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+          onClick={refreshAllData}
+        >
+          Refresh Data
+        </Button>
+      </div>
+      
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {dashboardStats.map((stat, index) => (

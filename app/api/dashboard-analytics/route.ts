@@ -153,23 +153,29 @@ export async function GET(req: NextRequest) {
   const retentionRate = totalUsers ? (retainedUsers / totalUsers) * 100 : 0;
 
   // --- REVENUE ANALYTICS ---
-  // Get revenue events for user's lockers
+  // Get revenue events for user's lockers (revenue generated from their lockers, regardless of who completed tasks)
   let userRevenue = 0;
   let userEvents: { amount: number|string, task_id: string, tier: string, country: string, timestamp: string }[] = [];
   let userAvgCpm = 0;
   
-  if (userId) {
-    // For specific user, get revenue events by user_id directly
+  if (userId && lockerIds.length > 0) {
+    // For specific user, get revenue events from their lockers (regardless of who completed the tasks)
     const { data: events, error: eventsError } = await supabase
       .from("revenue_events")
       .select("amount, task_id, tier, country, timestamp, locker_id")
-      .eq('user_id', userId);
+      .in('locker_id', lockerIds);
+    
+    console.log(`[DEBUG] Revenue events query for user ${userId} lockers:`, lockerIds);
+    console.log(`[DEBUG] Revenue events found:`, events?.length || 0);
     
     if (!eventsError && events) {
       userRevenue = events.reduce((sum, e) => sum + Number(e.amount), 0);
       // Calculate average CPM (weighted by event count)
       userAvgCpm = events.length > 0 ? events.reduce((sum, e) => sum + (Number(e.amount) * 1000), 0) / events.length : 0;
       userEvents = events;
+      console.log(`[DEBUG] User revenue calculated: $${userRevenue}, events: ${events.length}`);
+    } else if (eventsError) {
+      console.error(`[DEBUG] Revenue events error:`, eventsError);
     }
   } else {
     // For admin view, get all revenue events
@@ -211,10 +217,11 @@ export async function GET(req: NextRequest) {
     .order("timestamp", { ascending: false })
     .limit(5);
   
-  if (userId) {
-    recentPaymentsQuery = recentPaymentsQuery.eq("user_id", userId);
-  } else if (lockerIds.length > 0) {
+  if (userId && lockerIds.length > 0) {
+    // For specific user, get revenue events from their lockers
     recentPaymentsQuery = recentPaymentsQuery.in('locker_id', lockerIds);
+  } else if (!userId) {
+    // For admin view, get all revenue events (no filter needed)
   }
   
   let recentWithdrawalsQuery = supabase.from("withdrawals").select("amount, method, address, requested_at, status, user_id").order("requested_at", { ascending: false }).limit(5);
