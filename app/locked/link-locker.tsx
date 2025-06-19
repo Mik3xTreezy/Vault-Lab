@@ -61,7 +61,6 @@ export default function LinkLocker({ title = "Premium Content Download", destina
   const [tasks, setTasks] = useState<Task[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [userReady, setUserReady] = useState(false)
-  const [ipCooldowns, setIpCooldowns] = useState<Record<string, any>>({})
   const unlockStartTime = useRef(Date.now())
 
   // Get user's country and tier using IPLocate service
@@ -198,25 +197,8 @@ export default function LinkLocker({ title = "Premium Content Download", destina
 
         console.log(`Filtered tasks: ${filteredTasks.length}/${data.length} tasks shown for ${userBrowser} on ${userDevice}`);
         
-        // Check IP cooldowns for each task
-        const cooldownPromises = formattedTasks.map(async (task) => {
-          try {
-            const response = await fetch(`/api/ip-tracking?taskId=${task.id}`);
-            const result = await response.json();
-            return { taskId: task.id, cooldown: result };
-          } catch (error) {
-            console.error(`Error checking cooldown for task ${task.id}:`, error);
-            return { taskId: task.id, cooldown: { canComplete: true } };
-          }
-        });
-
-        const cooldownResults = await Promise.all(cooldownPromises);
-        const cooldownMap: Record<string, any> = {};
-        cooldownResults.forEach(({ taskId, cooldown }) => {
-          cooldownMap[taskId] = cooldown;
-        });
-        
-        setIpCooldowns(cooldownMap);
+        // Publisher-level IP tracking is now handled in real-time during events
+        // No need for pre-checking individual task cooldowns
         setTasks(formattedTasks)
       } catch (error) {
         console.error("Error fetching tasks:", error)
@@ -615,14 +597,6 @@ export default function LinkLocker({ title = "Premium Content Download", destina
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold mb-1 text-white">{task.title}</h3>
                       <p className="text-gray-400 text-sm">{task.loading ? task.loadingText : task.description}</p>
-                      {ipCooldowns[task.id] && !ipCooldowns[task.id].canComplete && (
-                        <div className="mt-2 flex items-center gap-2">
-                          <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></div>
-                          <p className="text-orange-400 text-xs">
-                            ⏰ Revenue cooldown: {ipCooldowns[task.id].hoursRemaining}h remaining
-                          </p>
-                        </div>
-                      )}
                     </div>
                   </div>
 
