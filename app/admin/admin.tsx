@@ -70,18 +70,9 @@ export default function Admin() {
     }
   });
 
-  if (!isLoaded) return <div className="text-white p-8">Loading...</div>;
-  if (
-    !isSignedIn ||
-    !user ||
-    !user.emailAddresses ||
-    !user.emailAddresses[0] ||
-    user.emailAddresses[0].emailAddress !== "ananthu9539@gmail.com"
-  ) {
-    return <div className="text-white p-8">Access denied.</div>;
-  }
-
   useEffect(() => {
+    if (!isLoaded || !isSignedIn || !user) return;
+    
     async function initFetchUsers() {
       setLoadingUsers(true)
       try {
@@ -96,9 +87,11 @@ export default function Admin() {
       setLoadingUsers(false)
     }
     initFetchUsers()
-  }, [])
+  }, [isLoaded, isSignedIn, user])
 
   useEffect(() => {
+    if (!isLoaded || !isSignedIn || !user) return;
+
     async function initFetchAnalytics() {
       setLoadingAnalytics(true)
       try {
@@ -113,9 +106,11 @@ export default function Admin() {
       setLoadingAnalytics(false)
     }
     initFetchAnalytics()
-  }, [])
+  }, [isLoaded, isSignedIn, user])
 
   useEffect(() => {
+    if (!isLoaded || !isSignedIn || !user) return;
+
     async function initFetchTasks() {
       setLoadingTasks(true);
       try {
@@ -130,7 +125,23 @@ export default function Admin() {
       setLoadingTasks(false);
     }
     initFetchTasks();
-  }, []);
+  }, [isLoaded, isSignedIn, user]);
+
+  // Early return for loading state
+  if (!isLoaded) {
+    return <div className="text-white p-8">Loading...</div>;
+  }
+
+  // Early return for unauthorized access
+  if (
+    !isSignedIn ||
+    !user ||
+    !user.emailAddresses ||
+    !user.emailAddresses[0] ||
+    user.emailAddresses[0].emailAddress !== "ananthu9539@gmail.com"
+  ) {
+    return <div className="text-white p-8">Access denied.</div>;
+  }
 
   // Task CRUD operations
   const fetchTasks = async () => {
