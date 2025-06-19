@@ -249,4 +249,6 @@ export async function GET(req: NextRequest) {
       withdrawals: recentWithdrawals || [],
     },
   });
+  // fallback in case something goes wrong
+  return NextResponse.json({ error: "Unknown error" }, { status: 500 });
 }

@@ -17,7 +17,8 @@ export async function GET(req: NextRequest) {
   if (!(await isAdmin(req))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const { data, error } = await supabase.from("users").select("*");
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data || []);
+  if (data) return NextResponse.json(data);
+  return NextResponse.json([]);
 }
 
 export async function POST(req: NextRequest) {
@@ -28,7 +29,8 @@ export async function POST(req: NextRequest) {
     { id, email, full_name, balance, status, joined, last_login, role, lockers, country, referral_code, referred_by, notes }
   ]).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data || null);
+  if (data) return NextResponse.json(data);
+  return NextResponse.json(null);
 }
 
 export async function PUT(req: NextRequest) {
@@ -37,7 +39,8 @@ export async function PUT(req: NextRequest) {
   const { id, ...fields } = body;
   const { data, error } = await supabase.from("users").update(fields).eq("id", id).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data || null);
+  if (data) return NextResponse.json(data);
+  return NextResponse.json(null);
 }
 
 export async function DELETE(req: NextRequest) {

@@ -17,7 +17,8 @@ export async function GET(req: NextRequest) {
   // Public: anyone can fetch tasks
   const { data, error } = await supabase.from("tasks").select("*").order("created_at", { ascending: false });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data || []); // Return empty array if data is null/undefined
+  if (data) return NextResponse.json(data);
+  return NextResponse.json([]); // fallback
 }
 
 export async function POST(req: NextRequest) {
@@ -28,7 +29,8 @@ export async function POST(req: NextRequest) {
     { title, description, ad_url, devices, cpm_tier1, cpm_tier2, cpm_tier3, country_cpm, status }
   ]).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data || null); // Return null if data is undefined
+  if (data) return NextResponse.json(data);
+  return NextResponse.json(null); // fallback
 }
 
 export async function PUT(req: NextRequest) {
@@ -39,7 +41,8 @@ export async function PUT(req: NextRequest) {
     title, description, ad_url, devices, cpm_tier1, cpm_tier2, cpm_tier3, status
   }).eq('id', id).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data || null); // Return null if data is undefined
+  if (data) return NextResponse.json(data);
+  return NextResponse.json(null); // fallback
 }
 
 export async function DELETE(req: NextRequest) {
