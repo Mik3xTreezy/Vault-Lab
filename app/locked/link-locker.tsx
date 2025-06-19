@@ -16,9 +16,22 @@ const getBrowserName = (): string => {
   if (userAgent.includes('Opera GX')) return 'Opera GX';
   if (userAgent.includes('OPR') || userAgent.includes('Opera')) return 'Opera';
   if (userAgent.includes('Edg')) return 'Edge';
-  if (userAgent.includes('Chrome')) return 'Chrome';
-  if (userAgent.includes('Firefox')) return 'Firefox';
-  if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) return 'Safari';
+  if (userAgent.includes('Chrome') && !userAgent.includes('Safari')) return 'Chrome';
+  if (userAgent.includes('CriOS')) return 'Chrome'; // Chrome on iOS
+  if (userAgent.includes('Firefox') || userAgent.includes('FxiOS')) return 'Firefox';
+  if (userAgent.includes('Safari')) return 'Safari';
+  
+  return 'Unknown';
+};
+
+// Device detection utility
+const getDevicePlatform = (): string => {
+  const userAgent = navigator.userAgent;
+  
+  if (/iPad|iPhone|iPod/.test(userAgent)) return 'iOS';
+  if (/Android/.test(userAgent)) return 'Android';
+  if (/Macintosh|Mac OS X/.test(userAgent)) return 'Mac';
+  if (/Windows/.test(userAgent)) return 'Windows';
   
   return 'Unknown';
 };
@@ -81,20 +94,46 @@ export default function LinkLocker({ title = "Premium Content Download", destina
         const data = await res.json()
         console.log("Fetched tasks:", data)
 
-        // Get user's browser
+        // Get user's browser and device
         const userBrowser = getBrowserName();
+        const userDevice = getDevicePlatform();
         console.log("User browser detected:", userBrowser);
+        console.log("User device detected:", userDevice);
+        console.log("User agent:", navigator.userAgent);
 
-        // Filter out tasks that exclude the user's browser
+        // Filter out tasks based on browser exclusions and device targeting
         const filteredTasks = data.filter((task: any) => {
-          const excludedBrowsers = task.excluded_browsers || [];
-          const isExcluded = excludedBrowsers.includes(userBrowser);
+          console.log(`\n--- Checking task: "${task.title}" ---`);
+          console.log(`Excluded browsers: [${(task.excluded_browsers || []).join(', ')}]`);
+          console.log(`Target devices: [${(task.devices || []).join(', ')}]`);
           
-          if (isExcluded) {
-            console.log(`Task "${task.title}" excluded for browser: ${userBrowser}`);
+          // Check browser exclusions
+          const excludedBrowsers = task.excluded_browsers || [];
+          const isBrowserExcluded = excludedBrowsers.includes(userBrowser);
+          
+          if (isBrowserExcluded) {
+            console.log(`❌ EXCLUDED: Browser ${userBrowser} is in exclusion list`);
+            return false;
+          } else {
+            console.log(`✅ Browser check passed: ${userBrowser} not excluded`);
           }
           
-          return !isExcluded;
+          // Check device targeting
+          const targetDevices = task.devices || [];
+          if (targetDevices.length > 0) {
+            const isDeviceTargeted = targetDevices.includes(userDevice);
+            if (!isDeviceTargeted) {
+              console.log(`❌ EXCLUDED: Device ${userDevice} not in target list [${targetDevices.join(', ')}]`);
+              return false;
+            } else {
+              console.log(`✅ Device check passed: ${userDevice} is targeted`);
+            }
+          } else {
+            console.log(`✅ Device check skipped: No device targeting set`);
+          }
+          
+          console.log(`✅ INCLUDED: Task passed all filters`);
+          return true;
         });
 
         const formattedTasks: Task[] = filteredTasks.map((task: any) => ({
@@ -110,7 +149,7 @@ export default function LinkLocker({ title = "Premium Content Download", destina
           action: () => handleTaskClick(task.id.toString()),
         }))
 
-        console.log(`Filtered tasks: ${filteredTasks.length}/${data.length} tasks shown for ${userBrowser}`);
+        console.log(`Filtered tasks: ${filteredTasks.length}/${data.length} tasks shown for ${userBrowser} on ${userDevice}`);
         setTasks(formattedTasks)
       } catch (error) {
         console.error("Error fetching tasks:", error)
