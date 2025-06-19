@@ -10,6 +10,7 @@ const supabase = createClient(
 export async function GET(req: NextRequest) {
   // Get user_id from query param (for per-user analytics)
   const userId = req.nextUrl.searchParams.get("user_id") || null;
+  console.log(`[DASHBOARD API] Request for userId: ${userId}`);
 
   // Fetch all lockers (id, title) for this user
   let lockerIds: string[] = [];
@@ -28,6 +29,7 @@ export async function GET(req: NextRequest) {
       acc[locker.id] = locker.title;
       return acc;
     }, {});
+    console.log(`[DASHBOARD API] User ${userId} has ${lockerIds.length} lockers:`, lockerIds);
   } else {
     const { data: allLockers, error: lockersError } = await supabase
       .from("lockers")
@@ -44,17 +46,33 @@ export async function GET(req: NextRequest) {
   }
 
   // Query analytics for these lockers
-  let analyticsQuery = supabase
-    .from("locker_analytics")
-    .select("*, locker_id");
+  let analytics: any[] = [];
   if (lockerIds.length > 0) {
-    analyticsQuery = analyticsQuery.in('locker_id', lockerIds);
-  }
-  const { data: analytics, error } = await analyticsQuery;
-
-  if (error) {
-    console.error("Supabase error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const { data: analyticsData, error: analyticsError } = await supabase
+      .from("locker_analytics")
+      .select("*, locker_id")
+      .in('locker_id', lockerIds);
+    
+    if (analyticsError) {
+      console.error("Supabase analytics error:", analyticsError);
+      return NextResponse.json({ error: analyticsError.message }, { status: 500 });
+    }
+    analytics = analyticsData || [];
+  } else if (userId) {
+    // User has no lockers, return empty analytics
+    console.log(`[DEBUG] User ${userId} has no lockers, returning empty analytics`);
+    analytics = [];
+  } else {
+    // Admin view - get all analytics
+    const { data: analyticsData, error: analyticsError } = await supabase
+      .from("locker_analytics")
+      .select("*, locker_id");
+    
+    if (analyticsError) {
+      console.error("Supabase analytics error:", analyticsError);
+      return NextResponse.json({ error: analyticsError.message }, { status: 500 });
+    }
+    analytics = analyticsData || [];
   }
 
   // Initialize analytics as empty array if null/undefined
@@ -74,7 +92,11 @@ export async function GET(req: NextRequest) {
       .select("amount, timestamp")
       .in('locker_id', lockerIds);
     revenueEventsForChart = chartEvents || [];
+  } else if (userId) {
+    // User has no lockers, return empty revenue events
+    revenueEventsForChart = [];
   } else {
+    // Admin view - get all revenue events
     const { data: chartEvents } = await supabase
       .from("revenue_events")
       .select("amount, timestamp");
