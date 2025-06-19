@@ -70,6 +70,14 @@ export default function Admin() {
     }
   });
 
+  // CPM Rate Management
+  const [bulkCpmRates, setBulkCpmRates] = useState({
+    tier1: "",
+    tier2: "",
+    tier3: ""
+  });
+  const [selectedTasksForBulk, setSelectedTasksForBulk] = useState<number[]>([]);
+
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !user) return;
     
@@ -172,16 +180,29 @@ export default function Admin() {
           description: taskData.description,
           ad_url: taskData.adUrl,
           devices: taskData.devices,
-          cpm_tier1: taskData.countryRates.tier1.replace("$", ""),
-          cpm_tier2: taskData.countryRates.tier2.replace("$", ""),
-          cpm_tier3: taskData.countryRates.tier3.replace("$", ""),
+          cpm_tier1: parseFloat(taskData.countryRates.tier1.replace("$", "")) || 0,
+          cpm_tier2: parseFloat(taskData.countryRates.tier2.replace("$", "")) || 0,
+          cpm_tier3: parseFloat(taskData.countryRates.tier3.replace("$", "")) || 0,
           status: "Active"
         })
       });
       if (!res.ok) throw new Error("Failed to add task");
       await fetchTasks();
+      // Reset form
+      setNewTask({
+        title: "",
+        description: "",
+        adUrl: "",
+        devices: [],
+        countryRates: {
+          tier1: "$4.50",
+          tier2: "$2.80",
+          tier3: "$1.50"
+        }
+      });
     } catch (error) {
       console.error("Error adding task:", error);
+      alert("Failed to add task. Please try again.");
     } finally {
       setIsAddingTask(false);
     }
@@ -199,9 +220,9 @@ export default function Admin() {
           description: taskData.description,
           ad_url: taskData.adUrl,
           devices: taskData.devices,
-          cpm_tier1: taskData.countryRates.tier1.replace("$", ""),
-          cpm_tier2: taskData.countryRates.tier2.replace("$", ""),
-          cpm_tier3: taskData.countryRates.tier3.replace("$", ""),
+          cpm_tier1: parseFloat(taskData.cpm_tier1) || 0,
+          cpm_tier2: parseFloat(taskData.cpm_tier2) || 0,
+          cpm_tier3: parseFloat(taskData.cpm_tier3) || 0,
           status: taskData.status
         })
       });
@@ -209,6 +230,7 @@ export default function Admin() {
       await fetchTasks();
     } catch (error) {
       console.error("Error updating task:", error);
+      alert("Failed to update task. Please try again.");
     } finally {
       setIsEditingTask(false);
     }
@@ -244,17 +266,96 @@ export default function Admin() {
       return;
     }
     await addTask(newTask);
-    setNewTask({
-      title: "",
-      description: "",
-      adUrl: "",
-      devices: [],
-      countryRates: {
-        tier1: "$4.50",
-        tier2: "$2.80",
-        tier3: "$1.50"
-      }
+  };
+
+  const handleBulkCpmUpdate = async () => {
+    if (selectedTasksForBulk.length === 0) {
+      alert("Please select at least one task to update.");
+      return;
+    }
+
+    // Filter out empty rates
+    const cpmRates: any = {};
+    if (bulkCpmRates.tier1.trim()) cpmRates.tier1 = bulkCpmRates.tier1.replace("$", "");
+    if (bulkCpmRates.tier2.trim()) cpmRates.tier2 = bulkCpmRates.tier2.replace("$", "");
+    if (bulkCpmRates.tier3.trim()) cpmRates.tier3 = bulkCpmRates.tier3.replace("$", "");
+
+    if (Object.keys(cpmRates).length === 0) {
+      alert("Please enter at least one CPM rate to update.");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/tasks", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          taskIds: selectedTasksForBulk,
+          cpmRates
+        })
+      });
+
+      if (!res.ok) throw new Error("Failed to update CPM rates");
+      
+      const result = await res.json();
+      await fetchTasks();
+      
+      // Reset bulk update form
+      setBulkCpmRates({ tier1: "", tier2: "", tier3: "" });
+      setSelectedTasksForBulk([]);
+      
+      alert(`CPM rates updated successfully for ${result.updated} tasks!`);
+    } catch (error) {
+      console.error("Error updating bulk CPM rates:", error);
+      alert("Failed to update CPM rates. Please try again.");
+    }
+  };
+
+  const handleTaskSelectionForBulk = (taskId: number, checked: boolean) => {
+    setSelectedTasksForBulk(prev => 
+      checked 
+        ? [...prev, taskId]
+        : prev.filter(id => id !== taskId)
+    );
+  };
+
+  // Individual CPM rate editing state
+  const [editingCpmTask, setEditingCpmTask] = useState<any>(null);
+  const [tempCpmRates, setTempCpmRates] = useState({
+    tier1: "",
+    tier2: "",
+    tier3: ""
+  });
+
+  const startEditingCpm = (task: any) => {
+    setEditingCpmTask(task);
+    setTempCpmRates({
+      tier1: task.cpm_tier1?.toString() || "0",
+      tier2: task.cpm_tier2?.toString() || "0",
+      tier3: task.cpm_tier3?.toString() || "0"
     });
+  };
+
+  const saveCpmRates = async () => {
+    if (!editingCpmTask) return;
+    
+    try {
+      await updateTask(editingCpmTask.id, {
+        ...editingCpmTask,
+        cpm_tier1: tempCpmRates.tier1,
+        cpm_tier2: tempCpmRates.tier2,
+        cpm_tier3: tempCpmRates.tier3
+      });
+      setEditingCpmTask(null);
+      setTempCpmRates({ tier1: "", tier2: "", tier3: "" });
+    } catch (error) {
+      console.error("Error saving CPM rates:", error);
+    }
+  };
+
+  const cancelEditingCpm = () => {
+    setEditingCpmTask(null);
+    setTempCpmRates({ tier1: "", tier2: "", tier3: "" });
   };
 
   // Sample data
@@ -887,11 +988,15 @@ export default function Admin() {
                   <TableCell>
                     <Dialog>
                       <DialogTrigger asChild>
-                        <Button variant="ghost" className="text-emerald-400 font-mono hover:bg-emerald-500/20 p-0">
+                        <Button 
+                          variant="ghost" 
+                          className="text-emerald-400 font-mono hover:bg-emerald-500/20 p-0"
+                          onClick={() => startEditingCpm(task)}
+                        >
                           <div className="text-left">
-                            <div className="text-xs">T1: ${task.cpm_tier1}</div>
-                            <div className="text-xs">T2: ${task.cpm_tier2}</div>
-                            <div className="text-xs">T3: ${task.cpm_tier3}</div>
+                            <div className="text-xs">T1: ${task.cpm_tier1 || 0}</div>
+                            <div className="text-xs">T2: ${task.cpm_tier2 || 0}</div>
+                            <div className="text-xs">T3: ${task.cpm_tier3 || 0}</div>
                           </div>
                         </Button>
                       </DialogTrigger>
@@ -900,9 +1005,9 @@ export default function Admin() {
                           <DialogTitle>Manage CPM Rates for "{task.title}"</DialogTitle>
                         </DialogHeader>
                         <div className="space-y-6">
-                          {/* Tier-based Bulk Update */}
+                          {/* Individual Task CPM Update */}
                           <div>
-                            <h3 className="text-lg font-semibold text-white mb-4">Bulk Update by Tier</h3>
+                            <h3 className="text-lg font-semibold text-white mb-4">Update CPM Rates</h3>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                               <Card className="bg-emerald-500/10 border-emerald-500/20">
                                 <CardHeader className="pb-3">
@@ -912,15 +1017,9 @@ export default function Admin() {
                                 <CardContent>
                                   <Input
                                     className="bg-white/5 border-white/10 text-white"
-                                    placeholder={`$${task.cpm_tier1}`}
-                                    defaultValue={`$${task.cpm_tier1}`}
-                                    onChange={(e) => {
-                                      const value = e.target.value.replace("$", "");
-                                      updateTask(task.id, {
-                                        ...task,
-                                        cpm_tier1: value
-                                      });
-                                    }}
+                                    placeholder="4.50"
+                                    value={tempCpmRates.tier1}
+                                    onChange={(e) => setTempCpmRates(prev => ({ ...prev, tier1: e.target.value }))}
                                   />
                                 </CardContent>
                               </Card>
@@ -932,15 +1031,9 @@ export default function Admin() {
                                 <CardContent>
                                   <Input
                                     className="bg-white/5 border-white/10 text-white"
-                                    placeholder={`$${task.cpm_tier2}`}
-                                    defaultValue={`$${task.cpm_tier2}`}
-                                    onChange={(e) => {
-                                      const value = e.target.value.replace("$", "");
-                                      updateTask(task.id, {
-                                        ...task,
-                                        cpm_tier2: value
-                                      });
-                                    }}
+                                    placeholder="2.80"
+                                    value={tempCpmRates.tier2}
+                                    onChange={(e) => setTempCpmRates(prev => ({ ...prev, tier2: e.target.value }))}
                                   />
                                 </CardContent>
                               </Card>
@@ -952,18 +1045,28 @@ export default function Admin() {
                                 <CardContent>
                                   <Input
                                     className="bg-white/5 border-white/10 text-white"
-                                    placeholder={`$${task.cpm_tier3}`}
-                                    defaultValue={`$${task.cpm_tier3}`}
-                                    onChange={(e) => {
-                                      const value = e.target.value.replace("$", "");
-                                      updateTask(task.id, {
-                                        ...task,
-                                        cpm_tier3: value
-                                      });
-                                    }}
+                                    placeholder="1.50"
+                                    value={tempCpmRates.tier3}
+                                    onChange={(e) => setTempCpmRates(prev => ({ ...prev, tier3: e.target.value }))}
                                   />
                                 </CardContent>
                               </Card>
+                            </div>
+                            <div className="flex space-x-4 mt-4">
+                              <Button 
+                                onClick={saveCpmRates}
+                                className="bg-gradient-to-r from-emerald-500 to-green-500 text-black"
+                                disabled={isEditingTask}
+                              >
+                                {isEditingTask ? "Saving..." : "Save Changes"}
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                onClick={cancelEditingCpm}
+                                className="border-white/10 bg-white/5 hover:bg-white/10 text-white"
+                              >
+                                Cancel
+                              </Button>
                             </div>
                           </div>
 
@@ -1064,7 +1167,12 @@ export default function Admin() {
                     <CardContent className="space-y-3">
                       <div>
                         <Label className="text-sm">CPM Rate</Label>
-                        <Input className="bg-white/5 border-white/10 text-white" placeholder="$4.50" />
+                        <Input 
+                          className="bg-white/5 border-white/10 text-white" 
+                          placeholder="4.50"
+                          value={bulkCpmRates.tier1}
+                          onChange={(e) => setBulkCpmRates(prev => ({ ...prev, tier1: e.target.value }))}
+                        />
                       </div>
                     </CardContent>
                   </Card>
@@ -1077,7 +1185,12 @@ export default function Admin() {
                     <CardContent className="space-y-3">
                       <div>
                         <Label className="text-sm">CPM Rate</Label>
-                        <Input className="bg-white/5 border-white/10 text-white" placeholder="$2.80" />
+                        <Input 
+                          className="bg-white/5 border-white/10 text-white" 
+                          placeholder="2.80"
+                          value={bulkCpmRates.tier2}
+                          onChange={(e) => setBulkCpmRates(prev => ({ ...prev, tier2: e.target.value }))}
+                        />
                       </div>
                     </CardContent>
                   </Card>
@@ -1090,7 +1203,12 @@ export default function Admin() {
                     <CardContent className="space-y-3">
                       <div>
                         <Label className="text-sm">CPM Rate</Label>
-                        <Input className="bg-white/5 border-white/10 text-white" placeholder="$1.50" />
+                        <Input 
+                          className="bg-white/5 border-white/10 text-white" 
+                          placeholder="1.50"
+                          value={bulkCpmRates.tier3}
+                          onChange={(e) => setBulkCpmRates(prev => ({ ...prev, tier3: e.target.value }))}
+                        />
                       </div>
                     </CardContent>
                   </Card>
@@ -1101,15 +1219,24 @@ export default function Admin() {
                   <div className="space-y-2">
                     {tasks.map((task) => (
                       <label key={task.id} className="flex items-center space-x-2">
-                        <input type="checkbox" className="rounded bg-white/5 border-white/10" defaultChecked />
+                        <input 
+                          type="checkbox" 
+                          className="rounded bg-white/5 border-white/10"
+                          checked={selectedTasksForBulk.includes(task.id)}
+                          onChange={(e) => handleTaskSelectionForBulk(task.id, e.target.checked)}
+                        />
                         <span className="text-gray-300 text-sm">{task.title}</span>
                       </label>
                     ))}
                   </div>
                 </div>
 
-                <Button className="w-full bg-gradient-to-r from-emerald-500 to-green-500 text-black">
-                  Apply Bulk CPM Rates
+                <Button 
+                  onClick={handleBulkCpmUpdate}
+                  className="w-full bg-gradient-to-r from-emerald-500 to-green-500 text-black"
+                  disabled={selectedTasksForBulk.length === 0}
+                >
+                  Apply Bulk CPM Rates ({selectedTasksForBulk.length} tasks selected)
                 </Button>
               </div>
             </DialogContent>

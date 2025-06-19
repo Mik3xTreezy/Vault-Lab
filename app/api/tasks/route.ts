@@ -51,4 +51,36 @@ export async function DELETE(req: NextRequest) {
   const { error } = await supabase.from("tasks").delete().eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ success: true });
+}
+
+export async function PATCH(req: NextRequest) {
+  if (!(await isAdmin(req))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const body = await req.json();
+  const { taskIds, cpmRates } = body;
+  
+  if (!taskIds || !Array.isArray(taskIds) || taskIds.length === 0) {
+    return NextResponse.json({ error: "Task IDs are required" }, { status: 400 });
+  }
+  
+  try {
+    const updatePromises = taskIds.map(async (taskId: number) => {
+      const updateData: any = {};
+      if (cpmRates.tier1 !== undefined) updateData.cpm_tier1 = parseFloat(cpmRates.tier1) || 0;
+      if (cpmRates.tier2 !== undefined) updateData.cpm_tier2 = parseFloat(cpmRates.tier2) || 0;
+      if (cpmRates.tier3 !== undefined) updateData.cpm_tier3 = parseFloat(cpmRates.tier3) || 0;
+      
+      return supabase.from('tasks').update(updateData).eq('id', taskId);
+    });
+    
+    const results = await Promise.all(updatePromises);
+    const errors = results.filter(result => result.error);
+    
+    if (errors.length > 0) {
+      return NextResponse.json({ error: "Some updates failed", details: errors }, { status: 500 });
+    }
+    
+    return NextResponse.json({ success: true, updated: taskIds.length });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 } 
