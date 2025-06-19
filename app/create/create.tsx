@@ -60,16 +60,16 @@ export default function Create() {
     setError(null)
 
     try {
-      const res = await fetch('/api/lockers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/lockers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: formData.title,
           destinationUrl: formData.destinationUrl,
         }),
       });
+      if (!res.ok) throw new Error("Failed to create locker");
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to create locker');
       setGeneratedLink(`https://vaultlab.co/locked/${data.id}`);
       setIsSuccess(true);
     } catch (err: any) {

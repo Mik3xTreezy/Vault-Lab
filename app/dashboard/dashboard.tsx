@@ -43,10 +43,16 @@ export default function Dashboard() {
     async function fetchAnalytics() {
       setLoading(true);
       if (!user) return;
-      const res = await fetch(`/api/dashboard-analytics?user_id=${user.id}`);
-      const data = await res.json();
-      console.log('[DEBUG] Dashboard analytics API response:', data); // TEMP LOG
-      setAnalytics(data);
+      try {
+        const res = await fetch(`/api/dashboard-analytics?user_id=${user.id}`);
+        if (!res.ok) throw new Error("Failed to fetch analytics");
+        const data = await res.json();
+        console.log('[DEBUG] Dashboard analytics API response:', data); // TEMP LOG
+        setAnalytics(data);
+      } catch (error) {
+        console.error('[DEBUG] Dashboard analytics error:', error);
+        setAnalytics(null);
+      }
       setLoading(false);
     }
     if (isLoaded && isSignedIn && user) {

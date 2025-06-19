@@ -26,20 +26,26 @@ export default function GeoMap({ countryData: initialCountryData, userId }: GeoM
   useEffect(() => {
     let interval: NodeJS.Timeout;
     async function fetchCountryData() {
-      const url = userId ? `/api/dashboard-analytics?user_id=${userId}` : '/api/dashboard-analytics';
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.countryData) {
-        setCountryData(normalizeCountryData(data.countryData));
+      try {
+        const url = userId ? `/api/dashboard-analytics?user_id=${userId}` : '/api/dashboard-analytics';
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Failed to fetch country data");
+        const data = await res.json();
+        if (data.countryData) {
+          setCountryData(normalizeCountryData(data.countryData));
+        }
+      } catch (error) {
+        console.error('Error fetching country data:', error);
       }
     }
     interval = setInterval(fetchCountryData, 120000);
     return () => clearInterval(interval);
   }, [userId]);
 
-  const countryValues = Object.values(countryData);
+  const countryValues = Object.values(countryData).filter((v): v is number => typeof v === 'number');
+  const maxValue = countryValues.length > 0 ? Math.max(...countryValues) : 1;
   const colorScale = scaleLinear()
-    .domain([0, Math.max(1, ...countryValues)])
+    .domain([0, Math.max(1, maxValue)])
     .range(["#23272f", "#facc15"]); // dark to yellow
 
   return (
