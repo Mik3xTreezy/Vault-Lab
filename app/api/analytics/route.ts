@@ -117,13 +117,16 @@ export async function POST(req: NextRequest) {
             if (revenueError.message.includes('foreign key constraint') || revenueError.message.includes('user_id_fkey')) {
               console.log('[ANALYTICS API] Foreign key error detected, creating user first...');
               
-              // Create user if doesn't exist
+              // Create user if doesn't exist with minimal required fields
               const { error: createUserError } = await supabase
                 .from("users")
                 .insert({
                   id: user_id,
+                  email: `${user_id}@temp.local`, // Temporary email to satisfy not-null constraint
                   balance: revenue,
                   joined: new Date().toISOString(),
+                  status: 'Active',
+                  role: 'user'
                 })
                 .select();
               
@@ -177,13 +180,16 @@ export async function POST(req: NextRequest) {
 
           if (balanceError) {
             console.log('[ANALYTICS API] User not found in users table, creating...');
-            // Create user if doesn't exist
+            // Create user if doesn't exist with required fields
             const { error: createUserError } = await supabase
               .from("users")
               .insert({
                 id: user_id,
+                email: `${user_id}@temp.local`, // Temporary email to satisfy not-null constraint
                 balance: revenue,
                 joined: new Date().toISOString(),
+                status: 'Active',
+                role: 'user'
               });
             
             if (createUserError && !createUserError.message.includes('duplicate key')) {
