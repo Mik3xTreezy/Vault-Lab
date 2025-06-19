@@ -27,7 +27,7 @@ interface LinkLockerProps {
 }
 
 export default function LinkLocker({ title = "Premium Content Download", destinationUrl = "#", lockerId }: LinkLockerProps) {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const [tasks, setTasks] = useState<Task[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const unlockStartTime = useRef(Date.now())
@@ -67,15 +67,16 @@ export default function LinkLocker({ title = "Premium Content Download", destina
 
     fetchTasks()
 
-    // Track initial visit
-    if (user) {
+    // Track initial visit only when user is loaded
+    if (isLoaded && user) {
+      console.log('[DEBUG] Tracking visit event for user:', user.id);
       trackLockerEvent({
         locker_id: lockerId,
         event_type: "visit",
         user_id: user.id,
       });
     }
-  }, [lockerId, user])
+  }, [lockerId, user, isLoaded])
 
   type HandleTaskClick = (taskId: string, countryCode?: string, tier?: string) => void
 
@@ -99,13 +100,13 @@ export default function LinkLocker({ title = "Premium Content Download", destina
     // Get user location for proper revenue calculation
     const location = getUserLocation();
 
-    // Complete after 60 seconds
+    // Complete after 5 seconds for testing (change back to 60000 for production)
     setTimeout(() => {
       setTasks((prevTasks) =>
         prevTasks.map((task) => (task.id === taskId ? { ...task, loading: false, completed: true } : task)),
       );
-      // Track task completion with user ID
-      if (user) {
+      // Track task completion with user ID - only if user is loaded
+      if (isLoaded && user) {
         console.log('[DEBUG] Tracking task completion:', {
           locker_id: lockerId,
           event_type: "task_complete",
@@ -121,23 +122,49 @@ export default function LinkLocker({ title = "Premium Content Download", destina
           extra: { country: location.country, tier: location.tier },
           user_id: user.id,
         });
+      } else {
+        console.warn('[DEBUG] User not loaded, skipping task completion tracking');
       }
-    }, 60000);
+    }, 5000); // 5 seconds for testing
   }
 
-  const allTasksCompleted = tasks.every((task) => task.completed)
+  const allTasksCompleted = tasks.length > 0 && tasks.every((task) => task.completed)
   const completedCount = tasks.filter((task) => task.completed).length
 
   const handleUnlock = () => {
-    if (allTasksCompleted && user) {
+    console.log('[DEBUG] Unlock button clicked:', { allTasksCompleted, user: user?.id, destinationUrl });
+    
+    if (allTasksCompleted && isLoaded && user) {
       const duration = Date.now() - unlockStartTime.current;
+      
+      console.log('[DEBUG] Tracking unlock event:', {
+        locker_id: lockerId,
+        event_type: "unlock",
+        duration,
+        user_id: user.id,
+      });
+      
       trackLockerEvent({
         locker_id: lockerId,
         event_type: "unlock",
         duration,
         user_id: user.id,
       });
-      window.location.href = destinationUrl
+      
+      // Ensure destinationUrl is valid
+      if (destinationUrl && destinationUrl !== "#") {
+        console.log('[DEBUG] Redirecting to:', destinationUrl);
+        window.location.href = destinationUrl;
+      } else {
+        console.error('[DEBUG] Invalid destination URL:', destinationUrl);
+        alert('Invalid destination URL. Please contact support.');
+      }
+    } else {
+      console.log('[DEBUG] Unlock conditions not met:', { 
+        allTasksCompleted, 
+        isLoaded, 
+        hasUser: !!user 
+      });
     }
   }
 
@@ -238,14 +265,14 @@ export default function LinkLocker({ title = "Premium Content Download", destina
         </div>
 
         {/* Progress Section & Unlock Button: Only show after tasks are loaded */}
-        {!isLoading && (
+        {!isLoading && tasks.length > 0 && (
           <>
             <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 mb-6">
               <div className="flex justify-between items-center mb-4">
                 <span className="text-gray-300 font-medium">Progress</span>
                 <div className="flex items-center space-x-2">
                   <div className="flex space-x-1">
-                    {[...Array(3)].map((_, i) => (
+                    {tasks.map((_, i) => (
                       <div
                         key={i}
                         className={`w-2 h-2 rounded-full transition-all duration-300 ${
@@ -258,7 +285,7 @@ export default function LinkLocker({ title = "Premium Content Download", destina
                       />
                     ))}
                   </div>
-                  <span className="text-emerald-400 font-bold text-lg">{completedCount}/3</span>
+                  <span className="text-emerald-400 font-bold text-lg">{completedCount}/{tasks.length}</span>
                 </div>
               </div>
 
@@ -306,7 +333,7 @@ export default function LinkLocker({ title = "Premium Content Download", destina
 
               {!allTasksCompleted && (
                 <p className="text-gray-500 text-sm mt-4">
-                  Complete {3 - completedCount} more challenge{3 - completedCount !== 1 ? "s" : ""} to unlock
+                  Complete {tasks.length - completedCount} more challenge{tasks.length - completedCount !== 1 ? "s" : ""} to unlock
                 </p>
               )}
             </div>
