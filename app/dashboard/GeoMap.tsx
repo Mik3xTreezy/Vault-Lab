@@ -133,10 +133,10 @@ export default function GeoMap({ countryData: initialCountryData, userId }: GeoM
   const maxValue = countryValues.length > 0 ? Math.max(...countryValues) : 1;
   const uniqueCountries = Object.keys(countryData).length;
   
-  // Enhanced color scale with better gradient
+  // Enhanced color scale with green gradient to match dashboard theme
   const colorScale = scaleLinear<string>()
     .domain([0, Math.max(1, maxValue)])
-    .range(["#0f172a", "#06b6d4"]); // slate-900 to cyan-500
+    .range(["#0f172a", "#10b981"]); // slate-900 to emerald-500
 
   const topCountries = Object.entries(countryData)
     .filter(([_, views]) => views > 0)
@@ -148,7 +148,7 @@ export default function GeoMap({ countryData: initialCountryData, userId }: GeoM
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
-          <div className="p-3 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-xl">
+          <div className="p-3 bg-gradient-to-r from-emerald-500 to-green-500 rounded-xl">
             <Globe className="w-6 h-6 text-white" />
           </div>
           <div>
@@ -170,7 +170,7 @@ export default function GeoMap({ countryData: initialCountryData, userId }: GeoM
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
           <div className="flex items-center gap-3 mb-2">
-            <Users className="w-5 h-5 text-cyan-400" />
+            <Users className="w-5 h-5 text-emerald-400" />
             <span className="text-slate-300 font-medium">Total Views</span>
           </div>
           <div className="text-3xl font-bold text-white">{totalViews.toLocaleString()}</div>
@@ -178,7 +178,7 @@ export default function GeoMap({ countryData: initialCountryData, userId }: GeoM
         
         <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
           <div className="flex items-center gap-3 mb-2">
-            <MapPin className="w-5 h-5 text-green-400" />
+            <MapPin className="w-5 h-5 text-emerald-400" />
             <span className="text-slate-300 font-medium">Countries</span>
           </div>
           <div className="text-3xl font-bold text-white">{uniqueCountries}</div>
@@ -186,7 +186,7 @@ export default function GeoMap({ countryData: initialCountryData, userId }: GeoM
         
         <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
           <div className="flex items-center gap-3 mb-2">
-            <TrendingUp className="w-5 h-5 text-purple-400" />
+            <TrendingUp className="w-5 h-5 text-emerald-400" />
             <span className="text-slate-300 font-medium">Top Country</span>
           </div>
           <div className="text-xl font-bold text-white">
@@ -219,7 +219,7 @@ export default function GeoMap({ countryData: initialCountryData, userId }: GeoM
               />
             ))}
           </div>
-          <span className="text-sm text-white font-medium">High</span>
+          <span className="text-sm text-emerald-400 font-medium">High</span>
         </div>
       </div>
 
@@ -246,12 +246,13 @@ export default function GeoMap({ countryData: initialCountryData, userId }: GeoM
                         <Geography
                           key={geo.rsmKey}
                           geography={geo}
-                          fill={views ? colorScale(views) : "#1e293b"}
+                          fill={views > 0 ? colorScale(views) : "#1e293b"}
                           stroke="#334155"
                           strokeWidth={0.5}
                           style={{ 
                             outline: "none",
-                            cursor: views ? "pointer" : "default"
+                            cursor: views > 0 ? "pointer" : "default",
+                            transition: "all 0.2s ease-in-out"
                           }}
                           onMouseEnter={() => {
                             if (views > 0) setHoveredCountry(`${countryName}: ${views.toLocaleString()} views`);
@@ -278,7 +279,7 @@ export default function GeoMap({ countryData: initialCountryData, userId }: GeoM
         <div className="xl:col-span-1">
           <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50 h-full">
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-cyan-400" />
+              <TrendingUp className="w-5 h-5 text-emerald-400" />
               Top Countries
             </h3>
             
@@ -293,19 +294,19 @@ export default function GeoMap({ countryData: initialCountryData, userId }: GeoM
                       key={code} 
                       className="flex items-center justify-between p-3 rounded-lg bg-slate-700/30 hover:bg-slate-700/50 transition-all duration-200 border border-slate-600/30"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-xs font-bold">
-                          {index + 1}
-                        </div>
-                        <div>
-                          <div className="text-white font-medium text-sm">{countryName}</div>
-                          <div className="text-slate-400 text-xs">{percentage.toFixed(1)}% of traffic</div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-cyan-400 font-bold text-sm">{views.toLocaleString()}</div>
-                        <div className="text-slate-500 text-xs">views</div>
-                      </div>
+                                             <div className="flex items-center gap-3">
+                         <div className="flex items-center justify-center w-6 h-6 rounded-full bg-gradient-to-r from-emerald-500 to-green-500 text-white text-xs font-bold">
+                           {index + 1}
+                         </div>
+                         <div>
+                           <div className="text-white font-medium text-sm">{countryName}</div>
+                           <div className="text-slate-400 text-xs">{percentage.toFixed(1)}% of traffic</div>
+                         </div>
+                       </div>
+                       <div className="text-right">
+                         <div className="text-emerald-400 font-bold text-sm">{views.toLocaleString()}</div>
+                         <div className="text-slate-500 text-xs">views</div>
+                       </div>
                     </div>
                   );
                 })
