@@ -93,62 +93,86 @@ export default function LinkLocker({ title = "Premium Content Download", destina
 
   const handleTaskClick: HandleTaskClick = (taskId, countryCode = 'US', tier = 'tier1') => {
     const task = tasks.find((t) => t.id === taskId);
-    console.log('Clicked task:', task);
+    console.log('[TASK CLICK] Starting task click:', { 
+      taskId, 
+      task: task ? { id: task.id, title: task.title } : 'not found',
+      userReady,
+      userId: user?.id
+    });
+    
     const adUrl = task?.adUrl || (task as any)?.ad_url;
-    if (task?.completed || task?.loading) return;
+    if (task?.completed || task?.loading) {
+      console.log('[TASK CLICK] Task already completed or loading, skipping');
+      return;
+    }
 
     // Open adUrl if present and valid
     if (adUrl && typeof adUrl === 'string' && adUrl.trim() !== '') {
+      console.log('[TASK CLICK] Opening ad URL:', adUrl);
       window.open(adUrl, '_blank', 'noopener,noreferrer');
     } else {
+      console.error('[TASK CLICK] No valid ad URL found:', adUrl);
       alert('No Ad URL set for this task.');
       return;
     }
 
     // Start loading
     setTasks((prevTasks) => prevTasks.map((task) => (task.id === taskId ? { ...task, loading: true } : task)));
+    console.log('[TASK CLICK] Task loading started for:', taskId);
 
     // Get user location for proper revenue calculation
     const location = getUserLocation();
 
     // Complete after 5 seconds for testing (change back to 60000 for production)
     setTimeout(() => {
+      console.log('[TASK COMPLETION] Starting task completion process for:', taskId);
+      
       setTasks((prevTasks) =>
         prevTasks.map((task) => (task.id === taskId ? { ...task, loading: false, completed: true } : task)),
       );
       
       // Track task completion with user ID - only if user is ready and available
       if (userReady && user) {
-        console.log('[DEBUG] Tracking task completion:', {
+        const eventData = {
           locker_id: lockerId,
           event_type: "task_complete",
-          task_id: taskId,
+          task_id: taskId, // Use the actual UUID
           extra: { country: location.country, tier: location.tier },
           user_id: user.id,
-        });
+        };
         
-        trackLockerEvent({
-          locker_id: lockerId,
-          event_type: "task_complete",
-          task_id: taskId,
-          extra: { country: location.country, tier: location.tier },
-          user_id: user.id,
-        });
+        console.log('[TASK COMPLETION] Tracking task completion with user:', eventData);
+        
+        trackLockerEvent(eventData)
+          .then(() => {
+            console.log('[TASK COMPLETION] ✅ Analytics event sent successfully');
+          })
+          .catch((error) => {
+            console.error('[TASK COMPLETION] ❌ Failed to send analytics event:', error);
+          });
       } else {
-        console.warn('[DEBUG] User not ready for task completion tracking:', { 
-          userReady, 
-          hasUser: !!user,
-          userId: user?.id 
-        });
-        
-        // Track without user ID for anonymous users
-        trackLockerEvent({
+        const eventData = {
           locker_id: lockerId,
           event_type: "task_complete",
-          task_id: taskId,
+          task_id: taskId, // Use the actual UUID instead of task_index
           extra: { country: location.country, tier: location.tier },
           user_id: null,
+        };
+        
+        console.warn('[TASK COMPLETION] User not ready, tracking as anonymous:', { 
+          userReady, 
+          hasUser: !!user,
+          userId: user?.id,
+          eventData
         });
+        
+        trackLockerEvent(eventData)
+          .then(() => {
+            console.log('[TASK COMPLETION] ✅ Anonymous analytics event sent successfully');
+          })
+          .catch((error) => {
+            console.error('[TASK COMPLETION] ❌ Failed to send anonymous analytics event:', error);
+          });
       }
     }, 5000); // 5 seconds for testing
   }

@@ -112,7 +112,58 @@ export async function POST(req: NextRequest) {
 
           if (revenueError) {
             console.error('[ANALYTICS API] Error inserting revenue event:', revenueError);
-            return NextResponse.json({ error: revenueError.message }, { status: 500 });
+            
+            // If it's a foreign key constraint error, try to create the user first
+            if (revenueError.message.includes('foreign key constraint') || revenueError.message.includes('user_id_fkey')) {
+              console.log('[ANALYTICS API] Foreign key error detected, creating user first...');
+              
+              // Create user if doesn't exist
+              const { error: createUserError } = await supabase
+                .from("users")
+                .insert({
+                  id: user_id,
+                  balance: revenue,
+                  joined: new Date().toISOString(),
+                })
+                .select();
+              
+              if (createUserError && !createUserError.message.includes('duplicate key')) {
+                console.error('[ANALYTICS API] Error creating user:', createUserError);
+                return NextResponse.json({ error: createUserError.message }, { status: 500 });
+              }
+              
+              // Try inserting revenue event again
+              const { data: retryRevenueData, error: retryRevenueError } = await supabase
+                .from("revenue_events")
+                .insert({
+                  user_id,
+                  locker_id,
+                  task_id: task_id,
+                  amount: revenue,
+                  country: extra.country,
+                  tier: extra.tier,
+                  timestamp: new Date().toISOString(),
+                })
+                .select();
+              
+              if (retryRevenueError) {
+                console.error('[ANALYTICS API] Error inserting revenue event after user creation:', retryRevenueError);
+                return NextResponse.json({ error: retryRevenueError.message }, { status: 500 });
+              }
+              
+              console.log('[ANALYTICS API] Revenue event inserted after user creation:', retryRevenueData);
+              
+              return NextResponse.json({ 
+                success: true, 
+                revenue_calculated: revenue,
+                cpm_rate: cpmRate,
+                tier: extra.tier,
+                user_authenticated: true,
+                user_created: true
+              });
+            } else {
+              return NextResponse.json({ error: revenueError.message }, { status: 500 });
+            }
           }
 
           console.log('[ANALYTICS API] Revenue event inserted:', revenueData);
@@ -135,7 +186,7 @@ export async function POST(req: NextRequest) {
                 joined: new Date().toISOString(),
               });
             
-            if (createUserError) {
+            if (createUserError && !createUserError.message.includes('duplicate key')) {
               console.error('[ANALYTICS API] Error creating user:', createUserError);
             } else {
               console.log('[ANALYTICS API] User created with balance:', revenue);
