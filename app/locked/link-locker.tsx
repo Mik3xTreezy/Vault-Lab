@@ -61,6 +61,7 @@ export default function LinkLocker({ title = "Premium Content Download", destina
   const [tasks, setTasks] = useState<Task[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [userReady, setUserReady] = useState(false)
+  const [ipCooldowns, setIpCooldowns] = useState<Record<string, any>>({})
   const unlockStartTime = useRef(Date.now())
 
   // Get user's country and tier using IPLocate service
@@ -196,6 +197,26 @@ export default function LinkLocker({ title = "Premium Content Download", destina
         })
 
         console.log(`Filtered tasks: ${filteredTasks.length}/${data.length} tasks shown for ${userBrowser} on ${userDevice}`);
+        
+        // Check IP cooldowns for each task
+        const cooldownPromises = formattedTasks.map(async (task) => {
+          try {
+            const response = await fetch(`/api/ip-tracking?taskId=${task.id}`);
+            const result = await response.json();
+            return { taskId: task.id, cooldown: result };
+          } catch (error) {
+            console.error(`Error checking cooldown for task ${task.id}:`, error);
+            return { taskId: task.id, cooldown: { canComplete: true } };
+          }
+        });
+
+        const cooldownResults = await Promise.all(cooldownPromises);
+        const cooldownMap: Record<string, any> = {};
+        cooldownResults.forEach(({ taskId, cooldown }) => {
+          cooldownMap[taskId] = cooldown;
+        });
+        
+        setIpCooldowns(cooldownMap);
         setTasks(formattedTasks)
       } catch (error) {
         console.error("Error fetching tasks:", error)
@@ -207,15 +228,52 @@ export default function LinkLocker({ title = "Premium Content Download", destina
     fetchTasks()
   }, [])
 
-  // Track initial visit when user is ready
+  // Track initial visit when user is ready (with IP tracking)
   useEffect(() => {
-    if (userReady && user) {
-      console.log('[DEBUG] Tracking visit event for user:', user.id);
-      trackLockerEvent({
-        locker_id: lockerId,
-        event_type: "visit",
-        user_id: user.id,
-      });
+    if (userReady) {
+      const trackVisit = async () => {
+        try {
+          // Check IP tracking for visit events
+          const ipTrackingResponse = await fetch('/api/ip-tracking', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              lockerId: lockerId,
+              userId: user?.id || null,
+              eventType: 'visit'
+            })
+          });
+
+          const ipTrackingResult = await ipTrackingResponse.json();
+          console.log('[IP TRACKING] Visit result:', ipTrackingResult);
+
+          // Only track visit if IP tracking allows it
+          if (ipTrackingResult.shouldCount) {
+            console.log('[DEBUG] ✅ IP tracking allows visit counting');
+            trackLockerEvent({
+              locker_id: lockerId,
+              event_type: "visit",
+              user_id: user?.id || null,
+              extra: {
+                ipTrackingReason: ipTrackingResult.reason,
+                analyticsAllowed: true
+              }
+            });
+          } else {
+            console.log('[DEBUG] ❌ IP tracking blocked visit counting:', ipTrackingResult.reason);
+          }
+        } catch (error) {
+          console.error('[IP TRACKING] Error checking visit:', error);
+          // Fallback: track visit anyway if IP tracking fails
+          trackLockerEvent({
+            locker_id: lockerId,
+            event_type: "visit",
+            user_id: user?.id || null,
+          });
+        }
+      };
+
+      trackVisit();
     }
   }, [userReady, user, lockerId])
 
@@ -260,63 +318,92 @@ export default function LinkLocker({ title = "Premium Content Download", destina
       const location = await getUserLocation();
         console.log('[TASK COMPLETION] Starting task completion process for:', taskId);
         console.log('[TASK COMPLETION] User location detected:', location);
+
+        // Check IP tracking to prevent duplicate analytics counting
+        const ipTrackingResponse = await fetch('/api/ip-tracking', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            taskId: taskId,
+            lockerId: lockerId,
+            userId: user?.id || null,
+            country: location.country,
+            device: getDevicePlatform(),
+            eventType: 'task_complete'
+          })
+        });
+
+        const ipTrackingResult = await ipTrackingResponse.json();
+        console.log('[IP TRACKING] Task completion result:', ipTrackingResult);
         
         setTasks((prevTasks) =>
           prevTasks.map((task) => (task.id === taskId ? { ...task, loading: false, completed: true } : task)),
         );
-        
-        // Track task completion with user ID - only if user is ready and available
-        if (userReady && user) {
-          const eventData = {
-            locker_id: lockerId,
-            event_type: "task_complete",
-            task_id: taskId, // Use the actual UUID
-            extra: { 
-              country: location.country, 
-              tier: location.tier,
-              isVpn: location.isVpn,
-              isProxy: location.isProxy
-            },
-            user_id: user.id,
-          };
+
+        // Only track analytics if IP tracking allows it
+        if (ipTrackingResult.shouldCount) {
+          console.log('[TASK COMPLETION] ✅ IP tracking allows analytics counting');
           
-          console.log('[TASK COMPLETION] Tracking task completion with user:', eventData);
-          
-          trackLockerEvent(eventData)
-            .then(() => {
-              console.log('[TASK COMPLETION] ✅ Analytics event sent successfully');
-            })
-            .catch((error) => {
-              console.error('[TASK COMPLETION] ❌ Failed to send analytics event:', error);
+          // Track task completion with user ID - only if user is ready and available
+          if (userReady && user) {
+            const eventData = {
+              locker_id: lockerId,
+              event_type: "task_complete",
+              task_id: taskId, // Use the actual UUID
+              extra: { 
+                country: location.country, 
+                tier: location.tier,
+                isVpn: location.isVpn,
+                isProxy: location.isProxy,
+                ipTrackingReason: ipTrackingResult.reason,
+                analyticsAllowed: true
+              },
+              user_id: user.id,
+            };
+            
+            console.log('[TASK COMPLETION] Tracking task completion with user:', eventData);
+            
+            trackLockerEvent(eventData)
+              .then(() => {
+                console.log('[TASK COMPLETION] ✅ Analytics event sent successfully');
+              })
+              .catch((error) => {
+                console.error('[TASK COMPLETION] ❌ Failed to send analytics event:', error);
+              });
+          } else {
+            const eventData = {
+              locker_id: lockerId,
+              event_type: "task_complete",
+              task_id: taskId, // Use the actual UUID instead of task_index
+              extra: { 
+                country: location.country, 
+                tier: location.tier,
+                isVpn: location.isVpn,
+                isProxy: location.isProxy,
+                ipTrackingReason: ipTrackingResult.reason,
+                analyticsAllowed: true
+              },
+              user_id: null,
+            };
+            
+            console.warn('[TASK COMPLETION] User not ready, tracking as anonymous:', { 
+              userReady, 
+              hasUser: !!user,
+              userId: user?.id,
+              eventData
             });
+            
+            trackLockerEvent(eventData)
+              .then(() => {
+                console.log('[TASK COMPLETION] ✅ Anonymous analytics event sent successfully');
+              })
+              .catch((error) => {
+                console.error('[TASK COMPLETION] ❌ Failed to send anonymous analytics event:', error);
+              });
+          }
         } else {
-          const eventData = {
-            locker_id: lockerId,
-            event_type: "task_complete",
-            task_id: taskId, // Use the actual UUID instead of task_index
-            extra: { 
-              country: location.country, 
-              tier: location.tier,
-              isVpn: location.isVpn,
-              isProxy: location.isProxy
-            },
-            user_id: null,
-          };
-          
-          console.warn('[TASK COMPLETION] User not ready, tracking as anonymous:', { 
-            userReady, 
-            hasUser: !!user,
-            userId: user?.id,
-            eventData
-          });
-          
-          trackLockerEvent(eventData)
-            .then(() => {
-              console.log('[TASK COMPLETION] ✅ Anonymous analytics event sent successfully');
-            })
-            .catch((error) => {
-              console.error('[TASK COMPLETION] ❌ Failed to send anonymous analytics event:', error);
-            });
+          console.log('[TASK COMPLETION] ❌ IP tracking blocked analytics counting:', ipTrackingResult.reason);
+          console.log('[TASK COMPLETION] No analytics will be tracked for this duplicate IP');
         }
       }, completionTime); // Use dynamic completion time from task settings
   }
@@ -324,7 +411,7 @@ export default function LinkLocker({ title = "Premium Content Download", destina
   const allTasksCompleted = tasks.length > 0 && tasks.every((task) => task.completed)
   const completedCount = tasks.filter((task) => task.completed).length
 
-  const handleUnlock = () => {
+  const handleUnlock = async () => {
     console.log('[DEBUG] Unlock button clicked:', { 
       allTasksCompleted, 
       userReady,
@@ -336,32 +423,81 @@ export default function LinkLocker({ title = "Premium Content Download", destina
     if (allTasksCompleted) {
       const duration = Date.now() - unlockStartTime.current;
       
-      // Track unlock event (with or without user)
-      if (userReady && user) {
-        console.log('[DEBUG] Tracking unlock event with user:', {
-          locker_id: lockerId,
-          event_type: "unlock",
-          duration,
-          user_id: user.id,
+      try {
+        // Check IP tracking for unlock events
+        const ipTrackingResponse = await fetch('/api/ip-tracking', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            lockerId: lockerId,
+            userId: user?.id || null,
+            eventType: 'unlock'
+          })
         });
-        
-        trackLockerEvent({
-          locker_id: lockerId,
-          event_type: "unlock",
-          duration,
-          user_id: user.id,
-        });
-      } else {
-        console.log('[DEBUG] Tracking unlock event without user');
-        trackLockerEvent({
-          locker_id: lockerId,
-          event_type: "unlock",
-          duration,
-          user_id: null,
-        });
+
+        const ipTrackingResult = await ipTrackingResponse.json();
+        console.log('[IP TRACKING] Unlock result:', ipTrackingResult);
+
+        // Only track unlock if IP tracking allows it
+        if (ipTrackingResult.shouldCount) {
+          console.log('[DEBUG] ✅ IP tracking allows unlock counting');
+          
+          // Track unlock event (with or without user)
+          if (userReady && user) {
+            console.log('[DEBUG] Tracking unlock event with user:', {
+              locker_id: lockerId,
+              event_type: "unlock",
+              duration,
+              user_id: user.id,
+            });
+            
+            trackLockerEvent({
+              locker_id: lockerId,
+              event_type: "unlock",
+              duration,
+              user_id: user.id,
+              extra: {
+                ipTrackingReason: ipTrackingResult.reason,
+                analyticsAllowed: true
+              }
+            });
+          } else {
+            console.log('[DEBUG] Tracking unlock event without user');
+            trackLockerEvent({
+              locker_id: lockerId,
+              event_type: "unlock",
+              duration,
+              user_id: null,
+              extra: {
+                ipTrackingReason: ipTrackingResult.reason,
+                analyticsAllowed: true
+              }
+            });
+          }
+        } else {
+          console.log('[DEBUG] ❌ IP tracking blocked unlock counting:', ipTrackingResult.reason);
+        }
+      } catch (error) {
+        console.error('[IP TRACKING] Error checking unlock:', error);
+        // Fallback: track unlock anyway if IP tracking fails
+        if (userReady && user) {
+          trackLockerEvent({
+            locker_id: lockerId,
+            event_type: "unlock",
+            duration,
+            user_id: user.id,
+          });
+        } else {
+          trackLockerEvent({
+            locker_id: lockerId,
+            event_type: "unlock",
+            duration,
+            user_id: null,
+          });
+        }
       }
       
-      // Ensure destinationUrl is valid and redirect
+      // Ensure destinationUrl is valid and redirect (always allow this regardless of IP tracking)
       if (destinationUrl && destinationUrl !== "#") {
         console.log('[DEBUG] Redirecting to:', destinationUrl);
         window.location.href = destinationUrl;
@@ -479,6 +615,14 @@ export default function LinkLocker({ title = "Premium Content Download", destina
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold mb-1 text-white">{task.title}</h3>
                       <p className="text-gray-400 text-sm">{task.loading ? task.loadingText : task.description}</p>
+                      {ipCooldowns[task.id] && !ipCooldowns[task.id].canComplete && (
+                        <div className="mt-2 flex items-center gap-2">
+                          <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></div>
+                          <p className="text-orange-400 text-xs">
+                            ⏰ Revenue cooldown: {ipCooldowns[task.id].hoursRemaining}h remaining
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
 
