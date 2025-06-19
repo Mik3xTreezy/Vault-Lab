@@ -19,7 +19,22 @@ export async function POST(req: NextRequest) {
     const { taskId, lockerId, userId, country, device, eventType } = await req.json();
     const userIP = getUserIP(req);
     
-    console.log(`[IP TRACKING] Checking IP ${userIP} for ${eventType || 'task completion'} on task ${taskId || 'locker ' + lockerId}`);
+    console.log(`[IP TRACKING] Checking IP ${userIP} for ${eventType || 'task completion'} on locker ${lockerId}`);
+    
+    // Get the publisher (owner) of this locker
+    const { data: lockerData, error: lockerError } = await supabase
+      .from('lockers')
+      .select('user_id')
+      .eq('id', lockerId)
+      .single();
+    
+    if (lockerError) {
+      console.error('[IP TRACKING] Error fetching locker data:', lockerError);
+      return NextResponse.json({ error: 'Locker not found' }, { status: 404 });
+    }
+    
+    const publisherId = lockerData.user_id;
+    console.log(`[IP TRACKING] Publisher ID: ${publisherId}`);
     
     // For locker-level events (views, unlocks), check against locker_id
     // For task-level events (task_complete), check against task_id
@@ -27,28 +42,23 @@ export async function POST(req: NextRequest) {
     const searchField = isLockerEvent ? 'locker_id' : 'task_id';
     const searchValue = isLockerEvent ? lockerId : taskId;
     
-    // Check if this IP has performed this action in the last 24 hours
-    let query = supabase
+    // Check if this IP has performed ANY action for this PUBLISHER in the last 24 hours
+    // This prevents revenue farming across multiple links from the same publisher
+    const { data: existingRecords, error: fetchRecordsError } = await supabase
       .from("ip_task_tracking")
       .select("*")
       .eq("ip_address", userIP)
-      .eq("locker_id", lockerId)
-      .eq("event_type", eventType || 'task_complete');
+      .eq("publisher_id", publisherId);
     
-    // For task-specific events, also filter by task_id
-    if (!isLockerEvent && taskId) {
-      query = query.eq("task_id", taskId);
-    } else if (isLockerEvent) {
-      // For locker events, task_id should be null
-      query = query.is("task_id", null);
+    if (fetchRecordsError) {
+      console.error("[IP TRACKING] Error fetching existing records:", fetchRecordsError);
+      return NextResponse.json({ error: fetchRecordsError.message }, { status: 500 });
     }
     
-    const { data: existingRecord, error: fetchError } = await query.single();
-    
-    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = no rows found
-      console.error("[IP TRACKING] Error fetching existing record:", fetchError);
-      return NextResponse.json({ error: fetchError.message }, { status: 500 });
-    }
+    // Find the most recent record for this IP + publisher combination
+    const existingRecord = existingRecords && existingRecords.length > 0 
+      ? existingRecords.sort((a, b) => new Date(b.first_completion_at).getTime() - new Date(a.first_completion_at).getTime())[0]
+      : null;
     
     const now = new Date();
     const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -71,14 +81,15 @@ export async function POST(req: NextRequest) {
           console.error("[IP TRACKING] Error updating record:", updateError);
         }
         
-        console.log(`[IP TRACKING] ❌ BLOCKED: IP ${userIP} already performed ${eventType || 'task completion'} within 24h`);
+        console.log(`[IP TRACKING] ❌ BLOCKED: IP ${userIP} already interacted with publisher ${publisherId} within 24h`);
         return NextResponse.json({
           shouldCount: false,
-          reason: "duplicate_ip_24h",
-          message: `This IP has already performed this action within the last 24 hours`,
+          reason: "duplicate_ip_publisher_24h",
+          message: `This IP has already interacted with this publisher within the last 24 hours`,
           firstActionAt: existingRecord.first_completion_at,
           actionCount: existingRecord.completion_count + 1,
-          eventType: eventType || 'task_complete'
+          eventType: eventType || 'task_complete',
+          publisherId: publisherId
         });
       } else {
         // More than 24 hours ago, reset the tracking
@@ -97,20 +108,22 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ error: resetError.message }, { status: 500 });
         }
         
-        console.log(`[IP TRACKING] ✅ ALLOWED: IP ${userIP} last performed action more than 24h ago`);
+        console.log(`[IP TRACKING] ✅ ALLOWED: IP ${userIP} last interacted with publisher ${publisherId} more than 24h ago`);
         return NextResponse.json({
           shouldCount: true,
           reason: "24h_cooldown_expired",
-          message: "Analytics counting allowed - 24 hour cooldown expired",
+          message: "Analytics counting allowed - 24 hour publisher cooldown expired",
           actionCount: 1,
-          eventType: eventType || 'task_complete'
+          eventType: eventType || 'task_complete',
+          publisherId: publisherId
         });
       }
     } else {
-      // First time this IP is performing this action
+      // First time this IP is interacting with this PUBLISHER
       const insertData: any = {
         ip_address: userIP,
-        locker_id: lockerId,
+        locker_id: lockerId, // Keep for reference
+        publisher_id: publisherId, // Track by publisher instead of individual locker
         user_id: userId,
         country: country,
         device: device,
@@ -135,13 +148,14 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: insertError.message }, { status: 500 });
       }
       
-      console.log(`[IP TRACKING] ✅ ALLOWED: First ${eventType || 'completion'} for IP ${userIP}`);
+      console.log(`[IP TRACKING] ✅ ALLOWED: First interaction between IP ${userIP} and publisher ${publisherId}`);
       return NextResponse.json({
         shouldCount: true,
-        reason: "first_action",
-        message: `Analytics counting allowed - first ${eventType || 'completion'} from this IP`,
+        reason: "first_publisher_interaction",
+        message: `Analytics counting allowed - first interaction with this publisher from this IP`,
         actionCount: 1,
-        eventType: eventType || 'task_complete'
+        eventType: eventType || 'task_complete',
+        publisherId: publisherId
       });
     }
     
@@ -155,30 +169,71 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const taskId = searchParams.get('taskId');
+    const lockerId = searchParams.get('lockerId');
     const userIP = getUserIP(req);
     
-    if (!taskId) {
-      return NextResponse.json({ error: "taskId is required" }, { status: 400 });
+    if (!taskId && !lockerId) {
+      return NextResponse.json({ error: "taskId or lockerId is required" }, { status: 400 });
     }
     
-    // Check current status for this IP/task combination
-    const { data: record, error } = await supabase
+    // Get publisher ID from locker
+    let publisherId = null;
+    if (lockerId) {
+      const { data: lockerData, error: lockerError } = await supabase
+        .from('lockers')
+        .select('user_id')
+        .eq('id', lockerId)
+        .single();
+      
+      if (lockerError) {
+        return NextResponse.json({ error: 'Locker not found' }, { status: 404 });
+      }
+      publisherId = lockerData.user_id;
+    } else if (taskId) {
+      // Get publisher ID from task -> locker relationship
+      const { data: taskData, error: taskError } = await supabase
+        .from('tasks')
+        .select('locker_id')
+        .eq('id', taskId)
+        .single();
+      
+      if (taskError) {
+        return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+      }
+      
+      const { data: lockerData, error: lockerError } = await supabase
+        .from('lockers')
+        .select('user_id')
+        .eq('id', taskData.locker_id)
+        .single();
+      
+      if (lockerError) {
+        return NextResponse.json({ error: 'Locker not found' }, { status: 404 });
+      }
+      publisherId = lockerData.user_id;
+    }
+    
+    // Check current status for this IP/publisher combination
+    const { data: records, error } = await supabase
       .from("ip_task_tracking")
       .select("*")
       .eq("ip_address", userIP)
-      .eq("task_id", taskId)
-      .single();
+      .eq("publisher_id", publisherId);
     
-    if (error && error.code !== 'PGRST116') {
-      console.error("[IP TRACKING] Error fetching record:", error);
+    const record = records && records.length > 0 
+      ? records.sort((a, b) => new Date(b.first_completion_at).getTime() - new Date(a.first_completion_at).getTime())[0]
+      : null;
+    
+    if (error) {
+      console.error("[IP TRACKING] Error fetching records:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
     
     if (!record) {
       return NextResponse.json({
         canComplete: true,
-        reason: "no_previous_completion",
-        message: "No previous completion found for this IP"
+        reason: "no_previous_interaction",
+        message: "No previous interaction found between this IP and publisher"
       });
     }
     
@@ -193,19 +248,21 @@ export async function GET(req: NextRequest) {
       
       return NextResponse.json({
         canComplete: false,
-        reason: "within_24h_cooldown",
-        message: `Must wait ${hoursRemaining} more hours before next revenue-counting completion`,
+        reason: "within_24h_publisher_cooldown",
+        message: `Must wait ${hoursRemaining} more hours before next interaction with this publisher counts for revenue`,
         hoursRemaining,
         completionCount: record.completion_count,
-        firstCompletionAt: record.first_completion_at
+        firstCompletionAt: record.first_completion_at,
+        publisherId: publisherId
       });
     }
     
     return NextResponse.json({
       canComplete: true,
-      reason: "cooldown_expired",
-      message: "24 hour cooldown has expired, can complete for revenue",
-      completionCount: record.completion_count
+      reason: "publisher_cooldown_expired",
+      message: "24 hour publisher cooldown has expired, can interact for revenue",
+      completionCount: record.completion_count,
+      publisherId: publisherId
     });
     
   } catch (error: any) {
