@@ -89,6 +89,11 @@ export default function Admin() {
     tier3: ""
   });
 
+  // Device targeting state
+  const [activeDeviceTab, setActiveDeviceTab] = useState("Windows");
+  const [deviceTargeting, setDeviceTargeting] = useState<any>({});
+  const [loadingDeviceTargeting, setLoadingDeviceTargeting] = useState(false);
+
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !user) return;
     
@@ -418,6 +423,29 @@ export default function Admin() {
     }
   };
 
+  // Device targeting functions
+  const updateDeviceTargeting = async (device: string, country: string, field: string, value: any) => {
+    try {
+      const key = `${device}_${country}`;
+      const currentData = deviceTargeting[key] || {};
+      const updatedData = { ...currentData, [field]: value };
+      
+      setDeviceTargeting((prev: any) => ({
+        ...prev,
+        [key]: updatedData
+      }));
+      
+      console.log(`[DEVICE TARGETING] Updated ${device} ${country} ${field}:`, value);
+    } catch (error) {
+      console.error("Error updating device targeting:", error);
+    }
+  };
+
+  const getDeviceTargetingValue = (device: string, country: string, field: string) => {
+    const key = `${device}_${country}`;
+    return deviceTargeting[key]?.[field] || "";
+  };
+
   // Dashboard stats using real data
   const dashboardStats = [
     {
@@ -457,6 +485,30 @@ export default function Admin() {
     { country: "Other", code: "XX", cpm: "$2.50", tier: "Tier 3", multiplier: "1.0x" },
   ]
 
+  // Device targeting countries
+  const targetingCountries = [
+    { country: "United States", code: "US", tier: "Tier 1" },
+    { country: "United Kingdom", code: "GB", tier: "Tier 1" },
+    { country: "Canada", code: "CA", tier: "Tier 1" },
+    { country: "Australia", code: "AU", tier: "Tier 1" },
+    { country: "Germany", code: "DE", tier: "Tier 1" },
+    { country: "Netherlands", code: "NL", tier: "Tier 1" },
+    { country: "Sweden", code: "SE", tier: "Tier 1" },
+    { country: "Norway", code: "NO", tier: "Tier 1" },
+    { country: "France", code: "FR", tier: "Tier 2" },
+    { country: "Italy", code: "IT", tier: "Tier 2" },
+    { country: "Spain", code: "ES", tier: "Tier 2" },
+    { country: "Japan", code: "JP", tier: "Tier 2" },
+    { country: "South Korea", code: "KR", tier: "Tier 2" },
+    { country: "Singapore", code: "SG", tier: "Tier 2" },
+    { country: "India", code: "IN", tier: "Tier 3" },
+    { country: "Brazil", code: "BR", tier: "Tier 3" },
+    { country: "Mexico", code: "MX", tier: "Tier 3" },
+    { country: "Philippines", code: "PH", tier: "Tier 3" },
+    { country: "Indonesia", code: "ID", tier: "Tier 3" },
+    { country: "Other", code: "XX", tier: "Tier 3" },
+  ]
+
   const withdrawals = [
     {
       id: 1,
@@ -490,6 +542,7 @@ export default function Admin() {
     { id: "analytics", label: "Analytics", icon: <Activity className="w-4 h-4" /> },
     { id: "tasks", label: "Tasks", icon: <Settings className="w-4 h-4" /> },
     { id: "cpm", label: "CPM Rates", icon: <DollarSign className="w-4 h-4" /> },
+    { id: "device-targeting", label: "Device Targeting", icon: <Globe className="w-4 h-4" /> },
     { id: "payments", label: "Payments", icon: <CreditCard className="w-4 h-4" /> },
   ]
 
@@ -1363,6 +1416,172 @@ export default function Admin() {
     </div>
   );
 
+  const renderDeviceTargeting = () => {
+    const devices = ["Windows", "MacOS", "Android", "iOS"];
+    
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-white">Device-Specific Targeting</h2>
+            <p className="text-gray-400 text-sm">Manage tasks, ad URLs, and CPM rates by device and country</p>
+          </div>
+          <Button 
+            variant="outline" 
+            className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+            onClick={() => {
+              console.log('Device targeting data:', deviceTargeting);
+              alert('Device targeting data logged to console');
+            }}
+          >
+            📊 Export Data
+          </Button>
+        </div>
+
+        {/* Device Tabs */}
+        <div className="flex space-x-1 bg-white/5 rounded-lg p-1">
+          {devices.map((device) => (
+            <button
+              key={device}
+              onClick={() => setActiveDeviceTab(device)}
+              className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeDeviceTab === device
+                  ? "bg-emerald-500 text-black"
+                  : "text-gray-300 hover:text-white hover:bg-white/10"
+              }`}
+            >
+              {device}
+            </button>
+          ))}
+        </div>
+
+        {/* Device-specific content */}
+        <Card className="bg-white/5 backdrop-blur-xl border-white/10">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              {activeDeviceTab === "Windows" && "🖥️"}
+              {activeDeviceTab === "MacOS" && "🍎"}
+              {activeDeviceTab === "Android" && "🤖"}
+              {activeDeviceTab === "iOS" && "📱"}
+              {activeDeviceTab} Targeting Configuration
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-white/10">
+                    <TableHead className="text-gray-300 w-48">Country</TableHead>
+                    <TableHead className="text-gray-300 w-64">Task</TableHead>
+                    <TableHead className="text-gray-300 w-96">Ad URL</TableHead>
+                    <TableHead className="text-gray-300 w-32">CPM Rate</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {targetingCountries.map((country) => (
+                    <TableRow key={country.code} className="border-white/10 hover:bg-white/5">
+                      <TableCell>
+                        <div className="flex items-center space-x-3">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-white font-medium">{country.country}</span>
+                            <span className="text-xs text-gray-400">({country.code})</span>
+                          </div>
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            country.tier === "Tier 1" ? "bg-emerald-500/20 text-emerald-400" :
+                            country.tier === "Tier 2" ? "bg-blue-500/20 text-blue-400" :
+                            "bg-orange-500/20 text-orange-400"
+                          }`}>
+                            {country.tier}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <select 
+                          className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-white text-sm"
+                          value={getDeviceTargetingValue(activeDeviceTab, country.code, "taskId")}
+                          onChange={(e) => updateDeviceTargeting(activeDeviceTab, country.code, "taskId", e.target.value)}
+                        >
+                          <option value="">Select Task</option>
+                          {tasks.map((task) => (
+                            <option key={task.id} value={task.id} className="bg-gray-800">
+                              {task.title}
+                            </option>
+                          ))}
+                        </select>
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          className="bg-white/5 border-white/10 text-white text-sm"
+                          placeholder="https://example.com/ad"
+                          value={getDeviceTargetingValue(activeDeviceTab, country.code, "adUrl")}
+                          onChange={(e) => updateDeviceTargeting(activeDeviceTab, country.code, "adUrl", e.target.value)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-1">
+                          <span className="text-gray-400 text-sm">$</span>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            className="bg-white/5 border-white/10 text-white text-sm w-20"
+                            placeholder="2.50"
+                            value={getDeviceTargetingValue(activeDeviceTab, country.code, "cpm")}
+                            onChange={(e) => updateDeviceTargeting(activeDeviceTab, country.code, "cpm", e.target.value)}
+                          />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Summary Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="bg-emerald-500/10 border-emerald-500/20">
+            <CardContent className="p-4">
+              <div className="text-emerald-400 font-bold text-lg">
+                {targetingCountries.filter(c => getDeviceTargetingValue(activeDeviceTab, c.code, "taskId")).length}
+              </div>
+              <div className="text-gray-300 text-sm">Configured Countries</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-blue-500/10 border-blue-500/20">
+            <CardContent className="p-4">
+              <div className="text-blue-400 font-bold text-lg">
+                {targetingCountries.filter(c => getDeviceTargetingValue(activeDeviceTab, c.code, "adUrl")).length}
+              </div>
+              <div className="text-gray-300 text-sm">With Ad URLs</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-orange-500/10 border-orange-500/20">
+            <CardContent className="p-4">
+              <div className="text-orange-400 font-bold text-lg">
+                {targetingCountries.filter(c => getDeviceTargetingValue(activeDeviceTab, c.code, "cpm")).length}
+              </div>
+              <div className="text-gray-300 text-sm">Custom CPM Rates</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-purple-500/10 border-purple-500/20">
+            <CardContent className="p-4">
+              <div className="text-purple-400 font-bold text-lg">
+                ${targetingCountries.reduce((sum, c) => {
+                  const cpm = parseFloat(getDeviceTargetingValue(activeDeviceTab, c.code, "cpm")) || 0;
+                  return sum + cpm;
+                }, 0).toFixed(2)}
+              </div>
+              <div className="text-gray-300 text-sm">Total CPM Value</div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  };
+
   const renderCpmRates = () => (
     <div className="space-y-6">
       {/* Header */}
@@ -1712,11 +1931,12 @@ export default function Admin() {
         {/* Content */}
         <div className="p-6">
           {activeTab === "dashboard" && renderDashboard()}
-          {activeTab === "users" && renderUsers()}
-          {activeTab === "analytics" && renderAnalytics()}
-          {activeTab === "tasks" && renderTasks()}
-          {activeTab === "cpm" && renderCpmRates()}
-          {activeTab === "payments" && renderPayments()}
+                  {activeTab === "users" && renderUsers()}
+        {activeTab === "analytics" && renderAnalytics()}
+        {activeTab === "tasks" && renderTasks()}
+        {activeTab === "cpm" && renderCpmRates()}
+        {activeTab === "device-targeting" && renderDeviceTargeting()}
+        {activeTab === "payments" && renderPayments()}
         </div>
       </div>
 
