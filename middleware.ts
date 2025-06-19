@@ -13,6 +13,7 @@ const isPublicRoute = createRouteMatcher([
   '/api/users(.*)', // Users API is public
   '/api/withdrawals(.*)', // Withdrawals API is public
   '/api/geolocation(.*)', // Geolocation API is public
+  '/api/device-targeting(.*)', // Device targeting API for admin
 ]);
 
 export const middleware = clerkMiddleware(async (auth, req) => {

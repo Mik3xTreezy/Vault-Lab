@@ -46,6 +46,7 @@ declare interface Task {
   loading: boolean
   adUrl?: string
   completionTimeSeconds?: number
+  deviceSpecificCpm?: number
   action: () => void
 }
 
@@ -101,7 +102,23 @@ export default function LinkLocker({ title = "Premium Content Download", destina
         console.log("User device detected:", userDevice);
         console.log("User agent:", navigator.userAgent);
 
-        // Filter out tasks based on browser exclusions and device targeting
+        // Get user's location for device targeting
+        const location = await getUserLocation();
+        console.log("User location detected:", location);
+
+        // Get device-specific targeting data
+        let deviceTargetingData: any = {};
+        try {
+          const deviceRes = await fetch("/api/device-targeting");
+          if (deviceRes.ok) {
+            deviceTargetingData = await deviceRes.json();
+            console.log("Device targeting data:", deviceTargetingData);
+          }
+        } catch (error) {
+          console.error("Error fetching device targeting:", error);
+        }
+
+        // Filter out tasks based on browser exclusions, device targeting, and device-specific overrides
         const filteredTasks = data.filter((task: any) => {
           console.log(`\n--- Checking task: "${task.title}" ---`);
           console.log(`Excluded browsers: [${(task.excluded_browsers || []).join(', ')}]`);
@@ -131,23 +148,52 @@ export default function LinkLocker({ title = "Premium Content Download", destina
           } else {
             console.log(`✅ Device check skipped: No device targeting set`);
           }
+
+          // Check device-specific targeting overrides
+          const deviceTargetKey = `${userDevice}_${location.country}`;
+          const deviceSpecificConfig = deviceTargetingData[deviceTargetKey];
+          
+          if (deviceSpecificConfig && deviceSpecificConfig.taskId) {
+            // If there's a device-specific task configured for this device/country combo
+            const isTaskMatching = deviceSpecificConfig.taskId === task.id.toString();
+            if (!isTaskMatching) {
+              console.log(`❌ EXCLUDED: Device-specific targeting shows different task for ${userDevice} in ${location.country}`);
+              return false;
+            } else {
+              console.log(`✅ Device-specific targeting: Task matches for ${userDevice} in ${location.country}`);
+            }
+          }
           
           console.log(`✅ INCLUDED: Task passed all filters`);
           return true;
         });
 
-        const formattedTasks: Task[] = filteredTasks.map((task: any) => ({
-          id: task.id.toString(),
-          title: task.title,
-          description: task.description,
-          loadingText: "Completing task...",
-          icon: <Gift className="w-5 h-5" />,
-          completed: false,
-          loading: false,
-          adUrl: task.ad_url,
-          completionTimeSeconds: task.completion_time_seconds || 60, // Default to 60 seconds
-          action: () => handleTaskClick(task.id.toString()),
-        }))
+        const formattedTasks: Task[] = filteredTasks.map((task: any) => {
+          // Check for device-specific overrides
+          const deviceTargetKey = `${userDevice}_${location.country}`;
+          const deviceSpecificConfig = deviceTargetingData[deviceTargetKey];
+          
+          // Use device-specific ad URL if available, otherwise use task default
+          const effectiveAdUrl = (deviceSpecificConfig && deviceSpecificConfig.adUrl) 
+            ? deviceSpecificConfig.adUrl 
+            : task.ad_url;
+          
+          console.log(`[TASK MAPPING] Task "${task.title}" - Using ad URL: ${effectiveAdUrl} ${deviceSpecificConfig?.adUrl ? '(device-specific)' : '(default)'}`);
+          
+          return {
+            id: task.id.toString(),
+            title: task.title,
+            description: task.description,
+            loadingText: "Completing task...",
+            icon: <Gift className="w-5 h-5" />,
+            completed: false,
+            loading: false,
+            adUrl: effectiveAdUrl,
+            completionTimeSeconds: task.completion_time_seconds || 60,
+            deviceSpecificCpm: deviceSpecificConfig?.cpm, // Store device-specific CPM for revenue calculation
+            action: () => handleTaskClick(task.id.toString()),
+          };
+        })
 
         console.log(`Filtered tasks: ${filteredTasks.length}/${data.length} tasks shown for ${userBrowser} on ${userDevice}`);
         setTasks(formattedTasks)

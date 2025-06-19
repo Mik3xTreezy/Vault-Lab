@@ -30,6 +30,7 @@ import {
   AlertCircle,
   CheckCircle,
   Globe,
+  Loader2,
 } from "lucide-react"
 import {
   ResponsiveContainer,
@@ -93,6 +94,8 @@ export default function Admin() {
   const [activeDeviceTab, setActiveDeviceTab] = useState("Windows");
   const [deviceTargeting, setDeviceTargeting] = useState<any>({});
   const [loadingDeviceTargeting, setLoadingDeviceTargeting] = useState(false);
+  const [savingDeviceTargeting, setSavingDeviceTargeting] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !user) return;
@@ -152,6 +155,28 @@ export default function Admin() {
       setLoadingTasks(false);
     }
     initFetchTasks();
+  }, [isLoaded, isSignedIn, user]);
+
+  // Load device targeting data
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn || !user) return;
+
+    async function fetchDeviceTargeting() {
+      setLoadingDeviceTargeting(true);
+      try {
+        const res = await fetch("/api/device-targeting");
+        if (res.ok) {
+          const data = await res.json();
+          setDeviceTargeting(data || {});
+        }
+      } catch (error) {
+        console.error("Error fetching device targeting:", error);
+      } finally {
+        setLoadingDeviceTargeting(false);
+      }
+    }
+    
+    fetchDeviceTargeting();
   }, [isLoaded, isSignedIn, user]);
 
   // Early return for loading state
@@ -428,13 +453,14 @@ export default function Admin() {
     try {
       const key = `${device}_${country}`;
       const currentData = deviceTargeting[key] || {};
-      const updatedData = { ...currentData, [field]: value };
+      const updatedData = { ...currentData, device, country, [field]: value };
       
       setDeviceTargeting((prev: any) => ({
         ...prev,
         [key]: updatedData
       }));
       
+      setHasUnsavedChanges(true);
       console.log(`[DEVICE TARGETING] Updated ${device} ${country} ${field}:`, value);
     } catch (error) {
       console.error("Error updating device targeting:", error);
@@ -444,6 +470,29 @@ export default function Admin() {
   const getDeviceTargetingValue = (device: string, country: string, field: string) => {
     const key = `${device}_${country}`;
     return deviceTargeting[key]?.[field] || "";
+  };
+
+  const saveDeviceTargeting = async () => {
+    setSavingDeviceTargeting(true);
+    try {
+      const res = await fetch("/api/device-targeting", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(deviceTargeting)
+      });
+
+      if (!res.ok) throw new Error("Failed to save device targeting");
+      
+      const result = await res.json();
+      setHasUnsavedChanges(false);
+      alert("Device targeting configurations saved successfully!");
+      console.log("[DEVICE TARGETING] Saved successfully:", result);
+    } catch (error) {
+      console.error("Error saving device targeting:", error);
+      alert("Failed to save device targeting. Please try again.");
+    } finally {
+      setSavingDeviceTargeting(false);
+    }
   };
 
   // Dashboard stats using real data
@@ -1427,16 +1476,39 @@ export default function Admin() {
             <h2 className="text-xl font-semibold text-white">Device-Specific Targeting</h2>
             <p className="text-gray-400 text-sm">Manage tasks, ad URLs, and CPM rates by device and country</p>
           </div>
-          <Button 
-            variant="outline" 
-            className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
-            onClick={() => {
-              console.log('Device targeting data:', deviceTargeting);
-              alert('Device targeting data logged to console');
-            }}
-          >
-            📊 Export Data
-          </Button>
+          <div className="flex items-center gap-3">
+            {hasUnsavedChanges && (
+              <span className="text-yellow-400 text-sm flex items-center gap-1">
+                ⚠️ Unsaved changes
+              </span>
+            )}
+            <Button 
+              variant="outline" 
+              className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+              onClick={() => {
+                console.log('Device targeting data:', deviceTargeting);
+                alert('Device targeting data logged to console');
+              }}
+            >
+              📊 Export Data
+            </Button>
+            <Button 
+              className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black"
+              onClick={saveDeviceTargeting}
+              disabled={savingDeviceTargeting || !hasUnsavedChanges}
+            >
+              {savingDeviceTargeting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  💾 Save Changes
+                </>
+              )}
+            </Button>
+          </div>
         </div>
 
         {/* Device Tabs */}
