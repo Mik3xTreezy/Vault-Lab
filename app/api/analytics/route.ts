@@ -8,13 +8,13 @@ const supabase = createClient(
 
 export async function POST(req: NextRequest) {
   try {
-    const { locker_id, event_type, user_id, task_index, duration, extra } = await req.json();
+    const { locker_id, event_type, user_id, task_id, duration, extra } = await req.json();
     
     console.log('[ANALYTICS API] Received event:', {
       locker_id,
       event_type,
       user_id: user_id || 'anonymous',
-      task_index,
+      task_id,
       duration,
       extra
     });
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
         referrer,
         duration,
         extra,
-        task_index,
+        task_index: null, // Keep this null since we're using task_id now
       })
       .select();
 
@@ -49,15 +49,15 @@ export async function POST(req: NextRequest) {
     console.log('[ANALYTICS API] Analytics event inserted successfully');
 
     // If this is a task completion, handle revenue calculation
-    if (event_type === "task_complete" && task_index !== null && extra?.country && extra?.tier) {
+    if (event_type === "task_complete" && task_id && extra?.country && extra?.tier) {
       console.log('[ANALYTICS API] Processing task completion for revenue...');
       
       try {
-        // Get the task details to find CPM rate
+        // Get the task details to find CPM rate using the UUID
         const { data: tasks, error: tasksError } = await supabase
           .from("tasks")
           .select("id, cpm_tier1, cpm_tier2, cpm_tier3")
-          .eq("id", task_index);
+          .eq("id", task_id);
 
         if (tasksError || !tasks || tasks.length === 0) {
           console.error('[ANALYTICS API] Error fetching task:', tasksError);
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
             .insert({
               user_id,
               locker_id,
-              task_id: task_index.toString(),
+              task_id: task_id, // Use the UUID directly
               amount: revenue,
               country: extra.country,
               tier: extra.tier,

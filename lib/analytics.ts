@@ -2,14 +2,14 @@ export async function trackLockerEvent({
   locker_id,
   event_type,
   user_id,
-  task_index,
+  task_id,
   duration,
   extra,
 }: {
   locker_id: string;
   event_type: string;
   user_id?: string | null;
-  task_index?: number | null;
+  task_id?: string | null;
   duration?: number | null;
   extra?: any;
 }) {
@@ -21,7 +21,7 @@ export async function trackLockerEvent({
         locker_id,
         event_type,
         user_id,
-        task_index,
+        task_id,
         duration,
         extra,
       }),

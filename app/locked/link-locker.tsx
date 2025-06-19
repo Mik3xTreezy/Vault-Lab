@@ -122,7 +122,7 @@ export default function LinkLocker({ title = "Premium Content Download", destina
         console.log('[DEBUG] Tracking task completion:', {
           locker_id: lockerId,
           event_type: "task_complete",
-          task_index: Number(taskId),
+          task_id: taskId,
           extra: { country: location.country, tier: location.tier },
           user_id: user.id,
         });
@@ -130,7 +130,7 @@ export default function LinkLocker({ title = "Premium Content Download", destina
         trackLockerEvent({
           locker_id: lockerId,
           event_type: "task_complete",
-          task_index: Number(taskId),
+          task_id: taskId,
           extra: { country: location.country, tier: location.tier },
           user_id: user.id,
         });
@@ -145,7 +145,7 @@ export default function LinkLocker({ title = "Premium Content Download", destina
         trackLockerEvent({
           locker_id: lockerId,
           event_type: "task_complete",
-          task_index: Number(taskId),
+          task_id: taskId,
           extra: { country: location.country, tier: location.tier },
           user_id: null,
         });
