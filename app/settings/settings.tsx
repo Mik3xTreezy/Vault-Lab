@@ -1,12 +1,23 @@
 "use client"
 
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Plus, Shield, Code, Users, HelpCircle, Fingerprint } from "lucide-react"
-import { useAuth } from "@clerk/nextjs"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Plus, Shield, Code, Users, HelpCircle, Fingerprint, X } from "lucide-react"
+import { useAuth, useUser } from "@clerk/nextjs"
+import { useRouter } from "next/navigation"
 
 export default function Settings() {
   const { signOut, isLoaded } = useAuth();
+  const { user } = useUser();
+  const router = useRouter();
+  const [securityModalOpen, setSecurityModalOpen] = useState(false);
+
+  const handleSecurityClick = () => {
+    setSecurityModalOpen(true);
+  };
+
   const settingsItems = [
     {
       title: "Security",
@@ -43,9 +54,12 @@ export default function Settings() {
         <div className="flex items-center justify-between p-6 border-b border-white/10">
           <div>
             <h1 className="text-3xl font-bold text-white mb-1">Settings</h1>
-            <p className="text-gray-400 text-sm">apklox9539@gmail.com</p>
+            <p className="text-gray-400 text-sm">{user?.emailAddresses?.[0]?.emailAddress || 'No email'}</p>
           </div>
-          <Button className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black font-medium">
+          <Button 
+            className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black font-medium"
+            onClick={() => router.push('/create')}
+          >
             <Plus className="w-4 h-4 mr-2" />
             Create link locker
           </Button>
@@ -61,6 +75,7 @@ export default function Settings() {
                 <Card
                   key={index}
                   className="bg-white/5 backdrop-blur-xl border-white/10 hover:bg-white/10 transition-colors cursor-pointer"
+                  onClick={() => item.title === "Security" ? handleSecurityClick() : null}
                 >
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
@@ -148,6 +163,35 @@ export default function Settings() {
           </div>
         </div>
       </div>
+
+      {/* Security Modal */}
+      <Dialog open={securityModalOpen} onOpenChange={setSecurityModalOpen}>
+        <DialogContent className="max-w-4xl h-[80vh] bg-[#18181b] text-white border-white/10 p-0">
+          <DialogHeader className="p-6 pb-0">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-xl font-bold">Account Security</DialogTitle>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSecurityModalOpen(false)}
+                className="h-8 w-8 text-gray-400 hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </DialogHeader>
+          <div className="flex-1 p-6 pt-0">
+            <div className="w-full h-full rounded-lg overflow-hidden border border-white/10">
+              <iframe
+                src="https://accounts.vaultlab.co/user"
+                className="w-full h-full"
+                title="Account Security Settings"
+                style={{ minHeight: '500px' }}
+              />
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
