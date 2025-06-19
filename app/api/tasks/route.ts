@@ -79,9 +79,63 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   if (!(await isAdmin(req))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const { id } = await req.json();
-  const { error } = await supabase.from("tasks").delete().eq("id", id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ success: true });
+  
+  try {
+    console.log(`[DELETE TASK] Starting deletion process for task ID: ${id}`);
+    
+    // Step 1: Delete all related revenue_events for this task
+    const { error: revenueError, count: revenueCount } = await supabase
+      .from("revenue_events")
+      .delete()
+      .eq("task_id", id);
+    
+    if (revenueError) {
+      console.error(`[DELETE TASK] Error deleting revenue events:`, revenueError);
+      return NextResponse.json({ 
+        error: `Failed to delete related revenue events: ${revenueError.message}` 
+      }, { status: 500 });
+    }
+    
+    console.log(`[DELETE TASK] Successfully deleted ${revenueCount || 0} revenue events for task ${id}`);
+    
+    // Step 2: Delete any analytics events that might reference this task
+    const { error: analyticsError, count: analyticsCount } = await supabase
+      .from("analytics")
+      .delete()
+      .eq("task_id", id);
+    
+    if (analyticsError && !analyticsError.message.includes("does not exist")) {
+      console.warn(`[DELETE TASK] Warning deleting analytics:`, analyticsError);
+      // Don't fail here, just warn as analytics table might not exist or have task_id
+    } else {
+      console.log(`[DELETE TASK] Successfully deleted ${analyticsCount || 0} analytics events for task ${id}`);
+    }
+    
+    // Step 3: Now delete the task itself
+    const { error: taskError } = await supabase
+      .from("tasks")
+      .delete()
+      .eq("id", id);
+    
+    if (taskError) {
+      console.error(`[DELETE TASK] Error deleting task:`, taskError);
+      return NextResponse.json({ 
+        error: `Failed to delete task: ${taskError.message}` 
+      }, { status: 500 });
+    }
+    
+    console.log(`[DELETE TASK] Successfully deleted task ${id}`);
+    return NextResponse.json({ 
+      success: true, 
+      message: `Task deleted successfully (cleaned up ${revenueCount || 0} revenue events)` 
+    });
+    
+  } catch (error: any) {
+    console.error(`[DELETE TASK] Unexpected error:`, error);
+    return NextResponse.json({ 
+      error: `Unexpected error during deletion: ${error.message}` 
+    }, { status: 500 });
+  }
 }
 
 export async function PATCH(req: NextRequest) {

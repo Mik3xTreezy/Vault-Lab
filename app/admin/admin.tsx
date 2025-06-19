@@ -272,7 +272,7 @@ export default function Admin() {
       const result = await res.json();
       console.log('[DELETE TASK] Success:', result);
       await fetchTasks();
-      alert('Task deleted successfully!');
+      alert(result.message || 'Task deleted successfully!');
     } catch (error) {
       console.error("Error deleting task:", error);
       alert(`Failed to delete task: ${error instanceof Error ? error.message : 'Unknown error'}`);
