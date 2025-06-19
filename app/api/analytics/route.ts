@@ -94,143 +94,152 @@ export async function POST(req: NextRequest) {
           hasUser: !!user_id
         });
 
-        // Only create revenue events and update balances for authenticated users
-        if (user_id) {
-          // Insert revenue event
-          const { data: revenueData, error: revenueError } = await supabase
-            .from("revenue_events")
-            .insert({
-              user_id,
-              locker_id,
-              task_id: task_id, // Use the UUID directly
-              amount: revenue,
-              country: extra.country,
-              tier: extra.tier,
-              timestamp: new Date().toISOString(),
-            })
-            .select();
+        // Get the publisher (locker owner) to credit revenue to
+        const { data: lockerData, error: lockerError } = await supabase
+          .from('lockers')
+          .select('user_id')
+          .eq('id', locker_id)
+          .single();
+        
+        if (lockerError) {
+          console.error('[ANALYTICS API] Error fetching locker owner:', lockerError);
+          return NextResponse.json({ 
+            success: true, 
+            warning: "Could not determine locker owner for revenue" 
+          });
+        }
+        
+        const publisherId = lockerData.user_id;
+        console.log('[ANALYTICS API] Revenue will be credited to publisher:', publisherId);
+        
+        // Create revenue event for the publisher (locker owner), not the visitor
+        const { data: revenueData, error: revenueError } = await supabase
+          .from("revenue_events")
+          .insert({
+            user_id: publisherId, // Credit revenue to publisher, not visitor
+            locker_id,
+            task_id: task_id, // Use the UUID directly
+            amount: revenue,
+            country: extra.country,
+            tier: extra.tier,
+            timestamp: new Date().toISOString(),
+          })
+          .select();
 
-          if (revenueError) {
-            console.error('[ANALYTICS API] Error inserting revenue event:', revenueError);
+        if (revenueError) {
+          console.error('[ANALYTICS API] Error inserting revenue event:', revenueError);
+          
+          // If it's a foreign key constraint error, try to create the publisher user first
+          if (revenueError.message.includes('foreign key constraint') || revenueError.message.includes('user_id_fkey')) {
+            console.log('[ANALYTICS API] Foreign key error detected, creating publisher user first...');
             
-            // If it's a foreign key constraint error, try to create the user first
-            if (revenueError.message.includes('foreign key constraint') || revenueError.message.includes('user_id_fkey')) {
-              console.log('[ANALYTICS API] Foreign key error detected, creating user first...');
-              
-              // Create user if doesn't exist with minimal required fields
-              const { error: createUserError } = await supabase
-                .from("users")
-                .insert({
-                  id: user_id,
-                  email: `${user_id}@temp.local`, // Temporary email to satisfy not-null constraint
-                  balance: revenue,
-                  joined: new Date().toISOString(),
-                  status: 'Active',
-                  role: 'user'
-                })
-                .select();
-              
-              if (createUserError && !createUserError.message.includes('duplicate key')) {
-                console.error('[ANALYTICS API] Error creating user:', createUserError);
-                return NextResponse.json({ error: createUserError.message }, { status: 500 });
-              }
-              
-              // Try inserting revenue event again
-              const { data: retryRevenueData, error: retryRevenueError } = await supabase
-                .from("revenue_events")
-                .insert({
-                  user_id,
-                  locker_id,
-                  task_id: task_id,
-                  amount: revenue,
-                  country: extra.country,
-                  tier: extra.tier,
-                  timestamp: new Date().toISOString(),
-                })
-                .select();
-              
-              if (retryRevenueError) {
-                console.error('[ANALYTICS API] Error inserting revenue event after user creation:', retryRevenueError);
-                return NextResponse.json({ error: retryRevenueError.message }, { status: 500 });
-              }
-              
-              console.log('[ANALYTICS API] Revenue event inserted after user creation:', retryRevenueData);
-              
-              return NextResponse.json({ 
-                success: true, 
-                revenue_calculated: revenue,
-                cpm_rate: cpmRate,
-                tier: extra.tier,
-                user_authenticated: true,
-                user_created: true
-              });
-            } else {
-              return NextResponse.json({ error: revenueError.message }, { status: 500 });
-            }
-          }
-
-          console.log('[ANALYTICS API] Revenue event inserted:', revenueData);
-
-          // Update user balance
-          const { data: currentBalance, error: balanceError } = await supabase
-            .from("users")
-            .select("balance")
-            .eq("id", user_id)
-            .single();
-
-          if (balanceError) {
-            console.log('[ANALYTICS API] User not found in users table, creating...');
-            // Create user if doesn't exist with required fields
+            // Create publisher user if doesn't exist with minimal required fields
             const { error: createUserError } = await supabase
               .from("users")
               .insert({
-                id: user_id,
-                email: `${user_id}@temp.local`, // Temporary email to satisfy not-null constraint
+                id: publisherId,
+                email: `${publisherId}@temp.local`, // Temporary email to satisfy not-null constraint
                 balance: revenue,
                 joined: new Date().toISOString(),
                 status: 'Active',
                 role: 'user'
-              });
+              })
+              .select();
             
             if (createUserError && !createUserError.message.includes('duplicate key')) {
-              console.error('[ANALYTICS API] Error creating user:', createUserError);
-            } else {
-              console.log('[ANALYTICS API] User created with balance:', revenue);
+              console.error('[ANALYTICS API] Error creating publisher user:', createUserError);
+              return NextResponse.json({ error: createUserError.message }, { status: 500 });
             }
+            
+            // Try inserting revenue event again
+            const { data: retryRevenueData, error: retryRevenueError } = await supabase
+              .from("revenue_events")
+              .insert({
+                user_id: publisherId,
+                locker_id,
+                task_id: task_id,
+                amount: revenue,
+                country: extra.country,
+                tier: extra.tier,
+                timestamp: new Date().toISOString(),
+              })
+              .select();
+            
+            if (retryRevenueError) {
+              console.error('[ANALYTICS API] Error inserting revenue event after publisher creation:', retryRevenueError);
+              return NextResponse.json({ error: retryRevenueError.message }, { status: 500 });
+            }
+            
+            console.log('[ANALYTICS API] Revenue event inserted after publisher creation:', retryRevenueData);
+            
+            return NextResponse.json({ 
+              success: true, 
+              revenue_calculated: revenue,
+              cpm_rate: cpmRate,
+              tier: extra.tier,
+              publisher_credited: publisherId,
+              publisher_created: true
+            });
           } else {
-            // Update existing user balance
-            const newBalance = (currentBalance.balance || 0) + revenue;
-            const { error: updateError } = await supabase
-              .from("users")
-              .update({ balance: newBalance })
-              .eq("id", user_id);
-
-            if (updateError) {
-              console.error('[ANALYTICS API] Error updating user balance:', updateError);
-            } else {
-              console.log('[ANALYTICS API] User balance updated:', { 
-                oldBalance: currentBalance.balance, 
-                newBalance 
-              });
-            }
+            return NextResponse.json({ error: revenueError.message }, { status: 500 });
           }
-
-          return NextResponse.json({ 
-            success: true, 
-            revenue_calculated: revenue,
-            cpm_rate: cpmRate,
-            tier: extra.tier,
-            user_authenticated: true
-          });
-        } else {
-          // Anonymous user - just track the completion but no revenue
-          console.log('[ANALYTICS API] Anonymous task completion - no revenue calculated');
-          return NextResponse.json({ 
-            success: true, 
-            message: "Task completion tracked for anonymous user",
-            user_authenticated: false
-          });
         }
+
+        console.log('[ANALYTICS API] Revenue event inserted:', revenueData);
+
+        // Update publisher balance (not visitor balance)
+        const { data: currentBalance, error: balanceError } = await supabase
+          .from("users")
+          .select("balance")
+          .eq("id", publisherId)
+          .single();
+
+        if (balanceError) {
+          console.log('[ANALYTICS API] Publisher not found in users table, creating...');
+          // Create publisher if doesn't exist with required fields
+          const { error: createUserError } = await supabase
+            .from("users")
+            .insert({
+              id: publisherId,
+              email: `${publisherId}@temp.local`, // Temporary email to satisfy not-null constraint
+              balance: revenue,
+              joined: new Date().toISOString(),
+              status: 'Active',
+              role: 'user'
+            });
+          
+          if (createUserError && !createUserError.message.includes('duplicate key')) {
+            console.error('[ANALYTICS API] Error creating publisher:', createUserError);
+          } else {
+            console.log('[ANALYTICS API] Publisher created with balance:', revenue);
+          }
+        } else {
+          // Update existing publisher balance
+          const newBalance = (currentBalance.balance || 0) + revenue;
+          const { error: updateError } = await supabase
+            .from("users")
+            .update({ balance: newBalance })
+            .eq("id", publisherId);
+
+          if (updateError) {
+            console.error('[ANALYTICS API] Error updating publisher balance:', updateError);
+          } else {
+            console.log('[ANALYTICS API] Publisher balance updated:', { 
+              publisherId,
+              oldBalance: currentBalance.balance, 
+              newBalance 
+            });
+          }
+        }
+
+        return NextResponse.json({ 
+          success: true, 
+          revenue_calculated: revenue,
+          cpm_rate: cpmRate,
+          tier: extra.tier,
+          publisher_credited: publisherId,
+          visitor_authenticated: !!user_id
+        });
       } catch (revenueError) {
         console.error('[ANALYTICS API] Error in revenue calculation:', revenueError);
         return NextResponse.json({ 
