@@ -17,6 +17,16 @@ export async function GET(req: NextRequest) {
   // Public: anyone can fetch tasks
   const { data, error } = await supabase.from("tasks").select("*").order("created_at", { ascending: false });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  
+  // Add debug logging for CPM rates
+  console.log("[DEBUG] Tasks with CPM rates:", data?.map(task => ({
+    id: task.id,
+    title: task.title,
+    cpm_tier1: task.cpm_tier1,
+    cpm_tier2: task.cpm_tier2,
+    cpm_tier3: task.cpm_tier3
+  })));
+  
   if (data) return NextResponse.json(data);
   return NextResponse.json([]); // fallback
 }

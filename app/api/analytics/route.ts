@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     // Extract IP, user agent, referrer
-    const ip = req.headers.get("x-forwarded-for") || req.ip || null;
+    const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || null;
     const user_agent = req.headers.get("user-agent") || null;
     const referrer = req.headers.get("referer") || null;
 
@@ -36,9 +36,12 @@ export async function POST(req: NextRequest) {
 
     // CPM Revenue Logic
     if (body.event_type === "task_complete") {
-      const { locker_id, task_index, extra } = body;
+      console.log("[DEBUG] Processing task completion for revenue calculation...");
+      const { locker_id, task_index, extra, user_id } = body;
       const country = extra?.country || "US";
       const tier = extra?.tier || "tier1";
+
+      console.log("[DEBUG] Task completion details:", { locker_id, task_index, country, tier, user_id });
 
       // 1. Get the locker to find the owner
       const { data: locker, error: lockerError } = await supabase
@@ -46,7 +49,13 @@ export async function POST(req: NextRequest) {
         .select("user_id")
         .eq("id", locker_id)
         .single();
-      if (lockerError || !locker) throw new Error("Locker not found");
+      
+      if (lockerError || !locker) {
+        console.error("[ERROR] Locker not found:", lockerError);
+        throw new Error("Locker not found");
+      }
+
+      console.log("[DEBUG] Locker owner:", locker.user_id);
 
       // 2. Get the task to find CPM for the tier
       const { data: task, error: taskError } = await supabase
@@ -54,23 +63,64 @@ export async function POST(req: NextRequest) {
         .select("*")
         .eq("id", task_index)
         .single();
-      if (taskError || !task) throw new Error("Task not found");
+      
+      if (taskError || !task) {
+        console.error("[ERROR] Task not found:", taskError);
+        throw new Error("Task not found");
+      }
+
+      console.log("[DEBUG] Task details:", { id: task.id, cpm_tier1: task.cpm_tier1, cpm_tier2: task.cpm_tier2, cpm_tier3: task.cpm_tier3 });
 
       // 3. Get CPM for the tier
       let cpm = 0;
-      if (tier === "tier1") cpm = parseFloat(task.cpm_tier1);
-      else if (tier === "tier2") cpm = parseFloat(task.cpm_tier2);
-      else cpm = parseFloat(task.cpm_tier3);
+      if (tier === "tier1") cpm = parseFloat(task.cpm_tier1) || 0;
+      else if (tier === "tier2") cpm = parseFloat(task.cpm_tier2) || 0;
+      else cpm = parseFloat(task.cpm_tier3) || 0;
 
-      // 4. Calculate revenue
+      console.log("[DEBUG] CPM for tier", tier, ":", cpm);
+
+      // 4. Calculate revenue (CPM is per 1000 views, so divide by 1000)
       const revenue = cpm / 1000;
+      console.log("[DEBUG] Calculated revenue:", revenue);
 
-      // 5. Update user's balance (atomic increment)
-      const { error: updateError } = await incrementUserBalance(locker.user_id, revenue);
-      if (updateError) throw new Error("Failed to update user balance");
+      // 5. Update user's balance (try direct update if RPC fails)
+      try {
+        const { error: updateError } = await incrementUserBalance(locker.user_id, revenue);
+        if (updateError) {
+          console.warn("[WARN] RPC increment failed, trying direct update:", updateError);
+          // Fallback to direct update - get current balance first, then update
+          const { data: userData, error: getUserError } = await supabase
+            .from("users")
+            .select("balance")
+            .eq("id", locker.user_id)
+            .single();
+          
+          if (getUserError) {
+            console.error("[ERROR] Failed to get user balance:", getUserError);
+            throw new Error("Failed to update user balance");
+          }
+          
+          const currentBalance = parseFloat(userData?.balance || "0") || 0;
+          const newBalance = currentBalance + revenue;
+          
+          const { error: directUpdateError } = await supabase
+            .from("users")
+            .update({ balance: newBalance })
+            .eq("id", locker.user_id);
+          
+          if (directUpdateError) {
+            console.error("[ERROR] Direct balance update failed:", directUpdateError);
+            throw new Error("Failed to update user balance");
+          }
+        }
+        console.log("[DEBUG] User balance updated successfully");
+      } catch (balanceError) {
+        console.error("[ERROR] Balance update error:", balanceError);
+        // Continue with revenue event logging even if balance update fails
+      }
 
       // 6. Log the revenue event
-      await supabase.from("revenue_events").insert([{
+      const revenueEventData = {
         user_id: locker.user_id,
         locker_id,
         task_id: task_index,
@@ -78,7 +128,20 @@ export async function POST(req: NextRequest) {
         country,
         tier,
         timestamp: new Date().toISOString(),
-      }]);
+      };
+      
+      console.log("[DEBUG] Creating revenue event:", revenueEventData);
+      
+      const { error: revenueError } = await supabase
+        .from("revenue_events")
+        .insert([revenueEventData]);
+      
+      if (revenueError) {
+        console.error("[ERROR] Failed to create revenue event:", revenueError);
+        throw new Error("Failed to log revenue event");
+      }
+      
+      console.log("[DEBUG] Revenue event created successfully");
     }
 
     return NextResponse.json({ success: true });
