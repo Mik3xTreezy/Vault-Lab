@@ -152,32 +152,53 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    // ... your existing code ...
-    const { data: analytics, error } = await supabase
+    // Simple test endpoint to check revenue events and tasks
+    const { data: tasks, error: tasksError } = await supabase.from("tasks").select("*");
+    if (tasksError) {
+      return NextResponse.json({ error: tasksError.message }, { status: 500 });
+    }
+
+    const { data: revenueEvents, error: revenueError } = await supabase
+      .from("revenue_events")
+      .select("*")
+      .order("timestamp", { ascending: false })
+      .limit(10);
+    
+    if (revenueError) {
+      return NextResponse.json({ error: revenueError.message }, { status: 500 });
+    }
+
+    const { data: analytics, error: analyticsError } = await supabase
       .from("locker_analytics")
-      .select("*");
-
-    if (error) {
-      console.error("Supabase error:", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      .select("*")
+      .eq("event_type", "task_complete")
+      .order("timestamp", { ascending: false })
+      .limit(10);
+    
+    if (analyticsError) {
+      return NextResponse.json({ error: analyticsError.message }, { status: 500 });
     }
-
-    if (!analytics) {
-      console.error("No analytics data returned");
-      return NextResponse.json({ error: "No analytics data" }, { status: 500 });
-    }
-
-    // ... rest of your aggregation code ...
 
     return NextResponse.json({
-      overview: { /* ... */ },
-      contentPerformance: { /* ... */ },
-      sources: { /* ... */ },
-      devices: { /* ... */ },
-      browsers: { /* ... */ },
+      message: "Revenue system test endpoint",
+      tasks: tasks?.map(t => ({
+        id: t.id,
+        title: t.title,
+        cpm_tier1: t.cpm_tier1,
+        cpm_tier2: t.cpm_tier2,
+        cpm_tier3: t.cpm_tier3,
+        status: t.status
+      })),
+      recentRevenueEvents: revenueEvents,
+      recentTaskCompletions: analytics,
+      summary: {
+        totalTasks: tasks?.length || 0,
+        totalRevenueEvents: revenueEvents?.length || 0,
+        totalTaskCompletions: analytics?.length || 0,
+        totalRevenue: revenueEvents?.reduce((sum, e) => sum + Number(e.amount), 0) || 0
+      }
     });
   } catch (err: any) {
-    console.error("API route error:", err);
-    return NextResponse.json({ error: err.message || String(err) }, { status: 500 });
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

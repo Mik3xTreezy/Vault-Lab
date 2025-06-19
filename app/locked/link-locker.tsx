@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { ChevronRight, Lock, Unlock, ExternalLink, Gift, FileText, Check, Zap, Loader2 } from "lucide-react"
 import { trackLockerEvent } from "@/lib/analytics"
+import { useUser } from "@clerk/nextjs"
 
 declare interface Task {
   id: string
@@ -26,84 +27,58 @@ interface LinkLockerProps {
 }
 
 export default function LinkLocker({ title = "Premium Content Download", destinationUrl = "#", lockerId }: LinkLockerProps) {
+  const { user } = useUser();
   const [tasks, setTasks] = useState<Task[]>([])
-  const [loadingTasks, setLoadingTasks] = useState(true);
+  const [isLoading, setIsLoading] = useState(true)
+  const unlockStartTime = useRef(Date.now())
 
-  const hasTrackedVisit = useRef(false);
-
-  // Device detection
-  function getDeviceType() {
-    const ua = typeof window !== 'undefined' ? window.navigator.userAgent : '';
-    if (/android/i.test(ua)) return 'Android';
-    if (/iPad|iPhone|iPod/.test(ua)) return 'iOS';
-    if (/Macintosh|MacIntel|MacPPC|Mac68K/.test(ua)) return 'Mac';
-    if (/Win32|Win64|Windows|WinCE/.test(ua)) return 'Windows';
-    return 'Other';
-  }
-
-  // Country tier detection
-  function getCountryTier(countryCode: string) {
-    const tier1 = ['US', 'UK', 'CA', 'AU', 'DE', 'NL', 'SE', 'NO'];
-    const tier2 = ['FR', 'IT', 'ES', 'JP', 'KR', 'SG', 'HK'];
-    if (tier1.includes(countryCode)) return 'tier1';
-    if (tier2.includes(countryCode)) return 'tier2';
-    return 'tier3';
-  }
+  // Get user's country and tier (you can implement geolocation or use a service)
+  const getUserLocation = () => {
+    // For now, default to US and tier1. You can implement proper geolocation later
+    return { country: 'US', tier: 'tier1' };
+  };
 
   useEffect(() => {
-    async function fetchAndFilterTasks() {
-      setLoadingTasks(true);
-      // 1. Detect device
-      const device = getDeviceType();
-      // 2. Detect country
-      let countryCode = 'US'; // fallback
+    const fetchTasks = async () => {
       try {
-        const geoRes = await fetch('https://ipapi.co/json/');
-        const geoData = await geoRes.json();
-        if (geoData && geoData.country) countryCode = geoData.country;
-      } catch (e) {
-        // fallback to US
-      }
-      const tier = getCountryTier(countryCode);
-      // 3. Fetch tasks
-      const res = await fetch('/api/tasks');
-      const data = await res.json();
-      console.log('API /api/tasks response:', data);
-      const tasksArray = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
-      // 4. Filter tasks by device and tier
-      const filtered = tasksArray.filter((t: any) => {
-        // Device match
-        if (t.devices && Array.isArray(t.devices) && !t.devices.includes(device)) return false;
-        // Status match
-        if (t.status && t.status !== 'Active') return false;
-        // CPM tier match: allow if CPM for this tier is set and > 0
-        if (tier === 'tier1' && (!t.cpm_tier1 || Number(t.cpm_tier1) <= 0)) return false;
-        if (tier === 'tier2' && (!t.cpm_tier2 || Number(t.cpm_tier2) <= 0)) return false;
-        if (tier === 'tier3' && (!t.cpm_tier3 || Number(t.cpm_tier3) <= 0)) return false;
-        return true;
-      });
-      // 5. Map to Task structure
-      setTasks(
-        filtered.map((t: any, idx: number) => ({
-          id: t.id,
-          title: t.title,
-          description: t.description,
-          loadingText: t.loadingText || "Loading...",
-          icon: idx === 0 ? <FileText className="w-5 h-5" /> : idx === 1 ? <Gift className="w-5 h-5" /> : <ExternalLink className="w-5 h-5" />,
+        const res = await fetch("/api/tasks")
+        const data = await res.json()
+        console.log("Fetched tasks:", data)
+
+        const formattedTasks: Task[] = data.map((task: any) => ({
+          id: task.id.toString(),
+          title: task.title,
+          description: task.description,
+          loadingText: "Completing task...",
+          icon: <Gift className="w-5 h-5" />,
           completed: false,
           loading: false,
-          adUrl: t.ad_url,
-          action: () => handleTaskClick(t.id, countryCode, tier),
+          adUrl: task.ad_url,
+          action: () => handleTaskClick(task.id.toString()),
         }))
-      );
-      setLoadingTasks(false);
+
+        setTasks(formattedTasks)
+      } catch (error) {
+        console.error("Error fetching tasks:", error)
+      } finally {
+        setIsLoading(false)
+      }
     }
-    fetchAndFilterTasks();
-  }, []);
 
-  const unlockStartTime = useRef(Date.now());
+    fetchTasks()
 
-  type HandleTaskClick = (taskId: string, countryCode?: string, tier?: string) => void;
+    // Track initial visit
+    if (user) {
+      trackLockerEvent({
+        locker_id: lockerId,
+        event_type: "visit",
+        user_id: user.id,
+      });
+    }
+  }, [lockerId, user])
+
+  type HandleTaskClick = (taskId: string, countryCode?: string, tier?: string) => void
+
   const handleTaskClick: HandleTaskClick = (taskId, countryCode = 'US', tier = 'tier1') => {
     const task = tasks.find((t) => t.id === taskId);
     console.log('Clicked task:', task);
@@ -121,19 +96,32 @@ export default function LinkLocker({ title = "Premium Content Download", destina
     // Start loading
     setTasks((prevTasks) => prevTasks.map((task) => (task.id === taskId ? { ...task, loading: true } : task)));
 
+    // Get user location for proper revenue calculation
+    const location = getUserLocation();
+
     // Complete after 60 seconds
     setTimeout(() => {
       setTasks((prevTasks) =>
         prevTasks.map((task) => (task.id === taskId ? { ...task, loading: false, completed: true } : task)),
       );
-      // Track task completion
-      trackLockerEvent({
-        locker_id: lockerId,
-        event_type: "task_complete",
-        task_index: Number(taskId),
-        extra: { country: countryCode, tier },
-        user_id: undefined,
-      });
+      // Track task completion with user ID
+      if (user) {
+        console.log('[DEBUG] Tracking task completion:', {
+          locker_id: lockerId,
+          event_type: "task_complete",
+          task_index: Number(taskId),
+          extra: { country: location.country, tier: location.tier },
+          user_id: user.id,
+        });
+        
+        trackLockerEvent({
+          locker_id: lockerId,
+          event_type: "task_complete",
+          task_index: Number(taskId),
+          extra: { country: location.country, tier: location.tier },
+          user_id: user.id,
+        });
+      }
     }, 60000);
   }
 
@@ -141,43 +129,17 @@ export default function LinkLocker({ title = "Premium Content Download", destina
   const completedCount = tasks.filter((task) => task.completed).length
 
   const handleUnlock = () => {
-    if (allTasksCompleted) {
+    if (allTasksCompleted && user) {
       const duration = Date.now() - unlockStartTime.current;
       trackLockerEvent({
         locker_id: lockerId,
         event_type: "unlock",
         duration,
-        user_id: undefined,
+        user_id: user.id,
       });
       window.location.href = destinationUrl
     }
   }
-
-  useEffect(() => {
-    const handleUnload = () => {
-      if (!allTasksCompleted) {
-        trackLockerEvent({
-          locker_id: lockerId,
-          event_type: "dropoff",
-          task_index: Number(completedCount),
-          user_id: undefined,
-        });
-      }
-    };
-    window.addEventListener("beforeunload", handleUnload);
-    return () => window.removeEventListener("beforeunload", handleUnload);
-  }, [allTasksCompleted, completedCount, lockerId]);
-
-  useEffect(() => {
-    if (!hasTrackedVisit.current) {
-      trackLockerEvent({
-        locker_id: lockerId,
-        event_type: "visit",
-        user_id: undefined,
-      });
-      hasTrackedVisit.current = true;
-    }
-  }, [lockerId]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900 text-white flex items-center justify-center p-6 relative overflow-hidden">
@@ -202,7 +164,7 @@ export default function LinkLocker({ title = "Premium Content Download", destina
 
         {/* Tasks Grid */}
         <div className="grid gap-4 mb-8">
-          {loadingTasks ? (
+          {isLoading ? (
             <div className="flex justify-center items-center py-12">
               <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
               <span className="ml-3 text-gray-400">Loading tasks...</span>
@@ -276,7 +238,7 @@ export default function LinkLocker({ title = "Premium Content Download", destina
         </div>
 
         {/* Progress Section & Unlock Button: Only show after tasks are loaded */}
-        {!loadingTasks && (
+        {!isLoading && (
           <>
             <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 mb-6">
               <div className="flex justify-between items-center mb-4">
