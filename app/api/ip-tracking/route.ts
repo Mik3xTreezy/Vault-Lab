@@ -68,29 +68,61 @@ export async function POST(req: NextRequest) {
       const isWithin24Hours = firstCompletion > twentyFourHoursAgo;
       
       if (isWithin24Hours) {
-        // Update completion count but don't count for revenue
-        const { error: updateError } = await supabase
-          .from("ip_task_tracking")
-          .update({
-            last_completion_at: now.toISOString(),
-            completion_count: existingRecord.completion_count + 1
-          })
-          .eq("id", existingRecord.id);
+        // Check if this is the first session (within a few minutes of first interaction)
+        const sessionWindow = 10 * 60 * 1000; // 10 minutes
+        const isWithinSession = (now.getTime() - firstCompletion.getTime()) < sessionWindow;
         
-        if (updateError) {
-          console.error("[IP TRACKING] Error updating record:", updateError);
+        if (isWithinSession) {
+          // Allow all events within the first session (first 10 minutes)
+          console.log(`[IP TRACKING] ✅ ALLOWED: IP ${userIP} within first session with publisher ${publisherId}`);
+          
+          // Update the record to track this event
+          const { error: updateError } = await supabase
+            .from("ip_task_tracking")
+            .update({
+              last_completion_at: now.toISOString(),
+              completion_count: existingRecord.completion_count + 1
+            })
+            .eq("id", existingRecord.id);
+          
+          if (updateError) {
+            console.error("[IP TRACKING] Error updating record:", updateError);
+          }
+          
+          return NextResponse.json({
+            shouldCount: true,
+            reason: "first_session_window",
+            message: `Analytics counting allowed - within first session window`,
+            firstActionAt: existingRecord.first_completion_at,
+            actionCount: existingRecord.completion_count + 1,
+            eventType: eventType || 'task_complete',
+            publisherId: publisherId
+          });
+        } else {
+          // Outside session window, block subsequent interactions
+          const { error: updateError } = await supabase
+            .from("ip_task_tracking")
+            .update({
+              last_completion_at: now.toISOString(),
+              completion_count: existingRecord.completion_count + 1
+            })
+            .eq("id", existingRecord.id);
+          
+          if (updateError) {
+            console.error("[IP TRACKING] Error updating record:", updateError);
+          }
+          
+          console.log(`[IP TRACKING] ❌ BLOCKED: IP ${userIP} already interacted with publisher ${publisherId} within 24h (outside session window)`);
+          return NextResponse.json({
+            shouldCount: false,
+            reason: "duplicate_ip_publisher_24h",
+            message: `This IP has already interacted with this publisher within the last 24 hours`,
+            firstActionAt: existingRecord.first_completion_at,
+            actionCount: existingRecord.completion_count + 1,
+            eventType: eventType || 'task_complete',
+            publisherId: publisherId
+          });
         }
-        
-        console.log(`[IP TRACKING] ❌ BLOCKED: IP ${userIP} already interacted with publisher ${publisherId} within 24h`);
-        return NextResponse.json({
-          shouldCount: false,
-          reason: "duplicate_ip_publisher_24h",
-          message: `This IP has already interacted with this publisher within the last 24 hours`,
-          firstActionAt: existingRecord.first_completion_at,
-          actionCount: existingRecord.completion_count + 1,
-          eventType: eventType || 'task_complete',
-          publisherId: publisherId
-        });
       } else {
         // More than 24 hours ago, reset the tracking
         const { error: resetError } = await supabase
