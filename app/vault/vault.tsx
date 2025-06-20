@@ -46,6 +46,7 @@ export default function Vault() {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [lockers, setLockers] = useState<any[]>([])
+  const [filteredLockers, setFilteredLockers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedLocker, setSelectedLocker] = useState<any>(null)
   const [lockerAnalytics, setLockerAnalytics] = useState<any>(null)
@@ -71,10 +72,25 @@ export default function Vault() {
       const res = await fetch("/api/lockers")
       const data = await res.json()
       setLockers(data)
+      setFilteredLockers(data) // Initialize filtered lockers with all lockers
       setLoading(false)
     }
     fetchLockers()
   }, [])
+
+  // Filter lockers based on search query
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredLockers(lockers)
+    } else {
+      const filtered = lockers.filter(locker => 
+        locker.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        locker.destination_url?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        locker.id?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+      setFilteredLockers(filtered)
+    }
+  }, [searchQuery, lockers])
 
   useEffect(() => {
     if (!loading && lockers.length > 0) {
@@ -169,6 +185,7 @@ export default function Vault() {
         const res = await fetch("/api/lockers")
         const data = await res.json()
         setLockers(data)
+        setFilteredLockers(data) // Update filtered lockers as well
         setEditOpen(false)
         setEditingLocker(null)
       }
@@ -260,7 +277,7 @@ export default function Vault() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <Input
-                    placeholder="Search lockers..."
+                    placeholder="Search by title, URL, or ID..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10 bg-white/5 border-white/10 text-white placeholder-gray-400 focus:border-emerald-500/50"
@@ -293,9 +310,9 @@ export default function Vault() {
                 <TableBody>
                   {loading ? (
                     <TableRow><TableCell colSpan={6}>Loading...</TableCell></TableRow>
-                  ) : lockers.length === 0 ? (
-                    <TableRow><TableCell colSpan={6}>No lockers found.</TableCell></TableRow>
-                  ) : lockers.map((locker, index) => (
+                  ) : filteredLockers.length === 0 ? (
+                    <TableRow><TableCell colSpan={6}>{searchQuery ? 'No lockers match your search.' : 'No lockers found.'}</TableCell></TableRow>
+                  ) : filteredLockers.map((locker, index) => (
                     <TableRow key={index} className="border-white/10 hover:bg-white/5">
                       <TableCell>
                         <div className="flex items-center space-x-3">
