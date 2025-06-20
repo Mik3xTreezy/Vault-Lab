@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
-import { ChevronRight, Lock, Unlock, ExternalLink, Gift, FileText, Check, Zap, Loader2 } from "lucide-react"
+import { ChevronRight, Lock, Unlock, ExternalLink, Gift, FileText, Check, Zap, Loader2, Clock, CheckCircle2 } from "lucide-react"
 import { trackLockerEvent } from "@/lib/analytics"
 import { useUser } from "@clerk/nextjs"
 import { getUserLocationClient } from "@/lib/geolocation"
@@ -44,8 +44,11 @@ declare interface Task {
   icon: React.ReactNode
   completed: boolean
   loading: boolean
+  pending?: boolean
   adUrl?: string
+  ad_url?: string
   completionTimeSeconds?: number
+  completion_time_seconds?: number
   deviceSpecificCpm?: number
   action: () => void
 }
@@ -56,6 +59,8 @@ interface LinkLockerProps {
   lockerId: string
   taskType?: string
 }
+
+const OPERA_GX_TASK_ID = "617c772b-e868-404c-8113-645214ac2476";
 
 export default function LinkLocker({ title = "Premium Content Download", destinationUrl = "#", lockerId, taskType = "adult" }: LinkLockerProps) {
   const { user, isLoaded, isSignedIn } = useUser();
@@ -313,6 +318,28 @@ export default function LinkLocker({ title = "Premium Content Download", destina
     setTasks((prevTasks) => prevTasks.map((task) => (task.id === taskId ? { ...task, loading: true } : task)));
     console.log('[TASK CLICK] Task loading started for:', taskId);
 
+    // Special handling for Opera GX - mark as pending instead of completed
+    if (taskId === OPERA_GX_TASK_ID) {
+      console.log('[TASK CLICK] Opera GX task detected - marking as pending installation');
+      
+      setTimeout(() => {
+        setTasks((prevTasks) =>
+          prevTasks.map((task) => 
+            task.id === taskId 
+              ? { ...task, loading: false, completed: false, pending: true } 
+              : task
+          ),
+        );
+        
+        // Show a message to the user
+        const pendingMessage = "Please complete the Opera GX installation. Your completion will be verified automatically once the browser is installed.";
+        // You could show this in a toast or alert
+        console.log('[TASK CLICK] Opera GX pending message:', pendingMessage);
+      }, 3000); // Show loading for 3 seconds then switch to pending
+      
+      return; // Exit early for Opera GX
+    }
+
     // Get user location for proper revenue calculation
     const currentTask = tasks.find(t => t.id === taskId);
     const completionTime = (currentTask?.completionTimeSeconds || 60) * 1000; // Convert to milliseconds
@@ -415,8 +442,8 @@ export default function LinkLocker({ title = "Premium Content Download", destina
       }, completionTime); // Use dynamic completion time from task settings
   }
 
-  const allTasksCompleted = tasks.length > 0 && tasks.every((task) => task.completed)
-  const completedCount = tasks.filter((task) => task.completed).length
+  const allTasksCompleted = tasks.length > 0 && tasks.every((task) => task.completed && !task.pending)
+  const completedCount = tasks.filter((task) => task.completed && !task.pending).length
 
   const handleUnlock = async () => {
     console.log('[DEBUG] Unlock button clicked:', { 
@@ -585,44 +612,56 @@ export default function LinkLocker({ title = "Premium Content Download", destina
                   transform: task.completed ? "scale(1.02)" : "scale(1)",
                 }}
               >
-                <div className="flex items-center justify-between">
+                <div
+                  className={`absolute inset-0 bg-gradient-to-br ${
+                    task.completed
+                      ? "from-green-100 to-green-200"
+                      : task.pending
+                      ? "from-yellow-100 to-yellow-200"
+                      : "from-gray-100 to-gray-200"
+                  } opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
+                />
+                <div className="relative flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <div
-                      className={`
-                      relative flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-300
-                      ${
+                      className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
                         task.completed
-                          ? "bg-gradient-to-r from-emerald-500 to-green-500 shadow-md"
-                          : task.loading
-                            ? "bg-gradient-to-r from-emerald-500 to-green-500 shadow-md"
-                            : "bg-white/10 group-hover:bg-white/15 group-hover:shadow-sm"
-                      }
-                    `}
+                          ? "bg-green-500 text-white"
+                          : task.pending
+                          ? "bg-yellow-500 text-white"
+                          : "bg-gray-200 text-gray-600 group-hover:bg-gray-300"
+                      }`}
                     >
                       {task.completed ? (
-                        <Check className="w-6 h-6 text-black" />
+                        <Check className="w-6 h-6" />
+                      ) : task.pending ? (
+                        <Clock className="w-6 h-6" />
                       ) : (
                         task.icon
                       )}
                     </div>
-
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold mb-1 text-white">{task.title}</h3>
-                      <p className="text-gray-400 text-sm">{task.loading ? task.loadingText : task.description}</p>
+                    <div>
+                      <h3 className="font-semibold text-gray-800">{task.title}</h3>
+                      <p className="text-sm text-gray-600">{task.description}</p>
                     </div>
                   </div>
-
-                  <div className="ml-4">
-                    {task.completed ? (
-                      <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                        <Check className="w-4 h-4 text-emerald-400" />
+                  <div className="flex items-center">
+                    {task.loading ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="text-sm">Loading...</span>
                       </div>
-                    ) : task.loading ? (
-                      <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                        <Loader2 className="w-4 h-4 text-emerald-400 animate-spin" />
+                    ) : task.pending ? (
+                      <div className="flex items-center gap-2 text-yellow-600">
+                        <span className="text-sm">Pending verification</span>
+                      </div>
+                    ) : task.completed ? (
+                      <div className="flex items-center gap-2 text-green-600">
+                        <span className="text-sm">Completed</span>
+                        <CheckCircle2 className="h-5 w-5" />
                       </div>
                     ) : (
-                      <ChevronRight className="w-6 h-6 text-gray-500 group-hover:text-white group-hover:translate-x-1 transition-all duration-200" />
+                      <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
                     )}
                   </div>
                 </div>
