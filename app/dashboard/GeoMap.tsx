@@ -227,9 +227,10 @@ export default function GeoMap({ countryData: initialCountryData, userId }: GeoM
   });
   
   // Enhanced color scale with green gradient to match dashboard theme
+  // TEST: Use very obvious colors to see if highlighting works at all
   const colorScale = scaleLinear<string>()
     .domain([0, Math.max(1, maxValue)])
-    .range(["#0f172a", "#10b981"]); // slate-900 to emerald-500
+    .range(["#1e293b", "#00ff00"]); // dark to bright green
     
   // Test the color scale
   console.log('[GeoMap] Color scale test:', {
@@ -341,17 +342,25 @@ export default function GeoMap({ countryData: initialCountryData, userId }: GeoM
                       const code = geo.properties.ISO_A2;
                       const views = countryData[code] || 0;
                       const countryName = countryNames[code] || geo.properties.NAME || code;
+                      const fillColor = views > 0 ? colorScale(views) : "#1e293b";
                       
-                      // Debug logging for all countries with views
-                      if (views > 0) {
-                        console.log(`[GeoMap] Country ${code} (${countryName}): ${views} views, color: ${colorScale(views)}`);
+                      // Debug logging for US and IN specifically
+                      if (code === 'US' || code === 'IN') {
+                        console.log(`[GeoMap] RENDERING ${code}:`, {
+                          code,
+                          countryName,
+                          views,
+                          fillColor,
+                          hasViews: views > 0,
+                          countryDataEntry: countryData[code]
+                        });
                       }
                       
                       return (
                         <Geography
                           key={geo.rsmKey}
                           geography={geo}
-                          fill={views > 0 ? colorScale(views) : "#1e293b"}
+                          fill={fillColor}
                           stroke="#334155"
                           strokeWidth={0.5}
                           style={{ 
