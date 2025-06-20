@@ -51,7 +51,10 @@ import {
 const COLORS = ['#10b981', '#3b82f6', '#f59e42', '#6366f1', '#f43f5e', '#a3e635', '#fbbf24', '#818cf8'];
 
 export default function Admin() {
+  console.log('[ADMIN DEBUG] Component rendering started');
+  
   const { user, isLoaded, isSignedIn } = useUser();
+  console.log('[ADMIN DEBUG] Clerk state:', { isLoaded, isSignedIn, userEmail: user?.emailAddresses?.[0]?.emailAddress });
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard")
   const [searchQuery, setSearchQuery] = useState("")
@@ -179,11 +182,11 @@ export default function Admin() {
       await fetchTasks();
     }
     initFetchTasks();
-  }, [isLoaded, isSignedIn, user]);
+  }, [mounted, isLoaded, isSignedIn, user]);
 
   // Load device targeting data
   useEffect(() => {
-    if (!isLoaded || !isSignedIn || !user) return;
+    if (!mounted || !isLoaded || !isSignedIn || !user) return;
 
     async function fetchDeviceTargeting() {
       setLoadingDeviceTargeting(true);
@@ -201,7 +204,7 @@ export default function Admin() {
     }
     
     fetchDeviceTargeting();
-  }, [isLoaded, isSignedIn, user]);
+  }, [mounted, isLoaded, isSignedIn, user]);
 
   // Early return for loading state or hydration
   if (!mounted || !isLoaded) {
@@ -2896,9 +2899,9 @@ Singapore,3.50,SG`;
 
   // Load postback data on component mount
   useEffect(() => {
-    if (!isLoaded || !isSignedIn || !user) return;
+    if (!mounted || !isLoaded || !isSignedIn || !user) return;
     fetchPostbackEvents();
-  }, [isLoaded, isSignedIn, user]);
+  }, [mounted, isLoaded, isSignedIn, user]);
 
   const renderPostbacks = () => {
     return (
