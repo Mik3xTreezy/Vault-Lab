@@ -17,10 +17,21 @@ export async function GET(req: NextRequest) {
   if (!(await isAdmin(req))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   
   try {
-    const { data, error } = await supabase
+    const { searchParams } = new URL(req.url);
+    const taskId = searchParams.get('taskId');
+    
+    let query = supabase
       .from("device_targeting")
       .select("*")
       .order("created_at", { ascending: false });
+    
+    // Filter by task ID if provided
+    if (taskId) {
+      query = query.eq('task_id', taskId);
+      console.log("[DEVICE TARGETING API] Filtering by task ID:", taskId);
+    }
+    
+    const { data, error } = await query;
     
     if (error) {
       console.error("[DEVICE TARGETING API] Error fetching:", error);
@@ -34,13 +45,17 @@ export async function GET(req: NextRequest) {
       formattedData[key] = {
         device: item.device,
         country: item.country,
-        taskId: item.task_id,
+        task_id: item.task_id,
+        taskId: item.task_id, // Keep both for compatibility
         adUrl: item.ad_url,
-        cpm: item.cpm
+        ad_url: item.ad_url, // Keep both for compatibility
+        cpm: item.cpm,
+        created_at: item.created_at,
+        updated_at: item.updated_at
       };
     });
     
-    console.log("[DEVICE TARGETING API] Fetched data:", formattedData);
+    console.log("[DEVICE TARGETING API] Fetched data:", Object.keys(formattedData).length, "records");
     return NextResponse.json(formattedData);
     
   } catch (error: any) {

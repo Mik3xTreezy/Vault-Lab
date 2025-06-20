@@ -109,6 +109,11 @@ export default function Admin() {
   const [uploadingCsv, setUploadingCsv] = useState(false);
   const [csvError, setCsvError] = useState("");
 
+  // CPM Viewer state
+  const [selectedTaskForViewer, setSelectedTaskForViewer] = useState<string | null>(null);
+  const [cpmViewerData, setCpmViewerData] = useState<any[]>([]);
+  const [loadingCpmViewer, setLoadingCpmViewer] = useState(false);
+
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !user) return;
     
@@ -665,6 +670,65 @@ export default function Admin() {
     // setSelectedTaskForCsv(null);
   };
 
+  // CPM Viewer functions
+  const fetchCpmDataForTask = async (taskId: string) => {
+    if (!taskId) return;
+    
+    setLoadingCpmViewer(true);
+    try {
+      console.log('[CPM VIEWER] Fetching CPM data for task:', taskId);
+      
+      const response = await fetch(`/api/device-targeting?taskId=${taskId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch CPM data');
+      }
+      
+      const data = await response.json();
+      console.log('[CPM VIEWER] Raw device targeting data:', data);
+      
+      // Transform the data to group by country
+      const countryData: { [key: string]: any } = {};
+      
+      Object.entries(data || {}).forEach(([key, value]: [string, any]) => {
+        if (value && value.country && value.cpm && value.task_id === taskId) {
+          const country = value.country;
+          if (!countryData[country]) {
+            countryData[country] = {
+              country: country,
+              devices: {},
+              averageCpm: 0,
+              totalDevices: 0
+            };
+          }
+          
+          countryData[country].devices[value.device] = {
+            cpm: value.cpm,
+            adUrl: value.ad_url || '',
+            updatedAt: value.updated_at
+          };
+          countryData[country].totalDevices++;
+        }
+      });
+      
+      // Calculate average CPM for each country
+      Object.values(countryData).forEach((country: any) => {
+        const cpms = Object.values(country.devices).map((device: any) => parseFloat(device.cpm) || 0);
+        country.averageCpm = cpms.length > 0 ? cpms.reduce((sum, cpm) => sum + cpm, 0) / cpms.length : 0;
+      });
+      
+      const sortedData = Object.values(countryData).sort((a: any, b: any) => b.averageCpm - a.averageCpm);
+      
+      console.log('[CPM VIEWER] Processed data:', sortedData);
+      setCpmViewerData(sortedData);
+      
+    } catch (error) {
+      console.error('[CPM VIEWER] Error fetching CPM data:', error);
+      setCpmViewerData([]);
+    } finally {
+      setLoadingCpmViewer(false);
+    }
+  };
+
   // Dashboard stats using real data
   const dashboardStats = [
     {
@@ -762,6 +826,7 @@ export default function Admin() {
     { id: "tasks", label: "Tasks", icon: <Settings className="w-4 h-4" /> },
     { id: "cpm", label: "CPM Rates", icon: <DollarSign className="w-4 h-4" /> },
     { id: "device-targeting", label: "Device Targeting", icon: <Globe className="w-4 h-4" /> },
+    { id: "cpm-viewer", label: "CPM Viewer", icon: <Eye className="w-4 h-4" /> },
     { id: "payments", label: "Payments", icon: <CreditCard className="w-4 h-4" /> },
   ]
 
@@ -2273,6 +2338,302 @@ Singapore,3.50,SG`;
     </div>
   )
 
+  const renderCpmViewer = () => {
+    const countryCodeToName: { [key: string]: string } = {
+      'US': 'United States',
+      'GB': 'United Kingdom', 
+      'DE': 'Germany',
+      'FR': 'France',
+      'IT': 'Italy',
+      'ES': 'Spain',
+      'NL': 'Netherlands',
+      'SE': 'Sweden',
+      'NO': 'Norway',
+      'DK': 'Denmark',
+      'FI': 'Finland',
+      'CA': 'Canada',
+      'AU': 'Australia',
+      'JP': 'Japan',
+      'KR': 'South Korea',
+      'SG': 'Singapore',
+      'HK': 'Hong Kong',
+      'CH': 'Switzerland',
+      'AT': 'Austria',
+      'BE': 'Belgium',
+      'IE': 'Ireland',
+      'NZ': 'New Zealand',
+      'IL': 'Israel',
+      'AE': 'UAE',
+      'BR': 'Brazil',
+      'MX': 'Mexico',
+      'IN': 'India',
+      'CN': 'China',
+      'RU': 'Russia',
+      'TR': 'Turkey',
+      'PL': 'Poland',
+      'CZ': 'Czech Republic',
+      'HU': 'Hungary',
+      'PT': 'Portugal',
+      'GR': 'Greece',
+      'ZA': 'South Africa',
+      'AR': 'Argentina',
+      'CL': 'Chile',
+      'CO': 'Colombia',
+      'PE': 'Peru',
+      'TH': 'Thailand',
+      'MY': 'Malaysia',
+      'ID': 'Indonesia',
+      'PH': 'Philippines',
+      'VN': 'Vietnam',
+      'TW': 'Taiwan'
+    };
+
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-white">CPM Rates Viewer</h2>
+          <div className="text-sm text-gray-400">
+            View CPM rates set via CSV upload for each country
+          </div>
+        </div>
+
+        {/* Task Selection */}
+        <Card className="bg-white/5 backdrop-blur-xl border-white/10">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Eye className="w-5 h-5 text-blue-400" />
+              Select Task to View CPM Rates
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <Label className="text-gray-300">Choose Task</Label>
+                <select 
+                  className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-white text-sm focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 mt-1"
+                  value={selectedTaskForViewer || ""}
+                  onChange={(e) => {
+                    const taskId = e.target.value;
+                    setSelectedTaskForViewer(taskId || null);
+                    if (taskId) {
+                      fetchCpmDataForTask(taskId);
+                    } else {
+                      setCpmViewerData([]);
+                    }
+                  }}
+                >
+                  <option value="" className="bg-gray-800 text-gray-300">Select a task to view CPM rates...</option>
+                  {tasks.filter(task => task && task.id && task.title).map((task) => (
+                    <option key={task.id} value={task.id} className="bg-gray-800 text-white">
+                      {task.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              {selectedTaskForViewer && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fetchCpmDataForTask(selectedTaskForViewer)}
+                  disabled={loadingCpmViewer}
+                  className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10 mt-6"
+                >
+                  {loadingCpmViewer ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Refresh
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+            
+            {selectedTaskForViewer && (
+              <div className="text-sm text-emerald-400">
+                ✓ Viewing CPM rates for: {tasks.find(t => t.id === selectedTaskForViewer)?.title}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* CPM Data Display */}
+        {selectedTaskForViewer && (
+          <Card className="bg-white/5 backdrop-blur-xl border-white/10">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="w-5 h-5 text-emerald-400" />
+                  CPM Rates by Country
+                </div>
+                <div className="text-sm text-gray-400">
+                  {cpmViewerData.length} countries configured
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {loadingCpmViewer ? (
+                <div className="p-8 text-center">
+                  <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-400" />
+                  <p className="text-gray-400">Loading CPM data...</p>
+                </div>
+              ) : cpmViewerData.length === 0 ? (
+                <div className="p-8 text-center">
+                  <Globe className="w-12 h-12 mx-auto mb-4 text-gray-500" />
+                  <p className="text-gray-400 text-lg mb-2">No CPM rates found</p>
+                  <p className="text-gray-500 text-sm">
+                    This task doesn't have any CPM rates set via CSV upload yet.
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-white/10">
+                        <TableHead className="text-gray-300">Country</TableHead>
+                        <TableHead className="text-gray-300">Average CPM</TableHead>
+                        <TableHead className="text-gray-300">Windows</TableHead>
+                        <TableHead className="text-gray-300">MacOS</TableHead>
+                        <TableHead className="text-gray-300">Android</TableHead>
+                        <TableHead className="text-gray-300">iOS</TableHead>
+                                                 <TableHead className="text-gray-300">Devices Configured</TableHead>
+                         <TableHead className="text-gray-300">Last Updated</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {cpmViewerData.map((countryData: any) => (
+                        <TableRow key={countryData.country} className="border-white/10 hover:bg-white/5">
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <span className="text-white font-medium">
+                                {countryCodeToName[countryData.country] || countryData.country}
+                              </span>
+                              <span className="text-xs text-gray-400 bg-gray-700 px-2 py-1 rounded">
+                                {countryData.country}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-emerald-400 font-bold">
+                              ${countryData.averageCpm.toFixed(2)}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            {countryData.devices.Windows ? (
+                              <span className="text-blue-400 font-mono">
+                                ${parseFloat(countryData.devices.Windows.cpm).toFixed(2)}
+                              </span>
+                            ) : (
+                              <span className="text-gray-500">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {countryData.devices.MacOS ? (
+                              <span className="text-blue-400 font-mono">
+                                ${parseFloat(countryData.devices.MacOS.cpm).toFixed(2)}
+                              </span>
+                            ) : (
+                              <span className="text-gray-500">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {countryData.devices.Android ? (
+                              <span className="text-blue-400 font-mono">
+                                ${parseFloat(countryData.devices.Android.cpm).toFixed(2)}
+                              </span>
+                            ) : (
+                              <span className="text-gray-500">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {countryData.devices.iOS ? (
+                              <span className="text-blue-400 font-mono">
+                                ${parseFloat(countryData.devices.iOS.cpm).toFixed(2)}
+                              </span>
+                            ) : (
+                              <span className="text-gray-500">-</span>
+                            )}
+                          </TableCell>
+                                                     <TableCell>
+                             <div className="flex items-center space-x-1">
+                               <span className="text-gray-300">{countryData.totalDevices}/4</span>
+                               <div className="w-16 bg-gray-700 rounded-full h-2">
+                                 <div 
+                                   className="bg-emerald-500 h-2 rounded-full transition-all duration-300"
+                                   style={{ width: `${(countryData.totalDevices / 4) * 100}%` }}
+                                 />
+                               </div>
+                             </div>
+                           </TableCell>
+                           <TableCell>
+                             <span className="text-gray-400 text-xs">
+                               {(() => {
+                                 const latestUpdate = Object.values(countryData.devices)
+                                   .map((device: any) => device.updatedAt)
+                                   .filter(Boolean)
+                                   .sort()
+                                   .pop();
+                                 return latestUpdate ? new Date(latestUpdate).toLocaleDateString() : '-';
+                               })()}
+                             </span>
+                           </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Summary Stats */}
+        {cpmViewerData.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card className="bg-emerald-500/10 border-emerald-500/20">
+              <CardContent className="p-4">
+                <div className="text-emerald-400 font-bold text-lg">
+                  {cpmViewerData.length}
+                </div>
+                <div className="text-gray-300 text-sm">Countries Configured</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-blue-500/10 border-blue-500/20">
+              <CardContent className="p-4">
+                <div className="text-blue-400 font-bold text-lg">
+                  ${(cpmViewerData.reduce((sum, country) => sum + country.averageCpm, 0) / cpmViewerData.length).toFixed(2)}
+                </div>
+                <div className="text-gray-300 text-sm">Average CPM</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-orange-500/10 border-orange-500/20">
+              <CardContent className="p-4">
+                <div className="text-orange-400 font-bold text-lg">
+                  ${Math.max(...cpmViewerData.map(c => c.averageCpm)).toFixed(2)}
+                </div>
+                <div className="text-gray-300 text-sm">Highest CPM</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-purple-500/10 border-purple-500/20">
+              <CardContent className="p-4">
+                <div className="text-purple-400 font-bold text-lg">
+                  {cpmViewerData.reduce((sum, country) => sum + country.totalDevices, 0)}
+                </div>
+                <div className="text-gray-300 text-sm">Total Device Configs</div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderPayments = () => (
     <div className="space-y-6">
       {/* Header */}
@@ -2447,6 +2808,7 @@ Singapore,3.50,SG`;
         {activeTab === "tasks" && renderTasks()}
         {activeTab === "cpm" && renderCpmRates()}
         {activeTab === "device-targeting" && renderDeviceTargeting()}
+        {activeTab === "cpm-viewer" && renderCpmViewer()}
         {activeTab === "payments" && renderPayments()}
         </div>
       </div>
