@@ -153,18 +153,8 @@ export default function Admin() {
     if (!isLoaded || !isSignedIn || !user) return;
 
     async function initFetchTasks() {
-      setLoadingTasks(true);
-      try {
-        const res = await fetch("/api/tasks");
-        if (!res.ok) throw new Error("Failed to fetch tasks");
-        const data = await res.json();
-        console.log('[ADMIN DEBUG] /api/tasks response:', data);
-        setTasks(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error('[ADMIN DEBUG] /api/tasks error:', err);
-        setTasks([]);
-      }
-      setLoadingTasks(false);
+      console.log('[INIT FETCH TASKS] Starting initial task fetch...');
+      await fetchTasks();
     }
     initFetchTasks();
   }, [isLoaded, isSignedIn, user]);
@@ -211,12 +201,40 @@ export default function Admin() {
   const fetchTasks = async () => {
     setLoadingTasks(true);
     try {
+      console.log('[FETCH TASKS] Starting task fetch...');
       const res = await fetch("/api/tasks");
-      if (!res.ok) throw new Error("Failed to fetch tasks");
-      const data = await res.json();
-      setTasks(data);
+      console.log('[FETCH TASKS] Response status:', res.status);
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('[FETCH TASKS] Error response:', errorText);
+        throw new Error(`Failed to fetch tasks: ${res.status} ${errorText}`);
+      }
+      
+      const rawText = await res.text();
+      console.log('[FETCH TASKS] Raw response:', rawText.substring(0, 200) + '...');
+      
+      let data;
+      try {
+        data = JSON.parse(rawText);
+      } catch (parseError) {
+        console.error('[FETCH TASKS] JSON parse error:', parseError);
+        console.error('[FETCH TASKS] Raw text that failed to parse:', rawText);
+        throw new Error('Invalid JSON response from tasks API');
+      }
+      
+      console.log('[FETCH TASKS] Parsed data:', data);
+      
+      if (Array.isArray(data)) {
+        setTasks(data);
+        console.log('[FETCH TASKS] Successfully set', data.length, 'tasks');
+      } else {
+        console.warn('[FETCH TASKS] Data is not an array:', typeof data, data);
+        setTasks([]);
+      }
     } catch (error) {
-      console.error("Error fetching tasks:", error);
+      console.error("[FETCH TASKS] Error fetching tasks:", error);
+      setTasks([]);
     } finally {
       setLoadingTasks(false);
     }
@@ -1628,10 +1646,15 @@ export default function Admin() {
                 <Button 
                   variant="outline" 
                   className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
-                  onClick={() => {
+                  onClick={async () => {
                     setCsvUploadOpen(true);
                     // Reset CSV state when opening dialog
                     resetCsvUpload();
+                    // Force refresh tasks if none are loaded
+                    if (!Array.isArray(tasks) || tasks.length === 0) {
+                      console.log('Force refreshing tasks for CSV dialog...');
+                      await fetchTasks();
+                    }
                   }}
                 >
                   <Upload className="w-4 h-4 mr-2" />
@@ -1649,27 +1672,52 @@ export default function Admin() {
                   <p className="text-xs text-yellow-400">Available tasks: {tasks.length}</p>
                 </DialogHeader>
                 
-                <div className="space-y-6">
+                <div className="space-y-6 max-h-[80vh] overflow-y-auto">
                   {/* Task Selection */}
                   <div className="space-y-2">
-                    <Label className="text-gray-300">Select Task</Label>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-gray-300">Select Task</Label>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={async () => {
+                          console.log('Refreshing tasks...');
+                          await fetchTasks();
+                        }}
+                        className="text-xs text-blue-400 hover:bg-blue-500/10"
+                      >
+                        <RefreshCw className="w-3 h-3 mr-1" />
+                        Refresh
+                      </Button>
+                    </div>
                     <select 
                       className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-white text-sm focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20"
                       value={selectedTaskForCsv?.toString() || ""}
                       onChange={(e) => {
                         const value = e.target.value;
-                        const taskId = value && !isNaN(Number(value)) ? Number(value) : null;
-                        setSelectedTaskForCsv(taskId);
-                        console.log('Selected task ID:', taskId, 'from value:', value);
+                        if (value === "") {
+                          setSelectedTaskForCsv(null);
+                          console.log('Task selection cleared');
+                          return;
+                        }
+                        
+                        const taskId = parseInt(value);
+                        if (!isNaN(taskId)) {
+                          setSelectedTaskForCsv(taskId);
+                          console.log('Selected task ID:', taskId, 'from value:', value);
+                        } else {
+                          console.error('Invalid task ID:', value);
+                          setSelectedTaskForCsv(null);
+                        }
                       }}
                     >
                       <option value="" className="bg-gray-800 text-gray-300">Choose a task to update CPM rates for...</option>
                       {loadingTasks ? (
                         <option value="" className="bg-gray-800 text-gray-400" disabled>Loading tasks...</option>
-                      ) : tasks.length === 0 ? (
+                      ) : !Array.isArray(tasks) || tasks.length === 0 ? (
                         <option value="" className="bg-gray-800 text-gray-400" disabled>No tasks available</option>
                       ) : (
-                        tasks.map((task) => (
+                        tasks.filter(task => task && task.id && task.title).map((task) => (
                           <option key={task.id} value={task.id.toString()} className="bg-gray-800 text-white">
                             {task.title} (ID: {task.id})
                           </option>
@@ -1682,11 +1730,10 @@ export default function Admin() {
                       </p>
                     )}
                     
-                    {/* Debug info - remove in production */}
+                    {/* Available tasks count */}
                     <div className="text-xs text-gray-500 mt-1">
-                      Debug: {tasks.length} tasks loaded, Loading: {loadingTasks.toString()}, Selected: {selectedTaskForCsv || 'none'}
-                      <br />
-                      Tasks: {tasks.map(t => `${t.title}(${t.id})`).join(', ')}
+                      Available tasks: {Array.isArray(tasks) ? tasks.filter(t => t && t.id && t.title).length : 0}
+                      {loadingTasks && " (Loading...)"}
                     </div>
                   </div>
 
