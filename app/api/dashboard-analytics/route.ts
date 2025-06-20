@@ -67,11 +67,11 @@ export async function GET(req: NextRequest) {
     const { data: analyticsData, error: analyticsError } = await supabase
       .from("locker_analytics")
       .select("*, locker_id");
-    
+
     if (analyticsError) {
       console.error("Supabase analytics error:", analyticsError);
       return NextResponse.json({ error: analyticsError.message }, { status: 500 });
-    }
+  }
     analytics = analyticsData || [];
   }
 

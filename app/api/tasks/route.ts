@@ -14,9 +14,9 @@ async function isAdmin(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  // Public: anyone can fetch tasks
-  const { data, error } = await supabase.from("tasks").select("*").order("created_at", { ascending: false });
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    // Public: anyone can fetch tasks
+    const { data, error } = await supabase.from("tasks").select("*").order("created_at", { ascending: false });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   
   // Add debug logging for CPM rates
   console.log("[DEBUG] Tasks with CPM rates:", data?.map(task => ({
@@ -60,25 +60,8 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   if (!(await isAdmin(req))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const body = await req.json();
-  const { 
-    id, 
-    title, 
-    description, 
-    ad_url, 
-    devices, 
-    completion_time_seconds, 
-    excluded_browsers, 
-    cpm_tier1, 
-    cpm_tier2, 
-    cpm_tier3, 
-    target_tiers, 
-    task_type, 
-    status,
-    postback_secret,
-    external_offer_id 
-  } = body;
-  
-  const updateData: any = {
+  const { id, title, description, ad_url, devices, completion_time_seconds, excluded_browsers, cpm_tier1, cpm_tier2, cpm_tier3, target_tiers, task_type, status } = body;
+  const { data, error } = await supabase.from('tasks').update({
     title, 
     description, 
     ad_url, 
@@ -91,13 +74,7 @@ export async function PUT(req: NextRequest) {
     target_tiers: target_tiers || ["tier1", "tier2", "tier3"],
     task_type: task_type || "adult",
     status
-  };
-
-  // Add postback fields if provided
-  if (postback_secret !== undefined) updateData.postback_secret = postback_secret;
-  if (external_offer_id !== undefined) updateData.external_offer_id = external_offer_id;
-
-  const { data, error } = await supabase.from('tasks').update(updateData).eq('id', id).select().single();
+  }).eq('id', id).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (data) return NextResponse.json(data);
   return NextResponse.json(null); // fallback

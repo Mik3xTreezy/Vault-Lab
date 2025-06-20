@@ -15,8 +15,6 @@ const isPublicRoute = createRouteMatcher([
   '/api/geolocation(.*)', // Geolocation API is public
   '/api/device-targeting(.*)', // Device targeting API for admin
   '/api/ip-tracking(.*)', // IP tracking API for revenue validation
-  '/api/postback(.*)', // Postback API for external advertisers
-  '/api/click-tracking(.*)', // Click tracking API for postback system
 ]);
 
 export const middleware = clerkMiddleware(async (auth, req) => {
