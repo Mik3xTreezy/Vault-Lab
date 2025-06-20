@@ -148,7 +148,7 @@ export async function PATCH(req: NextRequest) {
   }
   
   try {
-    const updatePromises = taskIds.map(async (taskId: number) => {
+    const updatePromises = taskIds.map(async (taskId: string) => {
       const updateData: any = {};
       if (cpmRates.tier1 !== undefined) updateData.cpm_tier1 = parseFloat(cpmRates.tier1) || 0;
       if (cpmRates.tier2 !== undefined) updateData.cpm_tier2 = parseFloat(cpmRates.tier2) || 0;

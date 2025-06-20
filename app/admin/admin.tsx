@@ -83,7 +83,7 @@ export default function Admin() {
     tier2: "",
     tier3: ""
   });
-  const [selectedTasksForBulk, setSelectedTasksForBulk] = useState<number[]>([]);
+  const [selectedTasksForBulk, setSelectedTasksForBulk] = useState<string[]>([]);
 
   // Individual CPM rate editing state
   const [editingCpmTask, setEditingCpmTask] = useState<any>(null);
@@ -102,7 +102,7 @@ export default function Admin() {
 
   // CSV Upload state
   const [csvUploadOpen, setCsvUploadOpen] = useState(false);
-  const [selectedTaskForCsv, setSelectedTaskForCsv] = useState<number | null>(null);
+  const [selectedTaskForCsv, setSelectedTaskForCsv] = useState<string | null>(null);
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [csvData, setCsvData] = useState<any[]>([]);
   const [csvPreview, setCsvPreview] = useState<any[]>([]);
@@ -408,7 +408,7 @@ export default function Admin() {
     }
   };
 
-  const handleTaskSelectionForBulk = (taskId: number, checked: boolean) => {
+  const handleTaskSelectionForBulk = (taskId: string, checked: boolean) => {
     setSelectedTasksForBulk(prev => 
       checked 
         ? [...prev, taskId]
@@ -598,19 +598,30 @@ export default function Admin() {
       return;
     }
 
+    console.log('[CSV UPLOAD] Starting upload with:', {
+      selectedTaskForCsv,
+      selectedTaskType: typeof selectedTaskForCsv,
+      csvDataLength: csvData.length,
+      availableTasks: tasks.map(t => ({ id: t.id, title: t.title }))
+    });
+
     setUploadingCsv(true);
     setCsvError("");
 
     try {
+      const requestBody = {
+        taskId: selectedTaskForCsv,
+        cpmData: csvData
+      };
+      
+      console.log('[CSV UPLOAD] Request body:', requestBody);
+
       const response = await fetch('/api/tasks/csv-upload', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          taskId: selectedTaskForCsv,
-          cpmData: csvData
-        })
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
@@ -1668,8 +1679,7 @@ export default function Admin() {
                     Bulk CPM Upload via CSV
                   </DialogTitle>
                   <p className="text-gray-400 text-sm">Upload a CSV file to set CPM rates for multiple countries at once</p>
-                  {/* Add task count in header for debugging */}
-                  <p className="text-xs text-yellow-400">Available tasks: {tasks.length}</p>
+                  <p className="text-xs text-blue-400">Available tasks: {Array.isArray(tasks) ? tasks.filter(t => t && t.id && t.title).length : 0}</p>
                 </DialogHeader>
                 
                 <div className="space-y-6 max-h-[80vh] overflow-y-auto">
@@ -1692,7 +1702,7 @@ export default function Admin() {
                     </div>
                     <select 
                       className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-white text-sm focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20"
-                      value={selectedTaskForCsv?.toString() || ""}
+                      value={selectedTaskForCsv || ""}
                       onChange={(e) => {
                         const value = e.target.value;
                         if (value === "") {
@@ -1701,14 +1711,9 @@ export default function Admin() {
                           return;
                         }
                         
-                        const taskId = parseInt(value);
-                        if (!isNaN(taskId)) {
-                          setSelectedTaskForCsv(taskId);
-                          console.log('Selected task ID:', taskId, 'from value:', value);
-                        } else {
-                          console.error('Invalid task ID:', value);
-                          setSelectedTaskForCsv(null);
-                        }
+                        // Task IDs are UUIDs (strings), not integers
+                        setSelectedTaskForCsv(value);
+                        console.log('Selected task ID:', value, 'type:', typeof value);
                       }}
                     >
                       <option value="" className="bg-gray-800 text-gray-300">Choose a task to update CPM rates for...</option>
@@ -1718,16 +1723,16 @@ export default function Admin() {
                         <option value="" className="bg-gray-800 text-gray-400" disabled>No tasks available</option>
                       ) : (
                         tasks.filter(task => task && task.id && task.title).map((task) => (
-                          <option key={task.id} value={task.id.toString()} className="bg-gray-800 text-white">
+                          <option key={task.id} value={task.id} className="bg-gray-800 text-white">
                             {task.title} (ID: {task.id})
                           </option>
                         ))
                       )}
                     </select>
                     {selectedTaskForCsv && (
-                      <p className="text-emerald-400 text-sm">
-                        ✓ Selected: {tasks.find(t => t.id === selectedTaskForCsv)?.title || 'Unknown Task'}
-                      </p>
+                      <div className="text-emerald-400 text-sm">
+                        <p>✓ Selected: {tasks.find(t => t.id === selectedTaskForCsv)?.title || 'Unknown Task'}</p>
+                      </div>
                     )}
                     
                     {/* Available tasks count */}

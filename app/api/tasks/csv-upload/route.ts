@@ -59,8 +59,10 @@ const COUNTRY_CODE_MAP: { [key: string]: string } = {
 export async function POST(request: NextRequest) {
   try {
     const { taskId, cpmData } = await request.json()
+    console.log('[CSV UPLOAD] Received request:', { taskId, cpmDataLength: cpmData?.length })
 
     if (!taskId || !cpmData || !Array.isArray(cpmData)) {
+      console.log('[CSV UPLOAD] Invalid request data:', { taskId, cpmData: typeof cpmData })
       return NextResponse.json(
         { message: 'Invalid request data. taskId and cpmData array are required.' },
         { status: 400 }
@@ -68,11 +70,21 @@ export async function POST(request: NextRequest) {
     }
 
     if (cpmData.length === 0) {
+      console.log('[CSV UPLOAD] No CPM data provided')
       return NextResponse.json(
         { message: 'No CPM data provided.' },
         { status: 400 }
       )
     }
+
+    // First, let's see what tasks exist
+    const { data: allTasks, error: allTasksError } = await supabase
+      .from('tasks')
+      .select('id, title')
+      .order('id')
+    
+    console.log('[CSV UPLOAD] All available tasks:', allTasks)
+    console.log('[CSV UPLOAD] Looking for task ID:', taskId, typeof taskId)
 
     // Verify task exists
     const { data: task, error: taskError } = await supabase
@@ -81,9 +93,14 @@ export async function POST(request: NextRequest) {
       .eq('id', taskId)
       .single()
 
+    console.log('[CSV UPLOAD] Task lookup result:', { task, taskError })
+
     if (taskError || !task) {
+      console.log('[CSV UPLOAD] Task not found:', { taskId, taskError: taskError?.message })
       return NextResponse.json(
-        { message: 'Task not found.' },
+        { 
+          message: `Task not found. Requested ID: ${taskId}, Available tasks: ${allTasks?.map(t => `${t.title}(${t.id})`).join(', ') || 'none'}` 
+        },
         { status: 404 }
       )
     }
