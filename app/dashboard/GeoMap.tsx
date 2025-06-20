@@ -176,7 +176,9 @@ function normalizeCountryData(data: Record<string, number | string>): Record<str
 }
 
 export default function GeoMap({ countryData: initialCountryData, userId }: GeoMapProps) {
-  const [countryData, setCountryData] = useState<Record<string, number>>(normalizeCountryData(initialCountryData));
+  // TEST: Hardcode some country data to see if the map can highlight at all
+  const testData = { "US": 78, "IN": 10 };
+  const [countryData, setCountryData] = useState<Record<string, number>>(testData);
   const [hoveredCountry, setHoveredCountry] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -215,10 +217,26 @@ export default function GeoMap({ countryData: initialCountryData, userId }: GeoM
   const maxValue = countryValues.length > 0 ? Math.max(...countryValues) : 1;
   const uniqueCountries = Object.keys(countryData).length;
   
+  // Debug logging
+  console.log('[GeoMap] Current state:', {
+    countryData,
+    countryValues,
+    totalViews,
+    maxValue,
+    uniqueCountries
+  });
+  
   // Enhanced color scale with green gradient to match dashboard theme
   const colorScale = scaleLinear<string>()
     .domain([0, Math.max(1, maxValue)])
     .range(["#0f172a", "#10b981"]); // slate-900 to emerald-500
+    
+  // Test the color scale
+  console.log('[GeoMap] Color scale test:', {
+    color0: colorScale(0),
+    colorMax: colorScale(maxValue),
+    colorMid: colorScale(maxValue / 2)
+  });
 
   const topCountries = Object.entries(countryData)
     .filter(([_, views]) => views > 0)
