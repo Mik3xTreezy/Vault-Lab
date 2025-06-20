@@ -125,43 +125,55 @@ export async function POST(request: NextRequest) {
         const devices = ['Windows', 'MacOS', 'Android', 'iOS']
         
         for (const device of devices) {
-          const key = `${device}_${finalCountryCode}`
+          console.log(`[CSV UPLOAD] Processing ${device} for ${finalCountryCode} with CPM ${cpm}`)
           
-          // Check if record exists
-          const { data: existing } = await supabase
+          // Check if record exists using device, country, and task_id
+          const { data: existing, error: existingError } = await supabase
             .from('device_targeting')
             .select('*')
-            .eq('key', key)
-            .single()
+            .eq('device', device)
+            .eq('country', finalCountryCode)
+            .eq('task_id', taskId)
+            .maybeSingle()
+
+          console.log(`[CSV UPLOAD] Existing record check:`, { existing, existingError })
 
           if (existing) {
             // Update existing record
-            await supabase
+            const { error: updateError } = await supabase
               .from('device_targeting')
               .update({
-                task_id: taskId,
                 cpm: cpm,
-                device: device,
-                country: finalCountryCode,
                 source: 'csv_upload', // Mark as CSV uploaded
                 updated_at: new Date().toISOString()
               })
-              .eq('key', key)
+              .eq('id', existing.id)
+            
+            if (updateError) {
+              console.error(`[CSV UPLOAD] Update error for ${device}/${finalCountryCode}:`, updateError)
+              errors.push(`Failed to update ${device}/${finalCountryCode}: ${updateError.message}`)
+            } else {
+              console.log(`[CSV UPLOAD] Updated ${device}/${finalCountryCode} with CPM ${cpm}`)
+            }
           } else {
             // Insert new record
-            await supabase
+            const { error: insertError } = await supabase
               .from('device_targeting')
               .insert({
-                key: key,
                 device: device,
                 country: finalCountryCode,
                 task_id: taskId,
                 cpm: cpm,
                 ad_url: '', // Will be set separately if needed
                 source: 'csv_upload', // Mark as CSV uploaded
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
               })
+            
+            if (insertError) {
+              console.error(`[CSV UPLOAD] Insert error for ${device}/${finalCountryCode}:`, insertError)
+              errors.push(`Failed to insert ${device}/${finalCountryCode}: ${insertError.message}`)
+            } else {
+              console.log(`[CSV UPLOAD] Inserted ${device}/${finalCountryCode} with CPM ${cpm}`)
+            }
           }
         }
 

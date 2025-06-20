@@ -690,11 +690,8 @@ export default function Admin() {
       const countryData: { [key: string]: any } = {};
       
       Object.entries(data || {}).forEach(([key, value]: [string, any]) => {
-        console.log('[CPM VIEWER] Processing entry:', key, value);
-        
         // Only show CSV uploaded data, not manually set data
         if (value && value.country && value.cpm && value.task_id === taskId && value.source === 'csv_upload') {
-          console.log('[CPM VIEWER] Found CSV upload record:', value);
           const country = value.country;
           if (!countryData[country]) {
             countryData[country] = {
@@ -711,15 +708,6 @@ export default function Admin() {
             updatedAt: value.updated_at
           };
           countryData[country].totalDevices++;
-        } else {
-          console.log('[CPM VIEWER] Filtered out record:', {
-            hasValue: !!value,
-            hasCountry: value?.country,
-            hasCpm: value?.cpm,
-            correctTask: value?.task_id === taskId,
-            isCSVUpload: value?.source === 'csv_upload',
-            actualSource: value?.source
-          });
         }
       });
       

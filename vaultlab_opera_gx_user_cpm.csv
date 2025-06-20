@@ -1,0 +1,231 @@
+country,cpm,country_code
+Austria,1.68,AT
+Switzerland,1.68,CH
+United Kingdom,1.68,GB
+Germany,1.512,DE
+United States,1.47,US
+Canada,1.05,CA
+Japan,1.05,JP
+Spain,0.84,ES
+France,0.84,FR
+Italy,0.84,IT
+Netherlands,0.786,NL
+Belgium,0.738,BE
+Australia,0.672,AU
+New Zealand,0.672,NZ
+Czech Republic,0.612,CZ
+Norway,0.528,NO
+Brazil,0.522,BR
+Poland,0.49799999999999994,PL
+Finland,0.49199999999999994,FI
+Denmark,0.46799999999999997,DK
+Sweden,0.45599999999999996,SE
+Bulgaria,0.318,BG
+Ireland,0.318,IE
+Romania,0.318,RO
+Portugal,0.24599999999999997,PT
+Singapore,0.23399999999999999,SG
+Costa Rica,0.21,CR
+Mexico,0.21,MX
+Russia,0.21,
+Greece,0.138,GR
+Argentina,0.132,AR
+Chile,0.126,CL
+India,0.108,IN
+Thailand,0.10200000000000001,TH
+Turkey,0.096,TR
+,0.09,
+Peru,0.084,PE
+Namibia,0.066,NA
+Mauritius,0.066,MU
+Nigeria,0.066,NG
+Nicaragua,0.066,NI
+Malawi,0.066,MW
+New Caledonia,0.066,NC
+Niger,0.066,NE
+Nepal,0.066,NP
+Mozambique,0.066,MZ
+Norfolk Island,0.066,NF
+Panama,0.066,PA
+Oman,0.066,OM
+Nauru,0.066,NR
+French Polynesia,0.066,PF
+Pakistan,0.066,PK
+Philippines,0.066,PH
+Papua New Guinea,0.066,PG
+Palestinian Territories,0.066,
+Puerto Rico,0.066,PR
+Saint Pierre and Miquelon,0.066,PM
+Paraguay,0.066,PY
+Malta,0.066,MT
+Republic of Moldova,0.066,MD
+Maldives,0.066,MV
+Martinique,0.066,MQ
+Sri Lanka,0.066,LK
+Libya,0.066,LY
+Latvia,0.066,LV
+Luxembourg,0.066,LU
+Réunion,0.066,RE
+Monaco,0.066,MC
+Morocco,0.066,MA
+Marshall Islands,0.066,MH
+Madagascar,0.066,MG
+Saint Martin,0.066,
+Montenegro,0.066,ME
+Mali,0.066,ML
+Macedonia,0.066,
+Northern Mariana Islands,0.066,MP
+Macao,0.066,MO
+Mongolia,0.066,MN
+Myanmar [Burma],0.066,
+Montserrat,0.066,MS
+Mauritania,0.066,MR
+Palau,0.066,PW
+Chad,0.066,TD
+Qatar,0.066,QA
+U.S. Virgin Islands,0.066,
+Trinidad and Tobago,0.066,TT
+Ukraine,0.066,UA
+Tanzania,0.066,TZ
+Tuvalu,0.066,TV
+Uganda,0.066,UG
+Saint Vincent and the Grenadines,0.066,VC
+Vatican City,0.066,
+Uzbekistan,0.066,UZ
+Uruguay,0.066,UY
+British Virgin Islands,0.066,VG
+Tunisia,0.066,TN
+Wallis and Futuna,0.066,WF
+Vanuatu,0.066,VU
+Vietnam,0.066,VN
+Mayotte,0.066,YT
+Yemen,0.066,YE
+Samoa,0.066,WS
+Zimbabwe,0.066,ZW
+Zambia,0.066,ZM
+South Africa,0.066,ZA
+Turkmenistan,0.066,TM
+Tonga,0.066,TO
+Saudi Arabia,0.066,SA
+Suriname,0.066,SR
+Rwanda,0.066,RW
+Serbia,0.066,RS
+Sudan,0.066,SD
+Seychelles,0.066,SC
+Solomon Islands,0.066,SB
+San Marino,0.066,SM
+Sierra Leone,0.066,SL
+Slovak Republic,0.066,SK
+Slovenia,0.066,SI
+Somalia,0.066,SO
+East Timor,0.066,
+Senegal,0.066,SN
+Syria,0.066,
+El Salvador,0.066,SV
+Sao Tome and Principe,0.066,ST
+Lesotho,0.066,LS
+Turks and Caicos Islands,0.066,TC
+Swaziland,0.066,
+Tajikistan,0.066,TJ
+Togo,0.066,TG
+Liberia,0.066,LR
+Kenya,0.066,KE
+Republic of Lithuania,0.066,LT
+China,0.066,CN
+Bahamas,0.066,BS
+Belize,0.066,BZ
+Belarus,0.066,BY
+Republic of the Congo,0.066,CG
+Central African Republic,0.066,CF
+Congo,0.066,CG
+Cook Islands,0.066,CK
+Ivory Coast,0.066,
+Colombia,0.066,CO
+Cameroon,0.066,CM
+Ecuador,0.066,EC
+Cape Verde,0.066,
+Cuba,0.066,CU
+Cyprus,0.066,CY
+Curacao,0.066,
+Djibouti,0.066,DJ
+Algeria,0.066,DZ
+Dominican Republic,0.066,DO
+Dominica,0.066,DM
+Lebanon,0.066,LB
+Bhutan,0.066,BT
+Botswana,0.066,BW
+Brunei,0.066,
+Bolivia,0.066,BO
+Andorra,0.066,AD
+Anguilla,0.066,AI
+Antigua and Barbuda,0.066,AG
+Afghanistan,0.066,AF
+United Arab Emirates,0.066,AE
+Angola,0.066,AO
+Armenia,0.066,AM
+Albania,0.066,AL
+American Samoa,0.066,AS
+Azerbaijan,0.066,AZ
+Aruba,0.066,AW
+Bangladesh,0.066,BD
+Barbados,0.066,BB
+Bosnia and Herzegovina,0.066,BA
+Bahrain,0.066,BH
+Burkina Faso,0.066,BF
+Bermuda,0.066,BM
+Benin,0.066,BJ
+Burundi,0.066,BI
+Estonia,0.066,EE
+Egypt,0.066,EG
+Ethiopia,0.066,ET
+Comoros,0.066,KM
+Isle of Man,0.066,IM
+Eritrea,0.066,ER
+British Indian Ocean Territory,0.066,IO
+Iceland,0.066,IS
+Iran,0.066,
+Iraq,0.066,IQ
+Jamaica,0.066,JM
+Jersey,0.066,JE
+Hashemite Kingdom of Jordan,0.066,JO
+Kiribati,0.066,KI
+Honduras,0.066,HN
+Cambodia,0.066,KH
+Kyrgyzstan,0.066,KG
+Kuwait,0.066,KW
+Saint Kitts and Nevis,0.066,KN
+Laos,0.066,
+Kazakhstan,0.066,KZ
+Cayman Islands,0.066,KY
+Liechtenstein,0.066,LI
+Saint Lucia,0.066,LC
+Hungary,0.066,HU
+Israel,0.066,IL
+Croatia,0.066,HR
+Gibraltar,0.066,GI
+Faroe Islands,0.066,FO
+Federated States of Micronesia,0.066,FM
+Fiji,0.066,FJ
+Gabon,0.066,GA
+Guernsey,0.066,GG
+French Guiana,0.066,GF
+Haiti,0.066,HT
+Grenada,0.066,GD
+Greenland,0.066,GL
+Georgia,0.066,GE
+Ghana,0.066,GH
+Guadeloupe,0.066,GP
+Guinea,0.066,GN
+Gambia,0.066,GM
+Guatemala,0.066,GT
+Equatorial Guinea,0.066,GQ
+Guyana,0.066,GY
+Guinea-Bissau,0.066,GW
+Guam,0.066,GU
+Hong Kong,0.024,HK
+Indonesia,0.024,ID
+Republic of Korea,0.024,
+Malaysia,0.024,MY
+Taiwan,0.024,TW
+Venezuela,0.024,VE
+,0.0,
