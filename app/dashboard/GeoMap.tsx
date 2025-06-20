@@ -324,9 +324,9 @@ export default function GeoMap({ countryData: initialCountryData, userId }: GeoM
                       const views = countryData[code] || 0;
                       const countryName = countryNames[code] || geo.properties.NAME || code;
                       
-                      // Debug logging for US and IN
-                      if (code === 'US' || code === 'IN') {
-                        console.log(`[GeoMap] Country ${code} (${countryName}): ${views} views, color: ${views > 0 ? colorScale(views) : "#1e293b"}`);
+                      // Debug logging for all countries with views
+                      if (views > 0) {
+                        console.log(`[GeoMap] Country ${code} (${countryName}): ${views} views, color: ${colorScale(views)}`);
                       }
                       
                       return (

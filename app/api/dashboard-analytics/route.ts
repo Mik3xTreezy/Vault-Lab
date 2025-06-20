@@ -150,13 +150,17 @@ export async function GET(req: NextRequest) {
     else browsers["Other"] = (browsers["Other"] || 0) + 1;
   });
 
-  // Aggregate country data
+  // Aggregate country data (with fallback to extra field for legacy data)
   const countryData: Record<string, number> = {};
   analyticsData.forEach(a => {
-    if (a.country) {
-      countryData[a.country] = (countryData[a.country] || 0) + 1;
+    // Try to get country from dedicated column first, then fallback to extra field
+    const country = a.country || (a.extra && a.extra.country);
+    if (country) {
+      countryData[country] = (countryData[country] || 0) + 1;
     }
   });
+  
+  console.log('[DASHBOARD API] Country data aggregated:', countryData);
 
   // --- USER ANALYTICS ---
   // Total users
