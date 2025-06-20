@@ -209,13 +209,27 @@ export default function LinkLocker({ title = "Premium Content Download", destina
             deviceTargetKey
           });
           
+          // Choose icon based on task title
+          const getTaskIcon = () => {
+            if (task.title.toLowerCase().includes('opera')) {
+              // Opera GX icon - using a gaming browser icon
+              return (
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M3 3h18v18H3V3zm16 16V5H5v14h14zm-8-2h2v-2h-2v2zm0-3h2V8h-2v6z"/>
+                  <circle cx="12" cy="12" r="2"/>
+                </svg>
+              );
+            }
+            return <Gift className="w-5 h-5" />;
+          };
+          
           return {
             id: task.id.toString(),
             title: task.title,
             description: task.description,
             loading: false,
             completed: false,
-            icon: <Gift className="w-5 h-5" />,
+            icon: getTaskIcon(),
             adUrl: effectiveAdUrl,
             completionTimeSeconds: task.completion_time_seconds || 60,
             action: () => handleTaskClick(task.id.toString(), effectiveAdUrl)
@@ -604,7 +618,9 @@ export default function LinkLocker({ title = "Premium Content Download", destina
                       className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
                         task.completed
                           ? "bg-green-500 text-white"
-                          : "bg-gray-200 text-gray-600 group-hover:bg-gray-300"
+                          : task.loading
+                          ? "bg-emerald-500/20 text-emerald-400"
+                          : "bg-white/10 text-gray-300 group-hover:bg-white/20"
                       }`}
                     >
                       {task.completed ? (
@@ -614,23 +630,23 @@ export default function LinkLocker({ title = "Premium Content Download", destina
                       )}
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-800">{task.title}</h3>
-                      <p className="text-sm text-gray-600">{task.description}</p>
+                      <h3 className="font-semibold text-white">{task.title}</h3>
+                      <p className="text-sm text-gray-400">{task.description}</p>
                     </div>
                   </div>
                   <div className="flex items-center">
                     {task.loading ? (
                       <div className="flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span className="text-sm">Loading...</span>
+                        <Loader2 className="h-4 w-4 animate-spin text-emerald-400" />
+                        <span className="text-sm text-gray-300">Loading...</span>
                       </div>
                     ) : task.completed ? (
-                      <div className="flex items-center gap-2 text-green-600">
+                      <div className="flex items-center gap-2 text-green-400">
                         <span className="text-sm">Completed</span>
                         <CheckCircle2 className="h-5 w-5" />
                       </div>
                     ) : (
-                      <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                      <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-gray-300 transition-colors" />
                     )}
                   </div>
                 </div>
