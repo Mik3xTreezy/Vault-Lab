@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   const user = await currentUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { title, destinationUrl, allowedTaskTypes } = await req.json();
+  const { title, destinationUrl, taskType } = await req.json();
   const shortId = generateShortId(5);
   const { data, error } = await supabase
     .from('lockers')
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       user_id: user.id, 
       title, 
       destination_url: destinationUrl,
-      allowed_task_types: allowedTaskTypes || ["adult", "game", "minecraft", "roblox"]
+      task_type: taskType || "adult"
     }])
     .select()
     .single();

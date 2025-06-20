@@ -15,7 +15,7 @@ export default function Create() {
   const [formData, setFormData] = useState({
     title: "",
     destinationUrl: "",
-    allowedTaskTypes: ["adult", "game", "minecraft", "roblox"] as string[], // Default: allow all task types
+    taskType: "adult" as string, // Single task type selection
   })
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
@@ -48,10 +48,7 @@ export default function Create() {
       }
     }
 
-    if (formData.allowedTaskTypes.length === 0) {
-      setError("Please select at least one task type")
-      isValid = false
-    }
+    // Task type is always selected in dropdown, so no validation needed
 
     setErrors(newErrors)
     return isValid
@@ -72,7 +69,7 @@ export default function Create() {
         body: JSON.stringify({
           title: formData.title,
           destinationUrl: formData.destinationUrl,
-          allowedTaskTypes: formData.allowedTaskTypes,
+          taskType: formData.taskType,
         }),
       });
       if (!res.ok) throw new Error("Failed to create locker");
@@ -93,12 +90,10 @@ export default function Create() {
     }
   }
 
-  const handleTaskTypeChange = (taskType: string, checked: boolean) => {
+  const handleTaskTypeChange = (taskType: string) => {
     setFormData((prev) => ({
       ...prev,
-      allowedTaskTypes: checked 
-        ? [...prev.allowedTaskTypes, taskType]
-        : prev.allowedTaskTypes.filter(type => type !== taskType)
+      taskType: taskType
     }))
   }
 
@@ -122,7 +117,7 @@ export default function Create() {
   }, [showCopyNotification])
 
   const resetForm = () => {
-    setFormData({ title: "", destinationUrl: "", allowedTaskTypes: ["adult", "game", "minecraft", "roblox"] })
+    setFormData({ title: "", destinationUrl: "", taskType: "adult" })
     setIsSuccess(false)
     setGeneratedLink("")
     setErrors({ title: "", destinationUrl: "" })
@@ -333,37 +328,31 @@ export default function Create() {
               </div>
 
               {/* Task Type Selection */}
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <Label className="text-gray-300 font-medium">
-                  Allowed Task Types
+                  Task Type
                 </Label>
-                <p className="text-gray-400 text-xs">Select which types of tasks visitors can complete to unlock your content</p>
+                <p className="text-gray-400 text-xs">Select the type of tasks visitors will complete to unlock your content</p>
                 
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { type: "adult", label: "🔞 Adult Tasks", desc: "18+ content tasks" },
-                    { type: "game", label: "🎮 Game Tasks", desc: "Gaming related tasks" },
-                    { type: "minecraft", label: "⛏️ Minecraft Tasks", desc: "Minecraft specific tasks" },
-                    { type: "roblox", label: "🟦 Roblox Tasks", desc: "Roblox related tasks" }
-                  ].map(({ type, label, desc }) => (
-                    <label key={type} className="flex items-start space-x-3 p-3 bg-white/5 border border-white/10 rounded-lg cursor-pointer hover:bg-white/10 transition-colors">
-                      <input 
-                        type="checkbox" 
-                        className="rounded bg-white/5 border-white/10 mt-1"
-                        checked={formData.allowedTaskTypes.includes(type)}
-                        onChange={(e) => handleTaskTypeChange(type, e.target.checked)}
-                      />
-                      <div className="flex-1">
-                        <span className="text-white text-sm font-medium block">{label}</span>
-                        <span className="text-gray-400 text-xs">{desc}</span>
-                      </div>
-                    </label>
-                  ))}
+                <select 
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white text-sm focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none transition-all duration-300 hover:bg-white/10 hover:border-white/20 cursor-pointer"
+                  value={formData.taskType}
+                  onChange={(e) => handleTaskTypeChange(e.target.value)}
+                >
+                  <option value="adult" className="bg-gray-800 text-white py-2">Adult Tasks</option>
+                  <option value="game" className="bg-gray-800 text-white py-2">Game Tasks</option>
+                  <option value="minecraft" className="bg-gray-800 text-white py-2">Minecraft Tasks</option>
+                  <option value="roblox" className="bg-gray-800 text-white py-2">Roblox Tasks</option>
+                </select>
+                
+                <div className="mt-2 p-3 bg-white/5 rounded-lg border border-white/10">
+                  <p className="text-gray-300 text-xs">
+                    {formData.taskType === "adult" && "18+ content tasks for mature audiences"}
+                    {formData.taskType === "game" && "General gaming related tasks and activities"}
+                    {formData.taskType === "minecraft" && "Minecraft specific tasks and server activities"}
+                    {formData.taskType === "roblox" && "Roblox related tasks and game experiences"}
+                  </p>
                 </div>
-                
-                {formData.allowedTaskTypes.length === 0 && (
-                  <p className="text-red-400 text-xs">⚠️ Please select at least one task type</p>
-                )}
               </div>
 
               {/* Info Box */}
@@ -375,7 +364,7 @@ export default function Create() {
                   <div>
                     <h4 className="text-emerald-400 font-medium text-sm mb-1">How it works</h4>
                     <p className="text-gray-300 text-xs leading-relaxed">
-                      Users will complete tasks from your selected categories to unlock access to your destination URL. You earn revenue from each completed task.
+                      Users will complete tasks from your selected category to unlock access to your destination URL. You earn revenue from each completed task.
                     </p>
                   </div>
                 </div>
