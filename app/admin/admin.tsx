@@ -1627,13 +1627,17 @@ export default function Admin() {
                 <Button 
                   variant="outline" 
                   className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
-                  onClick={() => setCsvUploadOpen(true)}
+                  onClick={() => {
+                    setCsvUploadOpen(true);
+                    // Reset CSV state when opening dialog
+                    resetCsvUpload();
+                  }}
                 >
                   <Upload className="w-4 h-4 mr-2" />
                   CSV Upload
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-black/90 backdrop-blur-xl border-white/10 text-white max-w-4xl animate-in fade-in-0 zoom-in-95 duration-300">
+              <DialogContent className="bg-black/90 backdrop-blur-xl border-white/10 text-white max-w-4xl max-h-[90vh] overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-300">
                 <DialogHeader>
                   <DialogTitle className="text-xl font-bold flex items-center gap-2">
                     <FileText className="w-5 h-5 text-blue-400" />
@@ -1647,17 +1651,37 @@ export default function Admin() {
                   <div className="space-y-2">
                     <Label className="text-gray-300">Select Task</Label>
                     <select 
-                      className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-white text-sm"
+                      className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-white text-sm focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20"
                       value={selectedTaskForCsv || ""}
-                      onChange={(e) => setSelectedTaskForCsv(Number(e.target.value))}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setSelectedTaskForCsv(value ? Number(value) : null);
+                        console.log('Selected task ID:', value);
+                      }}
                     >
-                      <option value="">Choose a task to update CPM rates for...</option>
-                      {tasks.map((task) => (
-                        <option key={task.id} value={task.id} className="bg-gray-800">
-                          {task.title}
-                        </option>
-                      ))}
+                      <option value="" className="bg-gray-800 text-gray-300">Choose a task to update CPM rates for...</option>
+                      {loadingTasks ? (
+                        <option value="" className="bg-gray-800 text-gray-400">Loading tasks...</option>
+                      ) : tasks.length === 0 ? (
+                        <option value="" className="bg-gray-800 text-gray-400">No tasks available</option>
+                      ) : (
+                        tasks.map((task) => (
+                          <option key={task.id} value={task.id} className="bg-gray-800 text-white">
+                            {task.title} (ID: {task.id})
+                          </option>
+                        ))
+                      )}
                     </select>
+                    {selectedTaskForCsv && (
+                      <p className="text-emerald-400 text-sm">
+                        ✓ Selected: {tasks.find(t => t.id === selectedTaskForCsv)?.title}
+                      </p>
+                    )}
+                    
+                    {/* Debug info - remove in production */}
+                    <div className="text-xs text-gray-500 mt-1">
+                      Debug: {tasks.length} tasks loaded, Loading: {loadingTasks.toString()}
+                    </div>
                   </div>
 
                   {/* CSV Format Instructions */}
@@ -1762,9 +1786,9 @@ Singapore,3.50,SG`;
                   {csvPreview.length > 0 && (
                     <div className="space-y-2">
                       <Label className="text-gray-300">Preview (First 10 rows)</Label>
-                      <div className="bg-white/5 rounded-lg overflow-hidden">
+                      <div className="bg-white/5 rounded-lg overflow-hidden max-h-64 overflow-y-auto">
                         <Table>
-                          <TableHeader>
+                          <TableHeader className="sticky top-0 bg-white/10">
                             <TableRow className="border-white/10">
                               <TableHead className="text-gray-300">Country</TableHead>
                               <TableHead className="text-gray-300">CPM Rate</TableHead>
@@ -1773,7 +1797,7 @@ Singapore,3.50,SG`;
                           </TableHeader>
                           <TableBody>
                             {csvPreview.map((row, index) => (
-                              <TableRow key={index} className="border-white/10">
+                              <TableRow key={index} className="border-white/10 hover:bg-white/5">
                                 <TableCell className="text-white">{row.country}</TableCell>
                                 <TableCell className="text-emerald-400 font-mono">${row.cpm.toFixed(2)}</TableCell>
                                 <TableCell className="text-gray-300">{row.countryCode || '-'}</TableCell>
@@ -1785,6 +1809,11 @@ Singapore,3.50,SG`;
                       {csvData.length > 10 && (
                         <p className="text-gray-400 text-sm">... and {csvData.length - 10} more rows</p>
                       )}
+                      <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
+                        <p className="text-blue-400 text-sm">
+                          📊 Ready to upload: <strong>{csvData.length} countries</strong> will be updated for the selected task
+                        </p>
+                      </div>
                     </div>
                   )}
 
@@ -1800,7 +1829,7 @@ Singapore,3.50,SG`;
                     <Button
                       onClick={uploadCsvRates}
                       disabled={!selectedTaskForCsv || csvData.length === 0 || uploadingCsv}
-                      className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white"
+                      className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black font-medium disabled:from-gray-500 disabled:to-gray-600 disabled:text-gray-300"
                     >
                       {uploadingCsv ? (
                         <>
@@ -1814,6 +1843,14 @@ Singapore,3.50,SG`;
                         </>
                       )}
                     </Button>
+                    
+                    {/* Upload requirements */}
+                    {(!selectedTaskForCsv || csvData.length === 0) && (
+                      <p className="text-yellow-400 text-sm mt-2">
+                        {!selectedTaskForCsv && "⚠️ Please select a task first"}
+                        {selectedTaskForCsv && csvData.length === 0 && "⚠️ Please upload a valid CSV file"}
+                      </p>
+                    )}
                   </div>
                 </div>
               </DialogContent>
