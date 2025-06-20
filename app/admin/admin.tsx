@@ -116,6 +116,15 @@ export default function Admin() {
   const [cpmViewerData, setCpmViewerData] = useState<any[]>([]);
   const [loadingCpmViewer, setLoadingCpmViewer] = useState(false);
 
+  // Postback Management state
+  const [postbackEvents, setPostbackEvents] = useState<any[]>([]);
+  const [loadingPostbacks, setLoadingPostbacks] = useState(false);
+  const [selectedPostbackTask, setSelectedPostbackTask] = useState<string | null>(null);
+  const [postbackConfig, setPostbackConfig] = useState({
+    external_offer_id: "",
+    postback_secret: ""
+  });
+
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !user) return;
     
@@ -828,30 +837,9 @@ export default function Admin() {
   ]
 
   const withdrawals = [
-    {
-      id: 1,
-      user: "user1@example.com",
-      amount: "$125.50",
-      method: "PayPal",
-      status: "Pending",
-      date: "2024-06-14",
-    },
-    {
-      id: 2,
-      user: "user2@example.com",
-      amount: "$89.30",
-      method: "Bitcoin",
-      status: "Processing",
-      date: "2024-06-13",
-    },
-    {
-      id: 3,
-      user: "user3@example.com",
-      amount: "$200.00",
-      method: "USDC",
-      status: "Completed",
-      date: "2024-06-12",
-    },
+    { id: 1, user: "user1@example.com", amount: "$50.00", method: "PayPal", status: "Pending", date: "2024-01-15" },
+    { id: 2, user: "user2@example.com", amount: "$25.00", method: "Bitcoin", status: "Processing", date: "2024-01-14" },
+    { id: 3, user: "user3@example.com", amount: "$100.00", method: "Bank Transfer", status: "Completed", date: "2024-01-13" },
   ]
 
   const tabs = [
@@ -862,6 +850,7 @@ export default function Admin() {
     { id: "cpm", label: "CPM Rates", icon: <DollarSign className="w-4 h-4" /> },
     { id: "device-targeting", label: "Device Targeting", icon: <Globe className="w-4 h-4" /> },
     { id: "cpm-viewer", label: "CPM Viewer", icon: <Eye className="w-4 h-4" /> },
+    { id: "postbacks", label: "Postbacks", icon: <Activity className="w-4 h-4" /> },
     { id: "payments", label: "Payments", icon: <CreditCard className="w-4 h-4" /> },
   ]
 
@@ -889,12 +878,7 @@ export default function Admin() {
       }
       
       // Refresh tasks
-      const tasksRes = await fetch("/api/tasks");
-      if (tasksRes.ok) {
-        const tasksData = await tasksRes.json();
-        console.log('[ADMIN DEBUG] Refreshed tasks:', tasksData);
-        setTasks(Array.isArray(tasksData) ? tasksData : []);
-      }
+      await fetchTasks();
     } catch (error) {
       console.error('[ADMIN DEBUG] Refresh error:', error);
     }
@@ -2835,6 +2819,278 @@ Singapore,3.50,SG`;
     </div>
   )
 
+  // Postback Management Functions
+  const fetchPostbackEvents = async () => {
+    setLoadingPostbacks(true);
+    try {
+      const res = await fetch("/api/postback", { method: "GET" });
+      if (res.ok) {
+        const data = await res.json();
+        // For now, return empty array since we need to implement the GET endpoint
+        setPostbackEvents([]);
+      }
+    } catch (error) {
+      console.error("Error fetching postback events:", error);
+      setPostbackEvents([]);
+    } finally {
+      setLoadingPostbacks(false);
+    }
+  };
+
+  const refreshPostbackData = async () => {
+    await fetchPostbackEvents();
+  };
+
+  const generateRandomSecret = () => {
+    return Array.from(crypto.getRandomValues(new Uint8Array(32)))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+  };
+
+  const savePostbackConfig = async () => {
+    if (!selectedPostbackTask) {
+      alert("Please select a task first");
+      return;
+    }
+
+    setLoadingPostbacks(true);
+    try {
+      const res = await fetch("/api/tasks", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: selectedPostbackTask,
+          postback_secret: postbackConfig.postback_secret,
+          external_offer_id: postbackConfig.external_offer_id,
+          // Include other task fields to avoid overwriting them
+          ...tasks.find(t => t.id === selectedPostbackTask)
+        })
+      });
+
+      if (!res.ok) throw new Error("Failed to save postback configuration");
+      
+      await fetchTasks(); // Refresh tasks to show updated config
+      alert("Postback configuration saved successfully!");
+      
+      // Reset form
+      setSelectedPostbackTask(null);
+      setPostbackConfig({ external_offer_id: "", postback_secret: "" });
+    } catch (error) {
+      console.error("Error saving postback config:", error);
+      alert("Failed to save postback configuration. Please try again.");
+    } finally {
+      setLoadingPostbacks(false);
+    }
+  };
+
+  // Load postback data on component mount
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn || !user) return;
+    fetchPostbackEvents();
+  }, [isLoaded, isSignedIn, user]);
+
+  const renderPostbacks = () => {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-white">Postback Management</h2>
+          <Button
+            onClick={refreshPostbackData}
+            disabled={loadingPostbacks}
+            className="flex items-center space-x-2"
+          >
+            {loadingPostbacks ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            <span>Refresh</span>
+          </Button>
+        </div>
+
+        {/* Postback Configuration */}
+        <Card className="bg-white/5 backdrop-blur-xl border-white/10">
+          <CardHeader>
+            <CardTitle className="text-white">Task Postback Configuration</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="postback-task" className="text-gray-300">Select Task</Label>
+                <select
+                  className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-white text-sm focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 mt-1"
+                  value={selectedPostbackTask || ""}
+                  onChange={(e) => setSelectedPostbackTask(e.target.value || null)}
+                >
+                  <option value="" className="bg-gray-800 text-gray-300">Select a task...</option>
+                  {tasks.map((task) => (
+                    <option key={task.id} value={task.id} className="bg-gray-800 text-white">
+                      {task.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="external-offer-id" className="text-gray-300">External Offer ID</Label>
+                <Input
+                  id="external-offer-id"
+                  className="bg-white/5 border-white/10 text-white mt-1"
+                  value={postbackConfig.external_offer_id}
+                  onChange={(e) => setPostbackConfig(prev => ({ ...prev, external_offer_id: e.target.value }))}
+                  placeholder="e.g., GAME001, APP123"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="postback-secret" className="text-gray-300">Postback Secret Key</Label>
+              <div className="flex space-x-2 mt-1">
+                <Input
+                  id="postback-secret"
+                  className="bg-white/5 border-white/10 text-white"
+                  value={postbackConfig.postback_secret}
+                  onChange={(e) => setPostbackConfig(prev => ({ ...prev, postback_secret: e.target.value }))}
+                  placeholder="Enter secret key for signature verification"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="border-white/10 bg-white/5 hover:bg-white/10 text-white"
+                  onClick={() => setPostbackConfig(prev => ({ 
+                    ...prev, 
+                    postback_secret: generateRandomSecret() 
+                  }))}
+                >
+                  Generate
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-gray-300">Your Postback URL</Label>
+              <div className="p-3 bg-gray-800/50 rounded border border-white/10 mt-1">
+                <code className="text-sm text-emerald-400">
+                  {typeof window !== 'undefined' ? `${window.location.origin}/api/postback` : 'https://yourdomain.com/api/postback'}
+                </code>
+              </div>
+              <p className="text-sm text-gray-400 mt-1">
+                Provide this URL to your advertiser/network for postback notifications
+              </p>
+            </div>
+
+            <Button
+              onClick={savePostbackConfig}
+              disabled={!selectedPostbackTask || loadingPostbacks}
+              className="w-full bg-gradient-to-r from-emerald-500 to-green-500 text-black"
+            >
+              {loadingPostbacks ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Save Postback Configuration
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Recent Postback Events */}
+        <Card className="bg-white/5 backdrop-blur-xl border-white/10">
+          <CardHeader>
+            <CardTitle className="text-white">Recent Postback Events</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {postbackEvents.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <Activity className="w-12 h-12 mx-auto mb-4 text-gray-500" />
+                <p className="text-lg mb-2">No postback events received yet</p>
+                <p className="text-sm">Configure tasks and wait for conversions</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-white/10">
+                      <TableHead className="text-gray-300">Click ID</TableHead>
+                      <TableHead className="text-gray-300">Task</TableHead>
+                      <TableHead className="text-gray-300">Status</TableHead>
+                      <TableHead className="text-gray-300">Payout</TableHead>
+                      <TableHead className="text-gray-300">Country</TableHead>
+                      <TableHead className="text-gray-300">Device</TableHead>
+                      <TableHead className="text-gray-300">Received</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {postbackEvents.map((event) => (
+                      <TableRow key={event.id} className="border-white/10 hover:bg-white/5">
+                        <TableCell className="font-mono text-sm text-white">
+                          {event.click_id}
+                        </TableCell>
+                        <TableCell className="text-white">
+                          {tasks.find(t => t.id === event.task_id)?.title || 'Unknown Task'}
+                        </TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded text-xs ${
+                            event.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400' : 
+                            event.status === 'rejected' ? 'bg-red-500/20 text-red-400' : 
+                            'bg-yellow-500/20 text-yellow-400'
+                          }`}>
+                            {event.status}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="font-mono text-emerald-400">
+                            ${event.payout?.toFixed(4) || '0.0000'}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-white">
+                          {event.country || '-'}
+                        </TableCell>
+                        <TableCell className="text-white">
+                          {event.device || '-'}
+                        </TableCell>
+                        <TableCell className="text-sm text-gray-400">
+                          {new Date(event.timestamp).toLocaleString()}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Postback Statistics */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="bg-blue-500/10 border-blue-500/20">
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-blue-400">
+                {postbackEvents.length}
+              </div>
+              <p className="text-sm text-gray-300">Total Postbacks</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-emerald-500/10 border-emerald-500/20">
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-emerald-400">
+                {postbackEvents.filter(e => e.status === 'approved').length}
+              </div>
+              <p className="text-sm text-gray-300">Approved</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-red-500/10 border-red-500/20">
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-red-400">
+                {postbackEvents.filter(e => e.status === 'rejected').length}
+              </div>
+              <p className="text-sm text-gray-300">Rejected</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-purple-500/10 border-purple-500/20">
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-purple-400">
+                ${postbackEvents.reduce((sum, e) => sum + (e.payout || 0), 0).toFixed(2)}
+              </div>
+              <p className="text-sm text-gray-300">Total Revenue</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900 text-white">
       {/* Background Effects */}
@@ -2889,6 +3145,7 @@ Singapore,3.50,SG`;
         {activeTab === "cpm" && renderCpmRates()}
         {activeTab === "device-targeting" && renderDeviceTargeting()}
         {activeTab === "cpm-viewer" && renderCpmViewer()}
+        {activeTab === "postbacks" && renderPostbacks()}
         {activeTab === "payments" && renderPayments()}
         </div>
       </div>

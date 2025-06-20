@@ -299,10 +299,37 @@ export default function LinkLocker({ title = "Premium Content Download", destina
       return;
     }
 
-    // Open adUrl if present and valid
+    // Generate unique click tracking before opening URL
     if (adUrl && typeof adUrl === 'string' && adUrl.trim() !== '') {
-      console.log('[TASK CLICK] Opening ad URL:', adUrl);
-      window.open(adUrl, '_blank', 'noopener,noreferrer');
+      console.log('[TASK CLICK] Generating click tracking for ad URL:', adUrl);
+      
+      // Track the click with unique ID for postback matching
+      fetch('/api/click-tracking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          task_id: taskId,
+          user_id: user?.id || null,
+          locker_id: lockerId
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          console.log('[TASK CLICK] Click tracked with ID:', data.click_id);
+          // Open the tracking URL which includes the click_id for postback matching
+          window.open(data.tracking_url, '_blank', 'noopener,noreferrer');
+        } else {
+          console.error('[TASK CLICK] Click tracking failed:', data.error);
+          // Fallback to original URL if tracking fails
+          window.open(adUrl, '_blank', 'noopener,noreferrer');
+        }
+      })
+      .catch(error => {
+        console.error('[TASK CLICK] Click tracking error:', error);
+        // Fallback to original URL if tracking fails
+        window.open(adUrl, '_blank', 'noopener,noreferrer');
+      });
     } else {
       console.error('[TASK CLICK] No valid ad URL found:', adUrl);
       alert('No Ad URL set for this task.');
