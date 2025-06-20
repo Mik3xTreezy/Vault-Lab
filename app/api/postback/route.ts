@@ -7,69 +7,59 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+// Handle postback notifications from advertisers
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    console.log('[POSTBACK] Received postback:', body);
+    console.log("[POSTBACK] Received postback:", body);
 
-    // Extract common postback parameters
-    const {
-      click_id,        // Unique identifier for the click/conversion
-      task_id,         // Your task ID
-      user_id,         // User who completed the task (optional)
-      locker_id,       // Locker where task was completed
-      status,          // 'approved', 'rejected', 'pending'
-      payout,          // Amount to pay (in USD)
-      currency = 'USD', // Currency
-      conversion_id,   // External network's conversion ID
-      ip,              // User's IP address
-      country,         // User's country
-      device,          // User's device
-      offer_id,        // External offer ID
-      signature,       // Security signature (if provided)
-      timestamp,       // When conversion happened
-      event_type = 'conversion', // Type of event
-      ...extraData     // Any additional data
+    const { 
+      click_id, 
+      task_id, 
+      status, 
+      payout = 0, 
+      currency = 'USD',
+      conversion_id,
+      ip,
+      country,
+      device,
+      offer_id,
+      signature 
     } = body;
 
     // Validate required fields
     if (!click_id || !task_id || !status) {
-      console.error('[POSTBACK] Missing required fields:', { click_id, task_id, status });
       return NextResponse.json({ 
         error: "Missing required fields: click_id, task_id, status" 
       }, { status: 400 });
     }
 
-    // Verify the task exists
+    // Get task details to verify postback secret
     const { data: task, error: taskError } = await supabase
       .from("tasks")
-      .select("id, title, postback_secret, status as task_status")
+      .select("*")
       .eq("id", task_id)
       .single();
 
     if (taskError || !task) {
-      console.error('[POSTBACK] Task not found:', task_id, taskError);
-      return NextResponse.json({ 
-        error: "Task not found" 
-      }, { status: 404 });
+      console.error("[POSTBACK] Task not found:", task_id);
+      return NextResponse.json({ error: "Task not found" }, { status: 404 });
     }
 
-    // Verify signature if task has postback_secret
+    // Verify signature if postback_secret is configured
     if (task.postback_secret && signature) {
-      const expectedSignature = generatePostbackSignature(body, task.postback_secret);
+      const expectedSignature = crypto
+        .createHmac('sha256', task.postback_secret)
+        .update(JSON.stringify({ click_id, task_id, status, payout }))
+        .digest('hex');
+      
       if (signature !== expectedSignature) {
-        console.error('[POSTBACK] Invalid signature:', { 
-          provided: signature, 
-          expected: expectedSignature 
-        });
-        return NextResponse.json({ 
-          error: "Invalid signature" 
-        }, { status: 401 });
+        console.error("[POSTBACK] Invalid signature");
+        return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
       }
-      console.log('[POSTBACK] Signature verified successfully');
     }
 
-    // Check for duplicate postbacks
+    // Check if this postback already exists (prevent duplicates)
     const { data: existingPostback } = await supabase
       .from("postback_events")
       .select("id")
@@ -78,203 +68,190 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (existingPostback) {
-      console.log('[POSTBACK] Duplicate postback ignored:', click_id);
+      console.log("[POSTBACK] Duplicate postback ignored:", click_id);
       return NextResponse.json({ 
-        message: "Postback already processed",
-        status: "duplicate"
+        success: true, 
+        message: "Postback already processed" 
       });
     }
 
-    // Insert postback event
-    const { data: postbackEvent, error: insertError } = await supabase
+    // Get click tracking info to find publisher
+    const { data: clickData } = await supabase
+      .from("click_tracking")
+      .select("*")
+      .eq("click_id", click_id)
+      .single();
+
+    // Store postback event
+    const { data: postbackEvent, error: postbackError } = await supabase
       .from("postback_events")
-      .insert({
+      .insert([{
         click_id,
         task_id,
-        user_id: user_id || null,
-        locker_id: locker_id || null,
+        user_id: clickData?.user_id,
+        locker_id: clickData?.locker_id,
         status,
-        payout: parseFloat(payout) || 0,
+        payout: parseFloat(payout.toString()),
         currency,
-        conversion_id: conversion_id || null,
-        ip: ip || null,
-        country: country || null,
-        device: device || null,
-        offer_id: offer_id || null,
-        event_type,
-        raw_data: body, // Store the complete postback for debugging
-        timestamp: timestamp ? new Date(timestamp) : new Date(),
+        conversion_id,
+        ip,
+        country: country || clickData?.country,
+        device: device || clickData?.device,
+        offer_id: offer_id || task.external_offer_id,
+        raw_data: body,
         processed: false
-      })
+      }])
       .select()
       .single();
 
-    if (insertError) {
-      console.error('[POSTBACK] Error inserting postback event:', insertError);
-      return NextResponse.json({ 
-        error: "Failed to store postback event" 
-      }, { status: 500 });
+    if (postbackError) {
+      console.error("[POSTBACK] Error storing postback:", postbackError);
+      return NextResponse.json({ error: "Failed to store postback" }, { status: 500 });
     }
 
-    console.log('[POSTBACK] Postback event stored:', postbackEvent.id);
-
-    // Process the postback based on status
-    if (status === 'approved') {
-      await processApprovedConversion(postbackEvent);
-    } else if (status === 'rejected') {
-      await processRejectedConversion(postbackEvent);
+    // Process approved conversions
+    if (status === 'approved' && clickData) {
+      await processApprovedConversion(postbackEvent, clickData, task);
     }
 
-    // Mark as processed
-    await supabase
-      .from("postback_events")
-      .update({ processed: true, processed_at: new Date().toISOString() })
-      .eq("id", postbackEvent.id);
-
+    console.log("[POSTBACK] Successfully processed postback:", postbackEvent.id);
     return NextResponse.json({ 
-      message: "Postback processed successfully",
+      success: true, 
       postback_id: postbackEvent.id,
-      status: "success"
+      message: "Postback processed successfully" 
     });
 
   } catch (error: any) {
-    console.error('[POSTBACK] Unexpected error:', error);
+    console.error("[POSTBACK] Error processing postback:", error);
     return NextResponse.json({ 
       error: "Internal server error",
-      message: error.message
+      details: error.message 
     }, { status: 500 });
   }
 }
 
-// GET endpoint for testing and webhook verification
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const challenge = searchParams.get('challenge');
-  
-  // Handle webhook verification challenges (like Facebook, etc.)
-  if (challenge) {
-    console.log('[POSTBACK] Webhook challenge received:', challenge);
-    return NextResponse.json({ challenge });
-  }
-
-  // Return postback endpoint info
-  return NextResponse.json({
-    message: "Postback endpoint is active",
-    endpoint: "/api/postback",
-    method: "POST",
-    required_fields: ["click_id", "task_id", "status"],
-    optional_fields: ["user_id", "locker_id", "payout", "currency", "conversion_id", "ip", "country", "device", "signature"],
-    supported_statuses: ["approved", "rejected", "pending"],
-    timestamp: new Date().toISOString()
-  });
-}
-
-async function processApprovedConversion(postbackEvent: any) {
-  console.log('[POSTBACK] Processing approved conversion:', postbackEvent.id);
-  
+// Process approved conversions by crediting revenue
+async function processApprovedConversion(postbackEvent: any, clickData: any, task: any) {
   try {
-    // Get the locker owner (publisher) who should receive the revenue
-    let publisherId = postbackEvent.user_id; // Default to the user who completed the task
+    console.log("[POSTBACK] Processing approved conversion:", postbackEvent.id);
+
+    // Calculate CPM-based revenue
+    const tier = getTierFromCountry(clickData.country);
+    let cpmRate = 0;
     
-    if (postbackEvent.locker_id) {
-      const { data: locker } = await supabase
-        .from("lockers")
-        .select("user_id")
-        .eq("id", postbackEvent.locker_id)
-        .single();
-      
-      if (locker) {
-        publisherId = locker.user_id; // Credit the locker owner, not the visitor
+    switch (tier) {
+      case 'tier1':
+        cpmRate = task.cpm_tier1 || 0;
+        break;
+      case 'tier2':
+        cpmRate = task.cpm_tier2 || 0;
+        break;
+      case 'tier3':
+        cpmRate = task.cpm_tier3 || 0;
+        break;
+    }
+
+    // Use postback payout if provided, otherwise calculate from CPM
+    const revenue = postbackEvent.payout > 0 ? postbackEvent.payout : (cpmRate / 1000);
+
+    if (revenue > 0) {
+      // Create verified revenue event
+      const { error: revenueError } = await supabase
+        .from("revenue_events")
+        .insert([{
+          user_id: clickData.publisher_id, // Credit the locker owner
+          locker_id: clickData.locker_id,
+          task_id: task.id,
+          amount: revenue,
+          country: clickData.country,
+          tier,
+          device: clickData.device,
+          rate_source: 'postback_verified',
+          postback_id: postbackEvent.id
+        }]);
+
+      if (revenueError) {
+        console.error("[POSTBACK] Error creating revenue event:", revenueError);
+        return;
+      }
+
+      // Update user balance
+      const { error: balanceError } = await supabase.rpc('increment_user_balance', {
+        user_id: clickData.publisher_id,
+        amount: revenue
+      });
+
+      if (balanceError) {
+        console.error("[POSTBACK] Error updating balance:", balanceError);
+      } else {
+        console.log(`[POSTBACK] Credited $${revenue} to user ${clickData.publisher_id}`);
       }
     }
 
-    if (!publisherId) {
-      console.warn('[POSTBACK] No publisher ID found for revenue credit');
-      return;
-    }
-
-    // Create verified revenue event
-    const { data: revenueEvent, error: revenueError } = await supabase
-      .from("revenue_events")
-      .insert({
-        user_id: publisherId,
-        locker_id: postbackEvent.locker_id,
-        task_id: postbackEvent.task_id,
-        amount: postbackEvent.payout,
-        country: postbackEvent.country,
-        device: postbackEvent.device,
-        rate_source: 'postback_verified',
-        timestamp: new Date().toISOString(),
-        postback_id: postbackEvent.id // Link to the postback event
+    // Mark postback as processed
+    await supabase
+      .from("postback_events")
+      .update({ 
+        processed: true, 
+        processed_at: new Date().toISOString() 
       })
-      .select()
-      .single();
+      .eq("id", postbackEvent.id);
 
-    if (revenueError) {
-      console.error('[POSTBACK] Error creating revenue event:', revenueError);
-      return;
-    }
-
-    console.log('[POSTBACK] Revenue event created:', revenueEvent.id);
-
-    // Update publisher balance
-    const { data: currentUser, error: userError } = await supabase
-      .from("users")
-      .select("balance")
-      .eq("id", publisherId)
-      .single();
-
-    if (userError) {
-      // Create user if doesn't exist
-      await supabase
-        .from("users")
-        .insert({
-          id: publisherId,
-          email: `${publisherId}@temp.local`,
-          balance: postbackEvent.payout,
-          joined: new Date().toISOString(),
-          status: 'Active',
-          role: 'user'
-        });
-      console.log('[POSTBACK] Created new publisher with balance:', postbackEvent.payout);
-    } else {
-      // Update existing balance
-      const newBalance = (currentUser.balance || 0) + postbackEvent.payout;
-      await supabase
-        .from("users")
-        .update({ balance: newBalance })
-        .eq("id", publisherId);
-      console.log('[POSTBACK] Updated publisher balance:', newBalance);
-    }
+    // Update click tracking
+    await supabase
+      .from("click_tracking")
+      .update({ 
+        converted: true, 
+        conversion_time: new Date().toISOString(),
+        payout: revenue
+      })
+      .eq("click_id", clickData.click_id);
 
   } catch (error) {
-    console.error('[POSTBACK] Error processing approved conversion:', error);
+    console.error("[POSTBACK] Error processing approved conversion:", error);
   }
 }
 
-async function processRejectedConversion(postbackEvent: any) {
-  console.log('[POSTBACK] Processing rejected conversion:', postbackEvent.id);
+// Helper function to determine tier from country
+function getTierFromCountry(country: string): string {
+  const tier1Countries = ['US', 'CA', 'GB', 'AU', 'DE', 'FR', 'NL', 'SE', 'NO', 'DK', 'CH', 'AT'];
+  const tier2Countries = ['ES', 'IT', 'BE', 'FI', 'IE', 'NZ', 'JP', 'KR', 'SG', 'HK'];
   
-  // If there's an existing revenue event for this conversion, we might need to reverse it
-  // This depends on your business logic - you might want to:
-  // 1. Mark the revenue event as reversed
-  // 2. Deduct from publisher balance
-  // 3. Send notification to publisher
-  
-  // For now, just log it
-  console.log('[POSTBACK] Conversion rejected - no action taken');
+  if (tier1Countries.includes(country?.toUpperCase())) return 'tier1';
+  if (tier2Countries.includes(country?.toUpperCase())) return 'tier2';
+  return 'tier3';
 }
 
-function generatePostbackSignature(data: any, secret: string): string {
-  // Generate HMAC-SHA256 signature for postback verification
-  const sortedParams = Object.keys(data)
-    .filter(key => key !== 'signature') // Exclude signature itself
-    .sort()
-    .map(key => `${key}=${data[key]}`)
-    .join('&');
-  
-  return crypto
-    .createHmac('sha256', secret)
-    .update(sortedParams)
-    .digest('hex');
+// Handle GET requests (for testing)
+export async function GET(req: NextRequest) {
+  const searchParams = req.nextUrl.searchParams;
+  const task_id = searchParams.get('task_id');
+
+  if (task_id) {
+    // Get postback events for specific task
+    const { data, error } = await supabase
+      .from("postback_events")
+      .select("*")
+      .eq("task_id", task_id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(data);
+  }
+
+  // Get recent postback events
+  const { data, error } = await supabase
+    .from("postback_events")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json(data);
 } 
