@@ -227,22 +227,24 @@ export default function Dashboard() {
           </div>
 
           {/* Metrics Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
             {overviewMetrics.map((metric, index) => (
               <Card
                 key={index}
-                className="bg-white/5 backdrop-blur-xl border-white/10 hover:bg-white/10 transition-colors"
+                className="bg-slate-900/50 border-slate-800 hover:bg-slate-900/70 transition-all duration-200"
               >
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-gray-300 text-sm">{metric.title}</span>
-                    {metric.icon}
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-slate-400 text-xs font-medium uppercase tracking-wider">{metric.title}</span>
+                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                      {metric.icon}
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold text-white">{metric.value}</span>
-                    <div className="flex items-center space-x-1">
-                      <ArrowUpRight className="w-3 h-3 text-emerald-400" />
-                      <span className="text-emerald-400 text-sm font-medium">{metric.change}</span>
+                  <div className="space-y-1">
+                    <div className="text-2xl font-bold text-white">{metric.value}</div>
+                    <div className="flex items-center text-xs">
+                      <ArrowUpRight className="w-3 h-3 text-emerald-400 mr-1" />
+                      <span className="text-emerald-400 font-medium">{metric.change}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -250,32 +252,32 @@ export default function Dashboard() {
             ))}
           </div>
 
-          {/* Analytics Chart (placeholder, you can use analytics.chartData if you add it) */}
-          <Card className="bg-white/5 backdrop-blur-xl border-white/10">
-            <CardHeader>
+          {/* Analytics Chart */}
+          <Card className="bg-slate-900/50 border-slate-800">
+            <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-white">Analytics & Revenue Overview</CardTitle>
-                <div className="flex items-center space-x-4 text-sm">
+                <CardTitle className="text-white text-lg font-semibold">Analytics & Revenue Overview</CardTitle>
+                <div className="flex items-center space-x-6 text-xs">
                   <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
-                    <span className="text-gray-300">Views</span>
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                    <span className="text-slate-400">Views</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 bg-green-400 rounded-full"></div>
-                    <span className="text-gray-300">Unlocks</span>
+                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                    <span className="text-slate-400">Unlocks</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
-                    <span className="text-gray-300">Tasks</span>
+                    <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                    <span className="text-slate-400">Tasks</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
-                    <span className="text-gray-300">Revenue</span>
+                    <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                    <span className="text-slate-400">Revenue</span>
                   </div>
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-0">
               <div className="h-64 flex items-end justify-center relative">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={analytics.chartData} margin={{ top: 20, right: 60, left: 0, bottom: 0 }}>
@@ -305,26 +307,27 @@ export default function Dashboard() {
           </Card>
 
           {/* Content & Traffic Analysis */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Content Performance */}
-            <Card className="bg-white/5 backdrop-blur-xl border-white/10">
-              <CardHeader>
-                <CardTitle className="text-white">Content Performance</CardTitle>
+            <Card className="bg-slate-900/50 border-slate-800">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-white text-lg font-semibold">Content Performance</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="pt-0 space-y-3">
                 {contentData.map((item, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                  <div key={index} className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
                     <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+                      <div className="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center">
                         <Globe className="w-4 h-4 text-emerald-400" />
                       </div>
                       <div>
-                        <p className="text-white font-semibold leading-tight">{item.title}</p>
-                        <p className="text-gray-400 text-sm font-mono">{item.id}</p>
+                        <p className="text-white font-medium text-sm">{item.title}</p>
+                        <p className="text-slate-400 text-xs font-mono">{item.id}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-white font-medium text-lg">{item.views}</p>
+                      <p className="text-white font-semibold">{item.views}</p>
+                      <p className="text-slate-400 text-xs">views</p>
                     </div>
                   </div>
                 ))}
@@ -332,51 +335,76 @@ export default function Dashboard() {
             </Card>
 
             {/* Traffic Sources */}
-            <Card className="bg-white/5 backdrop-blur-xl border-white/10">
-              <CardHeader>
-                <CardTitle className="text-white text-lg font-bold">Incoming Traffic</CardTitle>
+            <Card className="bg-slate-900/50 border-slate-800">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-white text-lg font-semibold">Incoming Traffic</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="flex flex-col md:flex-row gap-6">
+              <CardContent className="pt-0">
+                <div className="space-y-6">
                   {/* Domains/Referrers */}
-                  <div className="flex-1">
-                    <div className="text-gray-300 font-bold uppercase tracking-wide mb-2 text-sm">Domains</div>
-                    {trafficSources.map((source, idx) => (
-                      <div key={idx} className="flex items-center mb-2">
-                        <Globe className="w-4 h-4 text-emerald-400 mr-2" />
-                        <span className="text-white text-base font-medium truncate max-w-[160px]">{source.source}</span>
-                        <span className="ml-2 text-emerald-400 text-base font-bold">{source.percentage}</span>
-                        <div className="ml-2 flex items-center">
-                          {Array.from({ length: Math.round(Number(source.percentage.replace('%', '')) / 5) }).map((_, i) => (
-                            <div key={i} className="w-1 h-3 bg-emerald-400 rounded mr-0.5" />
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  {/* Sources */}
-                  <div className="flex-1">
-                    <div className="text-gray-300 font-bold uppercase tracking-wide mb-2 text-sm">Sources</div>
-                    {[
-                      { label: "Links", icon: <Link className="w-4 h-4 text-emerald-400" />, key: "Links", color: "bg-emerald-400" },
-                      { label: "Direct", icon: <Search className="w-4 h-4 text-emerald-400" />, key: "Direct", color: "bg-emerald-400" },
-                      { label: "Social Media", icon: <Share2 className="w-4 h-4 text-emerald-400" />, key: "Social Media", color: "bg-emerald-400" },
-                      { label: "Search", icon: <Search className="w-4 h-4 text-emerald-400" />, key: "Search", color: "bg-emerald-400" },
-                    ].map((src, idx) => {
-                      const found = trafficSources.find(s => s.source === src.key) || { percentage: "0%" };
-                      return (
-                        <div key={idx} className="flex items-center mb-2">
-                          {src.icon}
-                          <span className="text-white text-base font-medium ml-2">{src.label}</span>
-                          <span className="ml-2 text-emerald-400 text-base font-bold">{found.percentage}</span>
-                          <div className="ml-2 flex items-center">
-                            {Array.from({ length: Math.round(Number(found.percentage.replace('%', '')) / 5) }).map((_, i) => (
-                              <div key={i} className={`w-1 h-3 ${src.color} rounded mr-0.5`} />
-                            ))}
+                  <div>
+                    <div className="text-slate-400 font-medium uppercase tracking-wider mb-3 text-xs flex items-center">
+                      <Globe className="w-3 h-3 mr-2" />
+                      Domains
+                    </div>
+                    <div className="space-y-2">
+                      {trafficSources.map((source, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-800/50 transition-colors">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-6 h-6 bg-emerald-500/10 rounded-lg flex items-center justify-center">
+                              <Globe className="w-3 h-3 text-emerald-400" />
+                            </div>
+                            <span className="text-white text-sm font-medium">{source.source}</span>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <span className="text-emerald-400 text-sm font-semibold">{source.percentage}</span>
+                            <div className="w-16 h-1 bg-slate-700 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-emerald-400 rounded-full transition-all duration-300"
+                                style={{ width: source.percentage }}
+                              />
+                            </div>
                           </div>
                         </div>
-                      );
-                    })}
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Sources */}
+                  <div>
+                    <div className="text-slate-400 font-medium uppercase tracking-wider mb-3 text-xs flex items-center">
+                      <Link className="w-3 h-3 mr-2" />
+                      Sources
+                    </div>
+                    <div className="space-y-2">
+                      {[
+                        { label: "Links", icon: <Link className="w-3 h-3 text-emerald-400" />, key: "Links" },
+                        { label: "Direct", icon: <Search className="w-3 h-3 text-emerald-400" />, key: "Direct" },
+                        { label: "Social Media", icon: <Share2 className="w-3 h-3 text-emerald-400" />, key: "Social Media" },
+                        { label: "Search", icon: <Search className="w-3 h-3 text-emerald-400" />, key: "Search" },
+                      ].map((src, idx) => {
+                        const found = trafficSources.find(s => s.source === src.key) || { percentage: "0%" };
+                        return (
+                          <div key={idx} className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-800/50 transition-colors">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-6 h-6 bg-emerald-500/10 rounded-lg flex items-center justify-center">
+                                {src.icon}
+                              </div>
+                              <span className="text-white text-sm font-medium">{src.label}</span>
+                            </div>
+                            <div className="flex items-center space-x-3">
+                              <span className="text-emerald-400 text-sm font-semibold">{found.percentage}</span>
+                              <div className="w-16 h-1 bg-slate-700 rounded-full overflow-hidden">
+                                <div 
+                                  className="h-full bg-emerald-400 rounded-full transition-all duration-300"
+                                  style={{ width: found.percentage }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -384,53 +412,68 @@ export default function Dashboard() {
           </div>
 
           {/* Platforms (Devices & Browsers) */}
-          <Card className="bg-white/5 backdrop-blur-xl border-white/10">
-            <CardHeader>
-              <CardTitle className="text-white text-lg font-bold">Platforms</CardTitle>
+          <Card className="bg-slate-900/50 border-slate-800">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-white text-lg font-semibold">Platforms</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex flex-col md:flex-row gap-8">
+            <CardContent className="pt-0">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Devices */}
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-gray-300 font-bold uppercase tracking-wide text-sm">Devices</span>
-                    <span className="text-gray-400 text-xs flex items-center">
-                      <BarChart3 className="w-3 h-3 mr-1" /> Views
-                    </span>
+                <div>
+                  <div className="text-slate-400 font-medium uppercase tracking-wider mb-3 text-xs flex items-center">
+                    <Monitor className="w-3 h-3 mr-2" />
+                    Devices
                   </div>
-                  {deviceData.map((device, idx) => (
-                    <div key={idx} className="flex items-center mb-2">
-                      <span className="w-6 h-6 flex items-center justify-center">{device.icon}</span>
-                      <span className="text-white ml-2">{device.device}</span>
-                      <span className="ml-auto text-emerald-400 font-bold">{device.percentage}</span>
-                      <div className="ml-2 flex items-center">
-                        {Array.from({ length: Math.round(Number(device.percentage.replace('%', '')) / 5) }).map((_, i) => (
-                          <div key={i} className="w-1 h-3 bg-emerald-400 rounded mr-0.5" />
-                        ))}
+                  <div className="space-y-2">
+                    {deviceData.map((device, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-800/50 transition-colors">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-6 h-6 bg-emerald-500/10 rounded-lg flex items-center justify-center">
+                            {device.icon}
+                          </div>
+                          <span className="text-white text-sm font-medium">{device.device}</span>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <span className="text-emerald-400 text-sm font-semibold">{device.percentage}</span>
+                          <div className="w-16 h-1 bg-slate-700 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-emerald-400 rounded-full transition-all duration-300"
+                              style={{ width: device.percentage }}
+                            />
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
+                
                 {/* Browsers */}
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-gray-300 font-bold uppercase tracking-wide text-sm">Web browsers</span>
-                    <span className="text-gray-400 text-xs flex items-center">
-                      <BarChart3 className="w-3 h-3 mr-1" /> Views
-                    </span>
+                <div>
+                  <div className="text-slate-400 font-medium uppercase tracking-wider mb-3 text-xs flex items-center">
+                    <Chrome className="w-3 h-3 mr-2" />
+                    Web browsers
                   </div>
-                  {browserData.map((browser, idx) => (
-                    <div key={idx} className="flex items-center mb-2">
-                      <span className="w-6 h-6 flex items-center justify-center">{browser.icon}</span>
-                      <span className="text-white ml-2">{browser.browser}</span>
-                      <span className="ml-auto text-emerald-400 font-bold">{browser.percentage}</span>
-                      <div className="ml-2 flex items-center">
-                        {Array.from({ length: Math.round(Number(browser.percentage.replace('%', '')) / 5) }).map((_, i) => (
-                          <div key={i} className="w-1 h-3 bg-emerald-400 rounded mr-0.5" />
-                        ))}
+                  <div className="space-y-2">
+                    {browserData.map((browser, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-800/50 transition-colors">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-6 h-6 bg-emerald-500/10 rounded-lg flex items-center justify-center">
+                            {browser.icon}
+                          </div>
+                          <span className="text-white text-sm font-medium">{browser.browser}</span>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <span className="text-emerald-400 text-sm font-semibold">{browser.percentage}</span>
+                          <div className="w-16 h-1 bg-slate-700 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-emerald-400 rounded-full transition-all duration-300"
+                              style={{ width: browser.percentage }}
+                            />
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
             </CardContent>

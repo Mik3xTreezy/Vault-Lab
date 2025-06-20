@@ -236,90 +236,47 @@ export default function GeoMap({ countryData: initialCountryData, userId }: GeoM
     .slice(0, 10);
 
   return (
-    <div className="bg-gradient-to-br from-slate-900/50 to-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 shadow-2xl">
+    <div className="bg-slate-900/50 border border-slate-800 rounded-lg">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-gradient-to-r from-emerald-500 to-green-500 rounded-xl">
-            <Globe className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-white">Global Visitor Analytics</h2>
-            <p className="text-slate-400">Geographic distribution of your audience</p>
-          </div>
+      <div className="flex items-center justify-between p-6 border-b border-slate-800">
+        <div>
+          <h2 className="text-lg font-semibold text-white">Geographies</h2>
+          <p className="text-slate-400 text-sm mt-1">Geographic distribution of your audience</p>
         </div>
         
         {/* Live indicator */}
         <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${isLoading ? 'bg-yellow-400 animate-pulse' : 'bg-green-400'}`} />
-          <span className="text-sm text-slate-400">
-            {isLoading ? 'Updating...' : 'Live'}
+          <div className={`w-2 h-2 rounded-full ${isLoading ? 'bg-yellow-400 animate-pulse' : 'bg-emerald-400'}`} />
+          <span className="text-xs text-slate-400">
+            {isLoading ? 'Updating...' : 'Views'}
           </span>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
-          <div className="flex items-center gap-3 mb-2">
-            <Users className="w-5 h-5 text-emerald-400" />
-            <span className="text-slate-300 font-medium">Total Views</span>
-          </div>
-          <div className="text-3xl font-bold text-white">{totalViews.toLocaleString()}</div>
-        </div>
-        
-        <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
-          <div className="flex items-center gap-3 mb-2">
-            <MapPin className="w-5 h-5 text-emerald-400" />
-            <span className="text-slate-300 font-medium">Countries</span>
-          </div>
-          <div className="text-3xl font-bold text-white">{uniqueCountries}</div>
-        </div>
-        
-        <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
-          <div className="flex items-center gap-3 mb-2">
-            <TrendingUp className="w-5 h-5 text-emerald-400" />
-            <span className="text-slate-300 font-medium">Top Country</span>
-          </div>
-          <div className="text-xl font-bold text-white">
-            {topCountries.length > 0 ? (
-              <div>
-                <div>{countryNames[topCountries[0][0]] || topCountries[0][0]}</div>
-                <div className="text-sm text-slate-400 font-normal">
-                  {topCountries[0][1].toLocaleString()} views
-                </div>
-              </div>
-            ) : (
-              <div className="text-slate-500">No data</div>
-            )}
+      <div className="p-6">
+        {/* Color Scale Legend */}
+        <div className="flex items-center justify-center mb-6">
+          <div className="flex items-center gap-4">
+            <span className="text-xs text-slate-400">Low</span>
+            <div className="flex gap-0.5">
+              {Array.from({ length: 20 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="w-1 h-2 rounded-sm"
+                  style={{ 
+                    backgroundColor: colorScale(i * (maxValue / 19)),
+                  }}
+                />
+              ))}
+            </div>
+            <span className="text-xs text-emerald-400 font-medium">High</span>
           </div>
         </div>
-      </div>
 
-      {/* Color Scale Legend */}
-      <div className="flex items-center justify-center mb-6">
-        <div className="flex items-center gap-4 bg-slate-800/30 rounded-full px-6 py-3">
-          <span className="text-sm text-slate-400">Low</span>
-          <div className="flex gap-1">
-            {Array.from({ length: 20 }).map((_, i) => (
-              <div
-                key={i}
-                className="w-1 h-4 rounded-full"
-                style={{ 
-                  backgroundColor: colorScale(i * (maxValue / 19)),
-                }}
-              />
-            ))}
-          </div>
-          <span className="text-sm text-emerald-400 font-medium">High</span>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-        {/* World Map */}
-        <div className="xl:col-span-3">
-          <div className="bg-slate-900/50 rounded-xl p-6 border border-slate-700/30">
-            <div className="relative h-96 w-full">
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+          {/* World Map */}
+          <div className="xl:col-span-3">
+            <div className="relative h-80 w-full">
               <ComposableMap 
                 projectionConfig={{ 
                   scale: 160,
@@ -360,56 +317,51 @@ export default function GeoMap({ countryData: initialCountryData, userId }: GeoM
               
               {/* Hover Tooltip */}
               {hoveredCountry && (
-                <div className="absolute top-4 left-4 bg-slate-900/95 text-white px-4 py-2 rounded-lg border border-slate-700 shadow-lg pointer-events-none">
-                  <div className="text-sm font-medium">{hoveredCountry}</div>
+                <div className="absolute top-4 left-4 bg-slate-900/95 text-white px-3 py-2 rounded border border-slate-700 shadow-lg pointer-events-none">
+                  <div className="text-xs font-medium">{hoveredCountry}</div>
                 </div>
               )}
             </div>
           </div>
-        </div>
 
-        {/* Top Countries List */}
-        <div className="xl:col-span-1">
-          <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50 h-full">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-emerald-400" />
-              Top Countries
-            </h3>
-            
-            <div className="space-y-3 max-h-80 overflow-y-auto">
-              {topCountries.length > 0 ? (
-                topCountries.map(([code, views], index) => {
-                  const percentage = totalViews > 0 ? (views / totalViews) * 100 : 0;
-                  const countryName = countryNames[code] || code;
-                  
-                  return (
-                    <div 
-                      key={code} 
-                      className="flex items-center justify-between p-3 rounded-lg bg-slate-700/30 hover:bg-slate-700/50 transition-all duration-200 border border-slate-600/30"
-                    >
-                                             <div className="flex items-center gap-3">
-                         <div className="flex items-center justify-center w-6 h-6 rounded-full bg-gradient-to-r from-emerald-500 to-green-500 text-white text-xs font-bold">
-                           {index + 1}
-                         </div>
-                         <div>
-                           <div className="text-white font-medium text-sm">{countryName}</div>
-                           <div className="text-slate-400 text-xs">{percentage.toFixed(1)}% of traffic</div>
-                         </div>
-                       </div>
-                       <div className="text-right">
-                         <div className="text-emerald-400 font-bold text-sm">{views.toLocaleString()}</div>
-                         <div className="text-slate-500 text-xs">views</div>
-                       </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="text-center py-8">
-                  <Globe className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                  <div className="text-slate-500 text-sm">No visitor data available</div>
-                  <div className="text-slate-600 text-xs mt-1">Start sharing your links to see analytics</div>
-                </div>
-              )}
+          {/* Top Countries List */}
+          <div className="xl:col-span-1">
+            <div className="h-full">
+              <h3 className="text-slate-400 font-medium uppercase tracking-wider mb-3 text-xs">
+                Top Countries
+              </h3>
+              
+              <div className="space-y-2 max-h-72 overflow-y-auto">
+                {topCountries.length > 0 ? (
+                  topCountries.map(([code, views], index) => {
+                    const percentage = totalViews > 0 ? (views / totalViews) * 100 : 0;
+                    const countryName = countryNames[code] || code;
+                    
+                    return (
+                      <div 
+                        key={code} 
+                        className="flex items-center justify-between p-2 rounded hover:bg-slate-800/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center justify-center w-5 h-5 rounded bg-emerald-500/10 text-emerald-400 text-xs font-semibold">
+                            {index + 1}
+                          </div>
+                          <div>
+                            <div className="text-white font-medium text-sm">{countryName}</div>
+                            <div className="text-slate-400 text-xs">{percentage.toFixed(1)}%</div>
+                          </div>
+                        </div>
+                        <div className="text-emerald-400 font-semibold text-sm">{views.toLocaleString()}</div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-8">
+                    <Globe className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+                    <div className="text-slate-500 text-xs">No visitor data available</div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
