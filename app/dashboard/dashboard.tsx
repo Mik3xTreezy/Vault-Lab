@@ -479,8 +479,6 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-
-
           {/* Geo Map Section */}
           <div className="mt-8">
             <GeoMap countryData={analytics.countryData} userId={user.id} />
