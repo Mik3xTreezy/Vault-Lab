@@ -25,6 +25,14 @@ export async function GET(
     return NextResponse.json({ error: "No analytics data" }, { status: 500 });
   }
 
+  // Get revenue events for this locker
+  const { data: revenueEvents, error: revenueError } = await supabase
+    .from("revenue_events")
+    .select("amount, timestamp")
+    .eq("locker_id", lockerId);
+
+  const revenueData = revenueEvents || [];
+
   // Time series for the last 28 days
   const days = Array.from({ length: 28 }, (_, i) => {
     const d = subDays(new Date(), 27 - i);
@@ -40,7 +48,10 @@ export async function GET(
     const tasks = analytics.filter(
       (a) => a.event_type === "task_complete" && a.timestamp && a.timestamp.startsWith(date)
     ).length;
-    return { date, views, unlocks, tasks };
+    const revenue = revenueData
+      .filter(e => e.timestamp && e.timestamp.startsWith(date))
+      .reduce((sum, e) => sum + Number(e.amount), 0);
+    return { date, views, unlocks, tasks, revenue };
   });
 
   const views = analytics.filter((a) => a.event_type === "visit").length;
@@ -68,12 +79,21 @@ export async function GET(
     else browsers["Other"] = (browsers["Other"] || 0) + 1;
   });
 
+  // Calculate revenue metrics
+  const totalRevenue = revenueData.reduce((sum, e) => sum + Number(e.amount), 0);
+  const avgCpm = taskCompletions > 0 ? (totalRevenue * 1000) / taskCompletions : 0;
+
   return NextResponse.json({
     overview: {
       views,
       unlocks,
       taskCompletions,
       unlockRate,
+    },
+    revenue: {
+      totalRevenue,
+      avgCpm,
+      events: revenueData.length,
     },
     chartData,
     sources,

@@ -11,14 +11,17 @@ import {
   RefreshCw,
   ChevronLeft,
   ChevronRight,
-  Eye,
   Edit,
   ExternalLink,
   Globe,
   TrendingUp,
   BarChart3,
+  Save,
+  X,
 } from "lucide-react"
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTitle, DialogHeader } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from "recharts"
 import { useUser } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
@@ -47,6 +50,9 @@ export default function Vault() {
   const [selectedLocker, setSelectedLocker] = useState<any>(null)
   const [lockerAnalytics, setLockerAnalytics] = useState<any>(null)
   const [analyticsOpen, setAnalyticsOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const [editingLocker, setEditingLocker] = useState<any>(null)
+  const [editForm, setEditForm] = useState({ title: '', destination_url: '' })
   const [lockerCharts, setLockerCharts] = useState<Record<string, { chartData: any[], totalViews: number }>>({})
   const [bestPerformingLockers, setBestPerformingLockers] = useState<any[]>([])
 
@@ -134,6 +140,48 @@ export default function Vault() {
         .then(data => setLockerAnalytics(data))
     }
   }, [selectedLocker, analyticsOpen])
+
+  // Handle edit locker
+  const handleEditLocker = (locker: any) => {
+    setEditingLocker(locker)
+    setEditForm({
+      title: locker.title || '',
+      destination_url: locker.destination_url || ''
+    })
+    setEditOpen(true)
+  }
+
+  // Save edited locker
+  const handleSaveEdit = async () => {
+    if (!editingLocker) return
+    
+    try {
+      const response = await fetch(`/api/lockers/${editingLocker.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editForm),
+      })
+      
+      if (response.ok) {
+        // Refresh lockers list
+        const res = await fetch("/api/lockers")
+        const data = await res.json()
+        setLockers(data)
+        setEditOpen(false)
+        setEditingLocker(null)
+      }
+    } catch (error) {
+      console.error('Error updating locker:', error)
+    }
+  }
+
+  // Open locked link in new tab
+  const handleOpenLink = (locker: any) => {
+    const url = `${window.location.origin}/locked/${locker.id}`
+    window.open(url, '_blank')
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900 text-white">
@@ -282,13 +330,22 @@ export default function Vault() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
-                          <Button variant="ghost" size="icon" className="w-8 h-8 hover:bg-white/10">
-                            <Eye className="w-4 h-4 text-gray-400" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="w-8 h-8 hover:bg-white/10">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="w-8 h-8 hover:bg-white/10"
+                            onClick={() => handleEditLocker(locker)}
+                            aria-label="Edit locker"
+                          >
                             <Edit className="w-4 h-4 text-gray-400" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="w-8 h-8 hover:bg-white/10">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="w-8 h-8 hover:bg-white/10"
+                            onClick={() => handleOpenLink(locker)}
+                            aria-label="Open locked link"
+                          >
                             <ExternalLink className="w-4 h-4 text-gray-400" />
                           </Button>
                           <Button
@@ -320,15 +377,68 @@ export default function Vault() {
         </div>
       </div>
 
+      {/* Edit Modal */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-md bg-[#18181b] text-white">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">
+              Edit Locker
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="title" className="text-sm font-medium text-gray-300">
+                Title
+              </Label>
+              <Input
+                id="title"
+                value={editForm.title}
+                onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                className="mt-1 bg-white/5 border-white/10 text-white placeholder-gray-400 focus:border-emerald-500/50"
+                placeholder="Enter locker title"
+              />
+            </div>
+            <div>
+              <Label htmlFor="destination_url" className="text-sm font-medium text-gray-300">
+                Destination URL
+              </Label>
+              <Textarea
+                id="destination_url"
+                value={editForm.destination_url}
+                onChange={(e) => setEditForm({ ...editForm, destination_url: e.target.value })}
+                className="mt-1 bg-white/5 border-white/10 text-white placeholder-gray-400 focus:border-emerald-500/50 min-h-[80px]"
+                placeholder="Enter destination URL"
+              />
+            </div>
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setEditOpen(false)}
+                className="border-white/10 bg-white/5 hover:bg-white/10"
+              >
+                <X className="w-4 h-4 mr-2" />
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveEdit}
+                className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black font-medium"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Save Changes
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Analytics Modal */}
       <Dialog open={analyticsOpen} onOpenChange={setAnalyticsOpen}>
         <DialogContent className="max-w-2xl bg-[#18181b] text-white">
-          <DialogTitle className="sr-only">
-            Analytics Modal
-          </DialogTitle>
-          <h2 className="text-xl font-bold mb-4">
-            Analytics for: <span className="font-mono text-emerald-400">{selectedLocker?.title}</span>
-          </h2>
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">
+              Analytics for: <span className="font-mono text-emerald-400">{selectedLocker?.title}</span>
+            </DialogTitle>
+          </DialogHeader>
           {!lockerAnalytics ? (
             <div className="text-gray-400">Loading...</div>
           ) : (
@@ -360,10 +470,11 @@ export default function Vault() {
                     <Line type="monotone" dataKey="views" stroke="#10b981" strokeWidth={2} dot={false} name="Views" />
                     <Line type="monotone" dataKey="unlocks" stroke="#22c55e" strokeWidth={2} dot={false} name="Unlocks" />
                     <Line type="monotone" dataKey="tasks" stroke="#eab308" strokeWidth={2} dot={false} name="Tasks" />
+                    <Line type="monotone" dataKey="revenue" stroke="#60a5fa" strokeWidth={2} dot={false} name="Revenue ($)" />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <div className="text-gray-400 text-sm">Views</div>
                   <div className="text-2xl font-bold text-white">{lockerAnalytics.overview.views}</div>
@@ -379,6 +490,18 @@ export default function Vault() {
                 <div>
                   <div className="text-gray-400 text-sm">Unlock Rate</div>
                   <div className="text-2xl font-bold text-white">{lockerAnalytics.overview.unlockRate.toFixed(1)}%</div>
+                </div>
+                <div>
+                  <div className="text-gray-400 text-sm">Revenue Generated</div>
+                  <div className="text-2xl font-bold text-emerald-400">
+                    ${lockerAnalytics.revenue?.totalRevenue?.toFixed(4) || '0.0000'}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-gray-400 text-sm">Avg. CPM</div>
+                  <div className="text-2xl font-bold text-white">
+                    ${lockerAnalytics.revenue?.avgCpm?.toFixed(2) || '0.00'}
+                  </div>
                 </div>
               </div>
             </>
