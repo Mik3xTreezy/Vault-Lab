@@ -203,7 +203,13 @@ export default function LinkLocker({ title = "Premium Content Download", destina
             ? deviceSpecificConfig.adUrl 
             : task.ad_url;
           
-          console.log(`[TASK MAPPING] Task "${task.title}" - Using ad URL: ${effectiveAdUrl} ${deviceSpecificConfig?.adUrl ? '(device-specific)' : '(default)'}`);
+          console.log(`[TASK MAPPING] Task "${task.title}" - Raw task data:`, {
+            id: task.id,
+            ad_url: task.ad_url,
+            deviceSpecificConfig,
+            effectiveAdUrl,
+            deviceTargetKey
+          });
           
           return {
             id: task.id.toString(),
@@ -214,7 +220,7 @@ export default function LinkLocker({ title = "Premium Content Download", destina
             icon: <Gift className="w-5 h-5" />,
             adUrl: effectiveAdUrl,
             completionTimeSeconds: task.completion_time_seconds || 60,
-            action: () => handleTaskClick(task.id)
+            action: () => handleTaskClick(task.id.toString())
           };
         })
 
@@ -288,7 +294,13 @@ export default function LinkLocker({ title = "Premium Content Download", destina
     const task = tasks.find((t) => t.id === taskId);
     console.log('[TASK CLICK] Starting task click:', { 
       taskId, 
-      task: task ? { id: task.id, title: task.title } : 'not found',
+      task: task ? { 
+        id: task.id, 
+        title: task.title,
+        adUrl: task.adUrl,
+        ad_url: (task as any)?.ad_url,
+        fullTask: task
+      } : 'not found',
       userReady,
       userId: user?.id
     });
@@ -304,7 +316,12 @@ export default function LinkLocker({ title = "Premium Content Download", destina
       console.log('[TASK CLICK] Opening ad URL:', adUrl);
       window.open(adUrl, '_blank', 'noopener,noreferrer');
     } else {
-      console.error('[TASK CLICK] No valid ad URL found:', adUrl);
+      console.error('[TASK CLICK] No valid ad URL found:', {
+        adUrl,
+        taskAdUrl: task?.adUrl,
+        taskAdUrlAlt: (task as any)?.ad_url,
+        task
+      });
       alert('No Ad URL set for this task.');
       return;
     }
