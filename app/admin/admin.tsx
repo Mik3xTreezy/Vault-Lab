@@ -2830,7 +2830,7 @@ Singapore,3.50,SG`;
   )
 
   // Postback Management Functions
-  const fetchPostbackEvents = async () => {
+  const fetchPostbackEvents = useCallback(async () => {
     setLoadingPostbacks(true);
     try {
       const res = await fetch("/api/postback", { method: "GET" });
@@ -2845,11 +2845,11 @@ Singapore,3.50,SG`;
     } finally {
       setLoadingPostbacks(false);
     }
-  };
+  }, []);
 
-  const refreshPostbackData = async () => {
+  const refreshPostbackData = useCallback(async () => {
     await fetchPostbackEvents();
-  };
+  }, [fetchPostbackEvents]);
 
   const generateRandomSecret = () => {
     if (typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues) {
@@ -2862,7 +2862,7 @@ Singapore,3.50,SG`;
     }
   };
 
-  const savePostbackConfig = async () => {
+  const savePostbackConfig = useCallback(async () => {
     if (!selectedPostbackTask) {
       alert("Please select a task first");
       return;
@@ -2896,13 +2896,13 @@ Singapore,3.50,SG`;
     } finally {
       setLoadingPostbacks(false);
     }
-  };
+  }, [selectedPostbackTask, postbackConfig, tasks, fetchTasks]);
 
   // Load postback data on component mount
   useEffect(() => {
     if (!mounted || !isLoaded || !isSignedIn || !user) return;
     fetchPostbackEvents();
-  }, [mounted, isLoaded, isSignedIn, user]);
+  }, [mounted, isLoaded, isSignedIn, user, fetchPostbackEvents]);
 
   const renderPostbacks = () => {
     return (
