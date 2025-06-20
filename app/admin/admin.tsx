@@ -690,7 +690,8 @@ export default function Admin() {
       const countryData: { [key: string]: any } = {};
       
       Object.entries(data || {}).forEach(([key, value]: [string, any]) => {
-        if (value && value.country && value.cpm && value.task_id === taskId) {
+        // Only show CSV uploaded data, not manually set data
+        if (value && value.country && value.cpm && value.task_id === taskId && value.source === 'csv_upload') {
           const country = value.country;
           if (!countryData[country]) {
             countryData[country] = {
@@ -2394,17 +2395,18 @@ Singapore,3.50,SG`;
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold text-white">CPM Rates Viewer</h2>
           <div className="text-sm text-gray-400">
-            View CPM rates set via CSV upload for each country
+            View CPM rates set via CSV upload only (excludes manually configured rates)
           </div>
         </div>
 
         {/* Task Selection */}
         <Card className="bg-white/5 backdrop-blur-xl border-white/10">
           <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Eye className="w-5 h-5 text-blue-400" />
-              Select Task to View CPM Rates
-            </CardTitle>
+                         <CardTitle className="text-white flex items-center gap-2">
+               <Eye className="w-5 h-5 text-blue-400" />
+               Select Task to View CSV-Uploaded CPM Rates
+               <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded">CSV Only</span>
+             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-4">
@@ -2484,13 +2486,14 @@ Singapore,3.50,SG`;
                   <p className="text-gray-400">Loading CPM data...</p>
                 </div>
               ) : cpmViewerData.length === 0 ? (
-                <div className="p-8 text-center">
-                  <Globe className="w-12 h-12 mx-auto mb-4 text-gray-500" />
-                  <p className="text-gray-400 text-lg mb-2">No CPM rates found</p>
-                  <p className="text-gray-500 text-sm">
-                    This task doesn't have any CPM rates set via CSV upload yet.
-                  </p>
-                </div>
+                                 <div className="p-8 text-center">
+                   <Globe className="w-12 h-12 mx-auto mb-4 text-gray-500" />
+                   <p className="text-gray-400 text-lg mb-2">No CSV-uploaded CPM rates found</p>
+                   <p className="text-gray-500 text-sm">
+                     This task doesn't have any CPM rates set via CSV upload yet.<br/>
+                     Use the "Device Targeting" tab to upload CPM rates via CSV.
+                   </p>
+                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <Table>

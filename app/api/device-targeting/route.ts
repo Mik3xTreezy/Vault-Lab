@@ -50,6 +50,7 @@ export async function GET(req: NextRequest) {
         adUrl: item.ad_url,
         ad_url: item.ad_url, // Keep both for compatibility
         cpm: item.cpm,
+        source: item.source || 'manual', // Default to manual if not set
         created_at: item.created_at,
         updated_at: item.updated_at
       };
@@ -80,7 +81,8 @@ export async function POST(req: NextRequest) {
       country: item.country,
       task_id: item.taskId || null,
       ad_url: item.adUrl || null,
-      cpm: item.cpm ? parseFloat(item.cpm) : null
+      cpm: item.cpm ? parseFloat(item.cpm) : null,
+      source: 'manual' // Mark as manually set
     }));
     
     if (dataToSave.length === 0) {

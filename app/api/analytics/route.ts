@@ -53,38 +53,76 @@ export async function POST(req: NextRequest) {
     console.log('[ANALYTICS API] Analytics event inserted successfully');
 
     // If this is a task completion, handle revenue calculation
-    if (event_type === "task_complete" && task_id && extra?.country && extra?.tier) {
+    if (event_type === "task_complete" && task_id && extra?.country && (extra?.device || extra?.tier)) {
       console.log('[ANALYTICS API] Processing task completion for revenue...');
       
       try {
-        // Get the task details to find CPM rate using the UUID
-        const { data: tasks, error: tasksError } = await supabase
-          .from("tasks")
-          .select("id, cpm_tier1, cpm_tier2, cpm_tier3")
-          .eq("id", task_id);
-
-        if (tasksError || !tasks || tasks.length === 0) {
-          console.error('[ANALYTICS API] Error fetching task:', tasksError);
-          return NextResponse.json({ success: true, warning: "Task not found for revenue calculation" });
-        }
-
-        const task = tasks[0];
-        console.log('[ANALYTICS API] Found task:', task);
-
-        // Calculate revenue based on tier
         let cpmRate = 0;
-        switch (extra.tier) {
-          case 'tier1':
-            cpmRate = task.cpm_tier1 || 0;
-            break;
-          case 'tier2':
-            cpmRate = task.cpm_tier2 || 0;
-            break;
-          case 'tier3':
-            cpmRate = task.cpm_tier3 || 0;
-            break;
-          default:
-            cpmRate = task.cpm_tier3 || 0; // Default to tier3
+        let rateSource = 'unknown';
+        
+        // First priority: Try to get CSV-uploaded CPM rate if device info is available
+        if (extra?.device && extra?.country) {
+          const { data: deviceTargeting, error: deviceError } = await supabase
+            .from("device_targeting")
+            .select("cpm, source")
+            .eq("task_id", task_id)
+            .eq("device", extra.device)
+            .eq("country", extra.country)
+            .eq("source", "csv_upload") // Only use CSV-uploaded rates
+            .single();
+
+          if (!deviceError && deviceTargeting) {
+            cpmRate = deviceTargeting.cpm || 0;
+            rateSource = 'csv_upload';
+            console.log('[ANALYTICS API] Using CSV-uploaded CPM rate:', {
+              cpmRate,
+              device: extra.device,
+              country: extra.country,
+              source: deviceTargeting.source
+            });
+          } else {
+            console.warn('[ANALYTICS API] No CSV-uploaded CPM rate found for:', {
+              task_id,
+              device: extra.device,
+              country: extra.country,
+              error: deviceError?.message
+            });
+          }
+        }
+        
+        // Second priority: Fallback to task tier rates if no CSV rate is found
+        if (cpmRate === 0 && extra?.tier) {
+          const { data: tasks, error: tasksError } = await supabase
+            .from("tasks")
+            .select("id, cpm_tier1, cpm_tier2, cpm_tier3")
+            .eq("id", task_id);
+
+          if (!tasksError && tasks && tasks.length > 0) {
+            const task = tasks[0];
+            switch (extra.tier) {
+              case 'tier1':
+                cpmRate = task.cpm_tier1 || 0;
+                break;
+              case 'tier2':
+                cpmRate = task.cpm_tier2 || 0;
+                break;
+              case 'tier3':
+                cpmRate = task.cpm_tier3 || 0;
+                break;
+              default:
+                cpmRate = task.cpm_tier3 || 0;
+            }
+            rateSource = 'task_tier';
+            console.log('[ANALYTICS API] Using fallback tier-based CPM:', {
+              cpmRate,
+              tier: extra.tier,
+              task_id,
+              source: rateSource
+            });
+          } else {
+            console.error('[ANALYTICS API] Error fetching task for fallback:', tasksError);
+            return NextResponse.json({ success: true, warning: "No CPM rate found for revenue calculation" });
+          }
         }
 
         // Convert CPM to revenue per task (CPM is per 1000 impressions, so divide by 1000)
@@ -92,9 +130,11 @@ export async function POST(req: NextRequest) {
 
         console.log('[ANALYTICS API] Revenue calculation:', {
           tier: extra.tier,
+          device: extra.device,
           cpmRate,
           revenue,
           country: extra.country,
+          rateSource,
           hasUser: !!user_id
         });
 
@@ -126,6 +166,8 @@ export async function POST(req: NextRequest) {
             amount: revenue,
             country: extra.country,
             tier: extra.tier,
+            device: extra.device, // Include device info
+            rate_source: rateSource, // Track if CSV or tier-based
             timestamp: new Date().toISOString(),
           })
           .select();
@@ -165,6 +207,8 @@ export async function POST(req: NextRequest) {
                 amount: revenue,
                 country: extra.country,
                 tier: extra.tier,
+                device: extra.device,
+                rate_source: rateSource,
                 timestamp: new Date().toISOString(),
               })
               .select();
@@ -181,6 +225,8 @@ export async function POST(req: NextRequest) {
               revenue_calculated: revenue,
               cpm_rate: cpmRate,
               tier: extra.tier,
+              device: extra.device,
+              rate_source: rateSource,
               publisher_credited: publisherId,
               publisher_created: true
             });
@@ -241,6 +287,8 @@ export async function POST(req: NextRequest) {
           revenue_calculated: revenue,
           cpm_rate: cpmRate,
           tier: extra.tier,
+          device: extra.device,
+          rate_source: rateSource,
           publisher_credited: publisherId,
           visitor_authenticated: !!user_id
         });

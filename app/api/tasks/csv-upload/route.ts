@@ -143,6 +143,7 @@ export async function POST(request: NextRequest) {
                 cpm: cpm,
                 device: device,
                 country: finalCountryCode,
+                source: 'csv_upload', // Mark as CSV uploaded
                 updated_at: new Date().toISOString()
               })
               .eq('key', key)
@@ -157,6 +158,7 @@ export async function POST(request: NextRequest) {
                 task_id: taskId,
                 cpm: cpm,
                 ad_url: '', // Will be set separately if needed
+                source: 'csv_upload', // Mark as CSV uploaded
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
               })

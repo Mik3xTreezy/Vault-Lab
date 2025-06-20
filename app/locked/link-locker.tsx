@@ -328,20 +328,21 @@ export default function LinkLocker({ title = "Premium Content Download", destina
           
           // Track task completion with user ID - only if user is ready and available
           if (userReady && user) {
-            const eventData = {
-              locker_id: lockerId,
-              event_type: "task_complete",
-              task_id: taskId, // Use the actual UUID
-              extra: { 
-                country: location.country, // Already contains countryCode from getUserLocation
-                tier: location.tier,
-                isVpn: location.isVpn,
-                isProxy: location.isProxy,
-                ipTrackingReason: ipTrackingResult.reason,
-                analyticsAllowed: true
-              },
-              user_id: user.id,
-            };
+                      const eventData = {
+            locker_id: lockerId,
+            event_type: "task_complete",
+            task_id: taskId, // Use the actual UUID
+            extra: { 
+              country: location.country, // Already contains countryCode from getUserLocation
+              tier: location.tier,
+              device: getDevicePlatform(), // Add device info for CSV-uploaded CPM lookup
+              isVpn: location.isVpn,
+              isProxy: location.isProxy,
+              ipTrackingReason: ipTrackingResult.reason,
+              analyticsAllowed: true
+            },
+            user_id: user.id,
+          };
             
             console.log('[TASK COMPLETION] Tracking task completion with user:', eventData);
             
@@ -360,6 +361,7 @@ export default function LinkLocker({ title = "Premium Content Download", destina
               extra: { 
                 country: location.country, // Already contains countryCode from getUserLocation
                 tier: location.tier,
+                device: getDevicePlatform(), // Add device info for CSV-uploaded CPM lookup
                 isVpn: location.isVpn,
                 isProxy: location.isProxy,
                 ipTrackingReason: ipTrackingResult.reason,
