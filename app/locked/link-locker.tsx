@@ -119,10 +119,11 @@ export default function LinkLocker({ title = "Premium Content Download", destina
           console.error("Error fetching device targeting:", error);
         }
 
-        // Filter out tasks based on task type, browser exclusions, device targeting, and device-specific overrides
+        // Filter out tasks based on task type, tier targeting, browser exclusions, device targeting, and device-specific overrides
         const filteredTasks = data.filter((task: any) => {
           console.log(`\n--- Checking task: "${task.title}" ---`);
           console.log(`Task type: ${task.task_type || 'not set'}, Locker requires: ${taskType}`);
+          console.log(`Target tiers: [${(task.target_tiers || ['tier1', 'tier2', 'tier3']).join(', ')}], User tier: ${location.tier}`);
           console.log(`Excluded browsers: [${(task.excluded_browsers || []).join(', ')}]`);
           console.log(`Target devices: [${(task.devices || []).join(', ')}]`);
           
@@ -158,6 +159,17 @@ export default function LinkLocker({ title = "Premium Content Download", destina
             }
           } else {
             console.log(`✅ Device check skipped: No device targeting set`);
+          }
+
+          // Check tier targeting
+          const targetTiers = task.target_tiers || ["tier1", "tier2", "tier3"]; // Default to all tiers if not set
+          const userTier = location.tier;
+          
+          if (Array.isArray(targetTiers) && !targetTiers.includes(userTier)) {
+            console.log(`❌ EXCLUDED: User tier ${userTier} not in target tiers [${targetTiers.join(', ')}]`);
+            return false;
+          } else {
+            console.log(`✅ Tier check passed: User tier ${userTier} is in target tiers [${targetTiers.join(', ')}]`);
           }
 
           // Check device-specific targeting overrides
