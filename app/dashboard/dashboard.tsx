@@ -77,42 +77,42 @@ export default function Dashboard() {
   const overviewMetrics = [
     {
       title: "Revenue",
-      value: `$${analytics.userEarnings?.totalRevenue?.toFixed(2) ?? "0.00"}`,
+      value: `$${analytics?.userEarnings?.totalRevenue?.toFixed(2) ?? "0.00"}`,
       icon: <DollarSign className="w-5 h-5 text-emerald-400" />,
       change: "+0%",
       changeType: "positive" as const,
     },
     {
       title: "Avg. CPM",
-      value: `$${analytics.userEarnings?.avgCpm?.toFixed(2) ?? "0.00"}`,
+      value: `$${analytics?.userEarnings?.avgCpm?.toFixed(2) ?? "0.00"}`,
       icon: <TrendingUp className="w-5 h-5 text-emerald-400" />,
       change: "+0%",
       changeType: "positive" as const,
     },
     {
       title: "Views",
-      value: analytics.overview.views,
+      value: analytics?.overview?.views ?? 0,
       icon: <Eye className="w-5 h-5 text-emerald-400" />,
       change: "+0%", // You can calculate change if you add previous period data
       changeType: "positive" as const,
     },
     {
       title: "Unlocks",
-      value: analytics.overview.unlocks,
+      value: analytics?.overview?.unlocks ?? 0,
       icon: <Unlock className="w-5 h-5 text-emerald-400" />,
       change: "+0%",
       changeType: "positive" as const,
     },
     {
       title: "Task completions",
-      value: analytics.overview.taskCompletions,
+      value: analytics?.overview?.taskCompletions ?? 0,
       icon: <CheckCircle className="w-5 h-5 text-emerald-400" />,
       change: "+0%",
       changeType: "positive" as const,
     },
     {
       title: "Unlock Rate",
-      value: `${analytics.overview.unlockRate.toFixed(1)}%`,
+      value: `${analytics?.overview?.unlockRate?.toFixed(1) ?? "0.0"}%`,
       icon: <TrendingUp className="w-5 h-5 text-emerald-400" />,
       change: "+0%",
       changeType: "positive" as const,
@@ -121,24 +121,24 @@ export default function Dashboard() {
   ];
 
   // Content performance
-  const contentData = Object.entries(analytics.contentPerformance).map(([id, perf]: any) => ({
-    title: perf.title || id,
+  const contentData = Object.entries(analytics?.contentPerformance ?? {}).map(([id, perf]: any) => ({
+    title: perf?.title || id,
     id,
-    views: perf.views,
+    views: perf?.views ?? 0,
     percentage: "-", // You can calculate this if you add total views per content
   }));
 
   // Traffic sources
-  const totalSources = Object.values(analytics.sources).reduce((a: number, b: any) => a + Number(b), 0);
-  const trafficSources = Object.entries(analytics.sources).map(([source, views]: any) => ({
+  const totalSources = Object.values(analytics?.sources ?? {}).reduce((a: number, b: any) => a + Number(b), 0);
+  const trafficSources = Object.entries(analytics?.sources ?? {}).map(([source, views]: any) => ({
     source,
     views,
     percentage: totalSources ? `${((Number(views) / totalSources) * 100).toFixed(1)}%` : "0%",
   }));
 
   // Devices
-  const totalDevices = Object.values(analytics.devices).reduce((a: number, b: any) => a + Number(b), 0);
-  const deviceData = Object.entries(analytics.devices).map(([device, count]: any) => ({
+  const totalDevices = Object.values(analytics?.devices ?? {}).reduce((a: number, b: any) => a + Number(b), 0);
+  const deviceData = Object.entries(analytics?.devices ?? {}).map(([device, count]: any) => ({
     device,
     percentage: totalDevices ? `${((Number(count) / totalDevices) * 100).toFixed(1)}%` : "0%",
     icon:
@@ -148,8 +148,8 @@ export default function Dashboard() {
   }));
 
   // Browsers
-  const totalBrowsers = Object.values(analytics.browsers).reduce((a: number, b: any) => a + Number(b), 0);
-  const browserData = Object.entries(analytics.browsers).map(([browser, count]: any) => ({
+  const totalBrowsers = Object.values(analytics?.browsers ?? {}).reduce((a: number, b: any) => a + Number(b), 0);
+  const browserData = Object.entries(analytics?.browsers ?? {}).map(([browser, count]: any) => ({
     browser,
     percentage: totalBrowsers ? `${((Number(count) / totalBrowsers) * 100).toFixed(1)}%` : "0%",
     icon:
@@ -280,7 +280,7 @@ export default function Dashboard() {
             <CardContent className="pt-0">
               <div className="h-64 flex items-end justify-center relative">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={analytics.chartData} margin={{ top: 20, right: 60, left: 0, bottom: 0 }}>
+                  <LineChart data={analytics?.chartData ?? []} margin={{ top: 20, right: 60, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                     <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 12 }} />
                     <YAxis yAxisId="left" tick={{ fill: '#94a3b8', fontSize: 12 }} />

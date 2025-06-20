@@ -4,17 +4,8 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Globe, Users, MapPin } from "lucide-react";
 
-interface CountryData {
-  [country: string]: {
-    views: number;
-    unlocks: number;
-    tasks: number;
-    revenue: number;
-  };
-}
-
 interface GeoMapProps {
-  countryData: CountryData;
+  countryData: Record<string, number>;
   userId: string;
 }
 
@@ -22,10 +13,10 @@ export default function GeoMap({ countryData, userId }: GeoMapProps) {
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
 
   // Convert country data to array for easier processing
-  const countries = Object.entries(countryData || {}).map(([code, data]) => ({
+  const countries = Object.entries(countryData || {}).map(([code, views]) => ({
     code,
     name: getCountryName(code),
-    ...data,
+    views: views || 0,
   })).sort((a, b) => b.views - a.views);
 
   // Get top countries
@@ -42,7 +33,7 @@ export default function GeoMap({ countryData, userId }: GeoMapProps) {
           </CardTitle>
           <div className="flex items-center space-x-4 text-xs text-slate-400">
             <span>Total Countries: {countries.length}</span>
-            <span>Total Views: {totalViews.toLocaleString()}</span>
+            <span>Total Events: {totalViews.toLocaleString()}</span>
           </div>
         </div>
       </CardHeader>
@@ -103,65 +94,46 @@ export default function GeoMap({ countryData, userId }: GeoMapProps) {
                   if (!country) return null;
                   
                   return (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700/50">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-slate-400 text-xs uppercase tracking-wider">Views</span>
-                          <Globe className="w-4 h-4 text-emerald-400" />
+                    <div className="bg-slate-800/50 p-6 rounded-lg border border-slate-700/50">
+                      <div className="text-center">
+                        <div className="text-5xl font-bold text-white mb-2">
+                          {country.views.toLocaleString()}
                         </div>
-                        <p className="text-white text-xl font-bold">{country.views.toLocaleString()}</p>
-                      </div>
-                      
-                      <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700/50">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-slate-400 text-xs uppercase tracking-wider">Unlocks</span>
-                          <Users className="w-4 h-4 text-green-400" />
+                        <div className="text-slate-400 text-sm uppercase tracking-wider">
+                          Total Events from {country.name}
                         </div>
-                        <p className="text-white text-xl font-bold">{country.unlocks.toLocaleString()}</p>
-                      </div>
-                      
-                      <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700/50">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-slate-400 text-xs uppercase tracking-wider">Tasks</span>
-                          <MapPin className="w-4 h-4 text-yellow-400" />
+                        <div className="mt-4 text-emerald-400 text-2xl font-semibold">
+                          {((country.views / totalViews) * 100).toFixed(1)}%
                         </div>
-                        <p className="text-white text-xl font-bold">{country.tasks.toLocaleString()}</p>
-                      </div>
-                      
-                      <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700/50">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-slate-400 text-xs uppercase tracking-wider">Revenue</span>
-                          <span className="text-blue-400">$</span>
+                        <div className="text-slate-400 text-xs">
+                          of total traffic
                         </div>
-                        <p className="text-white text-xl font-bold">${country.revenue.toFixed(4)}</p>
                       </div>
                     </div>
                   );
                 })()}
                 
-                {/* Conversion Rates */}
+                {/* Country Rank */}
                 {(() => {
                   const country = countries.find(c => c.code === selectedCountry);
-                  if (!country || country.views === 0) return null;
-                  
-                  const unlockRate = ((country.unlocks / country.views) * 100).toFixed(1);
-                  const taskRate = country.unlocks > 0 ? ((country.tasks / country.unlocks) * 100).toFixed(1) : "0";
+                  const rank = countries.findIndex(c => c.code === selectedCountry) + 1;
+                  if (!country) return null;
                   
                   return (
                     <div className="mt-4 p-4 bg-slate-800/30 rounded-lg border border-slate-700/30">
-                      <h4 className="text-white font-medium mb-3">Conversion Rates</h4>
+                      <h4 className="text-white font-medium mb-3">Country Statistics</h4>
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                          <span className="text-slate-400 text-sm">Unlock Rate</span>
-                          <span className="text-emerald-400 font-semibold">{unlockRate}%</span>
+                          <span className="text-slate-400 text-sm">Global Rank</span>
+                          <span className="text-emerald-400 font-semibold">#{rank} of {countries.length}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-slate-400 text-sm">Task Completion Rate</span>
-                          <span className="text-yellow-400 font-semibold">{taskRate}%</span>
+                          <span className="text-slate-400 text-sm">Traffic Share</span>
+                          <span className="text-yellow-400 font-semibold">{((country.views / totalViews) * 100).toFixed(2)}%</span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-slate-400 text-sm">Revenue per View</span>
-                          <span className="text-blue-400 font-semibold">${(country.revenue / country.views).toFixed(6)}</span>
+                          <span className="text-slate-400 text-sm">Event Count</span>
+                          <span className="text-blue-400 font-semibold">{country.views.toLocaleString()}</span>
                         </div>
                       </div>
                     </div>
