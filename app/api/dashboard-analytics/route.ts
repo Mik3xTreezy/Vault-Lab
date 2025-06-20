@@ -7,9 +7,6 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Opera GX task UUID (replace with your actual UUID if different)
-const OPERA_GX_TASK_ID = "617c772b-e868-404c-8113-645214ac2476";
-
 export async function GET(req: NextRequest) {
   // Get user_id from query param (for per-user analytics)
   const userId = req.nextUrl.searchParams.get("user_id") || null;
@@ -119,14 +116,7 @@ export async function GET(req: NextRequest) {
   // Aggregate metrics
   const views = analyticsData.filter(a => a.event_type === "visit").length;
   const unlocks = analyticsData.filter(a => a.event_type === "unlock").length;
-  const taskCompletions = analyticsData.filter(a => {
-    if (a.task_id === OPERA_GX_TASK_ID) {
-      // Only count Opera GX completions if from postback
-      return a.event_type === "task_complete" && (a.user_agent === "OperaGX-Postback" || (a.extra && a.extra.postback));
-    }
-    // All other tasks: count as before
-    return a.event_type === "task_complete";
-  }).length;
+  const taskCompletions = analyticsData.filter(a => a.event_type === "task_complete").length;
   const unlockRate = views ? (unlocks / views) * 100 : 0;
 
   // Content performance (per locker)
@@ -224,16 +214,9 @@ export async function GET(req: NextRequest) {
     console.log(`[DEBUG] Revenue events found:`, events?.length || 0);
     
     if (!eventsError && events) {
-      // Only count Opera GX revenue if from postback
-      const filteredEvents = events.filter(e => {
-        if (e.task_id === OPERA_GX_TASK_ID) {
-          return e.rate_source === "postback";
-        }
-        return true;
-      });
-      userRevenue = filteredEvents.reduce((sum, e) => sum + Number(e.amount), 0);
-      userAvgCpm = filteredEvents.length > 0 ? filteredEvents.reduce((sum, e) => sum + (Number(e.amount) * 1000), 0) / filteredEvents.length : 0;
-      userEvents = filteredEvents;
+      userRevenue = events.reduce((sum, e) => sum + Number(e.amount), 0);
+      userAvgCpm = events.length > 0 ? events.reduce((sum, e) => sum + (Number(e.amount) * 1000), 0) / events.length : 0;
+      userEvents = events;
       console.log(`[DEBUG] User revenue calculated: $${userRevenue}, events: ${events.length}`);
     } else if (eventsError) {
       console.error(`[DEBUG] Revenue events error:`, eventsError);
@@ -244,16 +227,9 @@ export async function GET(req: NextRequest) {
       .from("revenue_events")
       .select("amount, task_id, tier, country, timestamp, locker_id, rate_source");
     if (!eventsError && events) {
-      // Only count Opera GX revenue if from postback
-      const filteredEvents = events.filter(e => {
-        if (e.task_id === OPERA_GX_TASK_ID) {
-          return e.rate_source === "postback";
-        }
-        return true;
-      });
-      userRevenue = filteredEvents.reduce((sum, e) => sum + Number(e.amount), 0);
-      userAvgCpm = filteredEvents.length > 0 ? filteredEvents.reduce((sum, e) => sum + (Number(e.amount) * 1000), 0) / filteredEvents.length : 0;
-      userEvents = filteredEvents;
+      userRevenue = events.reduce((sum, e) => sum + Number(e.amount), 0);
+      userAvgCpm = events.length > 0 ? events.reduce((sum, e) => sum + (Number(e.amount) * 1000), 0) / events.length : 0;
+      userEvents = events;
     }
   }
 

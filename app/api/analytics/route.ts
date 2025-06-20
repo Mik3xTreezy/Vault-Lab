@@ -6,8 +6,6 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const OPERA_GX_TASK_ID = "617c772b-e868-404c-8113-645214ac2476";
-
 export async function POST(req: NextRequest) {
   try {
     const { locker_id, event_type, user_id, task_id, duration, extra } = await req.json();
@@ -28,16 +26,6 @@ export async function POST(req: NextRequest) {
 
     // Extract country from extra field for dedicated column
     const country = extra?.country || null;
-    
-    // IMPORTANT: Block Opera GX task completions unless they come from postback
-    if (event_type === "task_complete" && task_id === OPERA_GX_TASK_ID && userAgent !== "OperaGX-Postback") {
-      console.log('[ANALYTICS API] Blocking Opera GX completion from frontend - only postback completions allowed');
-      return NextResponse.json({ 
-        success: true, 
-        message: "Opera GX completions only counted via postback",
-        blocked: true 
-      });
-    }
     
     // Insert analytics event
     const { data: analyticsData, error: analyticsError } = await supabase
@@ -68,12 +56,6 @@ export async function POST(req: NextRequest) {
     // If this is a task completion, handle revenue calculation
     if (event_type === "task_complete" && task_id && extra?.country && (extra?.device || extra?.tier)) {
       console.log('[ANALYTICS API] Processing task completion for revenue...');
-      
-      // Skip revenue calculation for Opera GX unless from postback
-      if (task_id === OPERA_GX_TASK_ID && userAgent !== "OperaGX-Postback") {
-        console.log('[ANALYTICS API] Skipping revenue calculation for Opera GX - only postback revenue allowed');
-        return NextResponse.json({ success: true, analyticsLogged: true, revenueSkipped: true });
-      }
       
       try {
         let cpmRate = 0;

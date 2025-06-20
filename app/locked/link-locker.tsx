@@ -57,8 +57,6 @@ interface LinkLockerProps {
   taskType?: string
 }
 
-const OPERA_GX_TASK_ID = "617c772b-e868-404c-8113-645214ac2476";
-
 export default function LinkLocker({ title = "Premium Content Download", destinationUrl = "#", lockerId, taskType = "adult" }: LinkLockerProps) {
   const { user, isLoaded, isSignedIn } = useUser();
   const [tasks, setTasks] = useState<Task[]>([])
@@ -239,20 +237,6 @@ export default function LinkLocker({ title = "Premium Content Download", destina
     fetchTasks()
   }, [])
 
-  // Debug: Monitor tasks state changes
-  useEffect(() => {
-    console.log('[TASKS STATE] Tasks updated:', {
-      count: tasks.length,
-      tasks: tasks.map(t => ({
-        id: t.id,
-        title: t.title,
-        adUrl: t.adUrl,
-        hasAdUrl: 'adUrl' in t,
-        keys: Object.keys(t)
-      }))
-    });
-  }, [tasks]);
-
   // Track initial visit when user is ready (with IP tracking)
   useEffect(() => {
     if (userReady) {
@@ -308,23 +292,13 @@ export default function LinkLocker({ title = "Premium Content Download", destina
     const task = tasks.find((t) => t.id === taskId);
     console.log('[TASK CLICK] Starting task click:', { 
       taskId,
-      passedAdUrl: adUrl,
-      task: task ? { 
-        id: task.id, 
-        title: task.title,
-        adUrl: task.adUrl,
-        ad_url: (task as any)?.ad_url,
-        hasAdUrl: 'adUrl' in task,
-        taskKeys: Object.keys(task),
-        fullTask: JSON.stringify(task)
-      } : 'not found',
+      task: task ? { id: task.id, title: task.title } : 'not found',
       userReady,
-      userId: user?.id,
-      allTasks: tasks
+      userId: user?.id
     });
     
     // Use the passed adUrl or try to get it from the task
-    const finalAdUrl = adUrl || task?.adUrl || (task as any)?.ad_url || (task as any)?.['adUrl'];
+    const finalAdUrl = adUrl || task?.adUrl;
     
     if (task?.completed || task?.loading) {
       console.log('[TASK CLICK] Task already completed or loading, skipping');
@@ -336,14 +310,7 @@ export default function LinkLocker({ title = "Premium Content Download", destina
       console.log('[TASK CLICK] Opening ad URL:', finalAdUrl);
       window.open(finalAdUrl, '_blank', 'noopener,noreferrer');
     } else {
-      console.error('[TASK CLICK] No valid ad URL found:', {
-        passedAdUrl: adUrl,
-        finalAdUrl,
-        taskAdUrl: task?.adUrl,
-        taskAdUrlAlt: (task as any)?.ad_url,
-        task,
-        taskStringified: JSON.stringify(task)
-      });
+      console.error('[TASK CLICK] No valid ad URL found:', finalAdUrl);
       alert('No Ad URL set for this task.');
       return;
     }
@@ -384,11 +351,6 @@ export default function LinkLocker({ title = "Premium Content Download", destina
           prevTasks.map((task) => (task.id === taskId ? { ...task, loading: false, completed: true } : task)),
         );
         
-        // Special message for Opera GX tasks
-        if (taskId === OPERA_GX_TASK_ID) {
-          console.log('[TASK COMPLETION] Opera GX task marked as completed for visitor. Publisher credit pending PWN Games postback verification.');
-        }
-
         // Only track analytics if IP tracking allows it
         if (ipTrackingResult.shouldCount) {
           console.log('[TASK COMPLETION] ✅ IP tracking allows analytics counting');

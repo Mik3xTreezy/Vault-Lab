@@ -2,7 +2,7 @@
 import { useState, useEffect, use } from "react";
 import dynamic from "next/dynamic";
 
-const LinkLocker = dynamic(() => import("../link-locker") as any, { ssr: false });
+const LinkLocker = dynamic(() => import("../link-locker"), { ssr: false });
 
 export default function LockedLinkPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -32,7 +32,6 @@ export default function LockedLinkPage({ params }: { params: Promise<{ id: strin
   if (!locker) return null;
 
   return (
-    // @ts-expect-error: dynamic import props
     <LinkLocker 
       lockerId={id} 
       title={locker.title} 
