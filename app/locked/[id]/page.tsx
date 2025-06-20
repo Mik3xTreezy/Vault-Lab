@@ -33,6 +33,11 @@ export default function LockedLinkPage({ params }: { params: Promise<{ id: strin
 
   return (
     // @ts-expect-error: dynamic import props
-    <LinkLocker lockerId={id} title={locker.title} destinationUrl={locker.destination_url} />
+    <LinkLocker 
+      lockerId={id} 
+      title={locker.title} 
+      destinationUrl={locker.destination_url}
+      taskType={locker.task_type}
+    />
   );
 } 

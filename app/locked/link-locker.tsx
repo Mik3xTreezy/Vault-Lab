@@ -54,9 +54,10 @@ interface LinkLockerProps {
   title?: string
   destinationUrl?: string
   lockerId: string
+  taskType?: string
 }
 
-export default function LinkLocker({ title = "Premium Content Download", destinationUrl = "#", lockerId }: LinkLockerProps) {
+export default function LinkLocker({ title = "Premium Content Download", destinationUrl = "#", lockerId, taskType = "adult" }: LinkLockerProps) {
   const { user, isLoaded, isSignedIn } = useUser();
   const [tasks, setTasks] = useState<Task[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -118,11 +119,21 @@ export default function LinkLocker({ title = "Premium Content Download", destina
           console.error("Error fetching device targeting:", error);
         }
 
-        // Filter out tasks based on browser exclusions, device targeting, and device-specific overrides
+        // Filter out tasks based on task type, browser exclusions, device targeting, and device-specific overrides
         const filteredTasks = data.filter((task: any) => {
           console.log(`\n--- Checking task: "${task.title}" ---`);
+          console.log(`Task type: ${task.task_type || 'not set'}, Locker requires: ${taskType}`);
           console.log(`Excluded browsers: [${(task.excluded_browsers || []).join(', ')}]`);
           console.log(`Target devices: [${(task.devices || []).join(', ')}]`);
+          
+          // Check task type matching
+          const taskTypeToCheck = task.task_type || 'adult'; // Default to adult if not set
+          if (taskTypeToCheck !== taskType) {
+            console.log(`❌ EXCLUDED: Task type ${taskTypeToCheck} doesn't match locker requirement ${taskType}`);
+            return false;
+          } else {
+            console.log(`✅ Task type check passed: ${taskTypeToCheck} matches requirement`);
+          }
           
           // Check browser exclusions
           const excludedBrowsers = task.excluded_browsers || [];
