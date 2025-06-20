@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useUser } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -174,56 +174,8 @@ export default function Admin() {
     initFetchAnalytics()
   }, [mounted, isLoaded, isSignedIn, user])
 
-  useEffect(() => {
-    if (!mounted || !isLoaded || !isSignedIn || !user) return;
-
-    async function initFetchTasks() {
-      console.log('[INIT FETCH TASKS] Starting initial task fetch...');
-      await fetchTasks();
-    }
-    initFetchTasks();
-  }, [mounted, isLoaded, isSignedIn, user]);
-
-  // Load device targeting data
-  useEffect(() => {
-    if (!mounted || !isLoaded || !isSignedIn || !user) return;
-
-    async function fetchDeviceTargeting() {
-      setLoadingDeviceTargeting(true);
-      try {
-        const res = await fetch("/api/device-targeting");
-        if (res.ok) {
-          const data = await res.json();
-          setDeviceTargeting(data || {});
-        }
-      } catch (error) {
-        console.error("Error fetching device targeting:", error);
-      } finally {
-        setLoadingDeviceTargeting(false);
-      }
-    }
-    
-    fetchDeviceTargeting();
-  }, [mounted, isLoaded, isSignedIn, user]);
-
-  // Early return for loading state or hydration
-  if (!mounted || !isLoaded) {
-    return <div className="text-white p-8">Loading...</div>;
-  }
-
-  // Early return for unauthorized access
-  if (
-    !isSignedIn ||
-    !user ||
-    !user.emailAddresses ||
-    !user.emailAddresses[0] ||
-    user.emailAddresses[0].emailAddress !== "ananthu9539@gmail.com"
-  ) {
-    return <div className="text-white p-8">Access denied.</div>;
-  }
-
   // Task CRUD operations
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     setLoadingTasks(true);
     try {
       console.log('[FETCH TASKS] Starting task fetch...');
@@ -263,7 +215,56 @@ export default function Admin() {
     } finally {
       setLoadingTasks(false);
     }
-  };
+  }, []);
+
+  // Load tasks after authentication
+  useEffect(() => {
+    if (!mounted || !isLoaded || !isSignedIn || !user) return;
+
+    async function initFetchTasks() {
+      console.log('[INIT FETCH TASKS] Starting initial task fetch...');
+      await fetchTasks();
+    }
+    initFetchTasks();
+  }, [mounted, isLoaded, isSignedIn, user, fetchTasks]);
+
+  // Load device targeting data
+  useEffect(() => {
+    if (!mounted || !isLoaded || !isSignedIn || !user) return;
+
+    async function fetchDeviceTargeting() {
+      setLoadingDeviceTargeting(true);
+      try {
+        const res = await fetch("/api/device-targeting");
+        if (res.ok) {
+          const data = await res.json();
+          setDeviceTargeting(data || {});
+        }
+      } catch (error) {
+        console.error("Error fetching device targeting:", error);
+      } finally {
+        setLoadingDeviceTargeting(false);
+      }
+    }
+    
+    fetchDeviceTargeting();
+  }, [mounted, isLoaded, isSignedIn, user]);
+
+  // Early return for loading state or hydration
+  if (!mounted || !isLoaded) {
+    return <div className="text-white p-8">Loading...</div>;
+  }
+
+  // Early return for unauthorized access
+  if (
+    !isSignedIn ||
+    !user ||
+    !user.emailAddresses ||
+    !user.emailAddresses[0] ||
+    user.emailAddresses[0].emailAddress !== "ananthu9539@gmail.com"
+  ) {
+    return <div className="text-white p-8">Access denied.</div>;
+  }
 
   const addTask = async (taskData: any) => {
     setIsAddingTask(true);
