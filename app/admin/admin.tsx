@@ -629,12 +629,31 @@ export default function Admin() {
         body: JSON.stringify(requestBody)
       });
 
+      console.log('[CSV UPLOAD] Response status:', response.status);
+      
+      // Get response text first to debug JSON parsing issues
+      const responseText = await response.text();
+      console.log('[CSV UPLOAD] Raw response:', responseText);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to upload CSV data');
+        let errorMessage = 'Failed to upload CSV data';
+        try {
+          const errorData = JSON.parse(responseText);
+          errorMessage = errorData.message || errorMessage;
+        } catch (parseError) {
+          console.error('[CSV UPLOAD] Failed to parse error response:', parseError);
+          errorMessage = `Server error: ${responseText}`;
+        }
+        throw new Error(errorMessage);
       }
 
-      const result = await response.json();
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('[CSV UPLOAD] Failed to parse success response:', parseError);
+        throw new Error(`Invalid response format: ${responseText}`);
+      }
       
       // Refresh tasks and device targeting data
       await fetchTasks();
