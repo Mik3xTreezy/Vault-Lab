@@ -17,10 +17,14 @@ function SignInContent() {
             card: "bg-slate-900/50 border border-slate-800 backdrop-blur-xl",
             headerTitle: "text-white",
             headerSubtitle: "text-slate-400",
-            socialButtonsBlockButton: "bg-white/10 border-white/20 text-white hover:bg-white/20",
-            formFieldInput: "bg-white/10 border-white/20 text-white",
-            formButtonPrimary: "bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400",
-            footerActionLink: "text-emerald-400 hover:text-emerald-300"
+            socialButtonsBlockButton: "bg-emerald-500/10 border-emerald-500/20 text-white hover:bg-emerald-500/20",
+            socialButtonsBlockButtonText: "text-white",
+            formFieldInput: "bg-white/10 border-white/20 text-white placeholder:text-gray-400",
+            formFieldLabel: "text-gray-300",
+            formButtonPrimary: "bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black font-medium",
+            footerActionLink: "text-emerald-400 hover:text-emerald-300",
+            identityPreviewText: "text-gray-300",
+            identityPreviewEditButton: "text-emerald-400 hover:text-emerald-300"
           }
         }}
         initialValues={{
