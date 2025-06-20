@@ -632,7 +632,8 @@ export default function Admin() {
     setCsvData([]);
     setCsvPreview([]);
     setCsvError("");
-    setSelectedTaskForCsv(null);
+    // Don't reset selected task when opening dialog - let user keep their selection
+    // setSelectedTaskForCsv(null);
   };
 
   // Dashboard stats using real data
@@ -1644,6 +1645,8 @@ export default function Admin() {
                     Bulk CPM Upload via CSV
                   </DialogTitle>
                   <p className="text-gray-400 text-sm">Upload a CSV file to set CPM rates for multiple countries at once</p>
+                  {/* Add task count in header for debugging */}
+                  <p className="text-xs text-yellow-400">Available tasks: {tasks.length}</p>
                 </DialogHeader>
                 
                 <div className="space-y-6">
@@ -1652,21 +1655,22 @@ export default function Admin() {
                     <Label className="text-gray-300">Select Task</Label>
                     <select 
                       className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-white text-sm focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20"
-                      value={selectedTaskForCsv || ""}
+                      value={selectedTaskForCsv?.toString() || ""}
                       onChange={(e) => {
                         const value = e.target.value;
-                        setSelectedTaskForCsv(value ? Number(value) : null);
-                        console.log('Selected task ID:', value);
+                        const taskId = value && !isNaN(Number(value)) ? Number(value) : null;
+                        setSelectedTaskForCsv(taskId);
+                        console.log('Selected task ID:', taskId, 'from value:', value);
                       }}
                     >
                       <option value="" className="bg-gray-800 text-gray-300">Choose a task to update CPM rates for...</option>
                       {loadingTasks ? (
-                        <option value="" className="bg-gray-800 text-gray-400">Loading tasks...</option>
+                        <option value="" className="bg-gray-800 text-gray-400" disabled>Loading tasks...</option>
                       ) : tasks.length === 0 ? (
-                        <option value="" className="bg-gray-800 text-gray-400">No tasks available</option>
+                        <option value="" className="bg-gray-800 text-gray-400" disabled>No tasks available</option>
                       ) : (
                         tasks.map((task) => (
-                          <option key={task.id} value={task.id} className="bg-gray-800 text-white">
+                          <option key={task.id} value={task.id.toString()} className="bg-gray-800 text-white">
                             {task.title} (ID: {task.id})
                           </option>
                         ))
@@ -1674,13 +1678,15 @@ export default function Admin() {
                     </select>
                     {selectedTaskForCsv && (
                       <p className="text-emerald-400 text-sm">
-                        ✓ Selected: {tasks.find(t => t.id === selectedTaskForCsv)?.title}
+                        ✓ Selected: {tasks.find(t => t.id === selectedTaskForCsv)?.title || 'Unknown Task'}
                       </p>
                     )}
                     
                     {/* Debug info - remove in production */}
                     <div className="text-xs text-gray-500 mt-1">
-                      Debug: {tasks.length} tasks loaded, Loading: {loadingTasks.toString()}
+                      Debug: {tasks.length} tasks loaded, Loading: {loadingTasks.toString()}, Selected: {selectedTaskForCsv || 'none'}
+                      <br />
+                      Tasks: {tasks.map(t => `${t.title}(${t.id})`).join(', ')}
                     </div>
                   </div>
 
