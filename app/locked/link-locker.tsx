@@ -528,20 +528,7 @@ export default function LinkLocker({ title = "Premium Content Download", destina
           </h1>
           <p className="text-gray-400 text-sm">Complete the challenges below to access your content</p>
           
-          {/* Sign-in prompt for better revenue tracking */}
-          {userReady && !user && (
-            <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-              <p className="text-blue-300 text-sm">
-                💡 <strong>Tip:</strong> Sign in to track your earnings from completed tasks!
-              </p>
-              <button
-                onClick={() => window.location.href = '/sign-in'}
-                className="mt-2 text-blue-400 hover:text-blue-300 text-sm underline"
-              >
-                Sign in here
-              </button>
-            </div>
-          )}
+
         </div>
 
         {/* Tasks Grid */}
