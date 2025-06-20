@@ -40,16 +40,13 @@ declare interface Task {
   id: string
   title: string
   description: string
-  loadingText: string
-  icon: React.ReactNode
-  completed: boolean
   loading: boolean
-  pending?: boolean
+  completed: boolean
+  icon: React.ReactNode
   adUrl?: string
   ad_url?: string
   completionTimeSeconds?: number
   completion_time_seconds?: number
-  deviceSpecificCpm?: number
   action: () => void
 }
 
@@ -212,14 +209,12 @@ export default function LinkLocker({ title = "Premium Content Download", destina
             id: task.id.toString(),
             title: task.title,
             description: task.description,
-            loadingText: "Completing task...",
-            icon: <Gift className="w-5 h-5" />,
-            completed: false,
             loading: false,
+            completed: false,
+            icon: <Gift className="w-5 h-5" />,
             adUrl: effectiveAdUrl,
             completionTimeSeconds: task.completion_time_seconds || 60,
-            deviceSpecificCpm: deviceSpecificConfig?.cpm, // Store device-specific CPM for revenue calculation
-            action: () => handleTaskClick(task.id.toString()),
+            action: () => handleTaskClick(task.id)
           };
         })
 
@@ -318,28 +313,6 @@ export default function LinkLocker({ title = "Premium Content Download", destina
     setTasks((prevTasks) => prevTasks.map((task) => (task.id === taskId ? { ...task, loading: true } : task)));
     console.log('[TASK CLICK] Task loading started for:', taskId);
 
-    // Special handling for Opera GX - mark as pending instead of completed
-    if (taskId === OPERA_GX_TASK_ID) {
-      console.log('[TASK CLICK] Opera GX task detected - marking as pending installation');
-      
-      setTimeout(() => {
-        setTasks((prevTasks) =>
-          prevTasks.map((task) => 
-            task.id === taskId 
-              ? { ...task, loading: false, completed: false, pending: true } 
-              : task
-          ),
-        );
-        
-        // Show a message to the user
-        const pendingMessage = "Please complete the Opera GX installation. Your completion will be verified automatically once the browser is installed.";
-        // You could show this in a toast or alert
-        console.log('[TASK CLICK] Opera GX pending message:', pendingMessage);
-      }, 3000); // Show loading for 3 seconds then switch to pending
-      
-      return; // Exit early for Opera GX
-    }
-
     // Get user location for proper revenue calculation
     const currentTask = tasks.find(t => t.id === taskId);
     const completionTime = (currentTask?.completionTimeSeconds || 60) * 1000; // Convert to milliseconds
@@ -371,6 +344,11 @@ export default function LinkLocker({ title = "Premium Content Download", destina
         setTasks((prevTasks) =>
           prevTasks.map((task) => (task.id === taskId ? { ...task, loading: false, completed: true } : task)),
         );
+        
+        // Special message for Opera GX tasks
+        if (taskId === OPERA_GX_TASK_ID) {
+          console.log('[TASK COMPLETION] Opera GX task marked as completed for visitor. Publisher credit pending PWN Games postback verification.');
+        }
 
         // Only track analytics if IP tracking allows it
         if (ipTrackingResult.shouldCount) {
@@ -442,8 +420,8 @@ export default function LinkLocker({ title = "Premium Content Download", destina
       }, completionTime); // Use dynamic completion time from task settings
   }
 
-  const allTasksCompleted = tasks.length > 0 && tasks.every((task) => task.completed && !task.pending)
-  const completedCount = tasks.filter((task) => task.completed && !task.pending).length
+  const allTasksCompleted = tasks.length > 0 && tasks.every((task) => task.completed)
+  const completedCount = tasks.filter((task) => task.completed).length
 
   const handleUnlock = async () => {
     console.log('[DEBUG] Unlock button clicked:', { 
@@ -595,7 +573,7 @@ export default function LinkLocker({ title = "Premium Content Download", destina
               <button
                 key={task.id}
                 type="button"
-                onClick={() => handleTaskClick(task.id)}
+                onClick={task.action}
                 className={`
                   group relative overflow-hidden backdrop-blur-xl border transition-all duration-300 cursor-pointer
                   ${
@@ -616,8 +594,6 @@ export default function LinkLocker({ title = "Premium Content Download", destina
                   className={`absolute inset-0 bg-gradient-to-br ${
                     task.completed
                       ? "from-green-100 to-green-200"
-                      : task.pending
-                      ? "from-yellow-100 to-yellow-200"
                       : "from-gray-100 to-gray-200"
                   } opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
                 />
@@ -627,15 +603,11 @@ export default function LinkLocker({ title = "Premium Content Download", destina
                       className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
                         task.completed
                           ? "bg-green-500 text-white"
-                          : task.pending
-                          ? "bg-yellow-500 text-white"
                           : "bg-gray-200 text-gray-600 group-hover:bg-gray-300"
                       }`}
                     >
                       {task.completed ? (
                         <Check className="w-6 h-6" />
-                      ) : task.pending ? (
-                        <Clock className="w-6 h-6" />
                       ) : (
                         task.icon
                       )}
@@ -650,10 +622,6 @@ export default function LinkLocker({ title = "Premium Content Download", destina
                       <div className="flex items-center gap-2">
                         <Loader2 className="h-4 w-4 animate-spin" />
                         <span className="text-sm">Loading...</span>
-                      </div>
-                    ) : task.pending ? (
-                      <div className="flex items-center gap-2 text-yellow-600">
-                        <span className="text-sm">Pending verification</span>
                       </div>
                     ) : task.completed ? (
                       <div className="flex items-center gap-2 text-green-600">
