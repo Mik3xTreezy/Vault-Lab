@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
     if (analyticsError) {
       console.error("Supabase analytics error:", analyticsError);
       return NextResponse.json({ error: analyticsError.message }, { status: 500 });
-    }
+  }
     analytics = analyticsData || [];
   }
 
@@ -207,7 +207,7 @@ export async function GET(req: NextRequest) {
     // For specific user, get revenue events from their lockers (regardless of who completed the tasks)
     const { data: events, error: eventsError } = await supabase
       .from("revenue_events")
-      .select("amount, task_id, tier, country, timestamp, locker_id, rate_source")
+      .select("amount, task_id, tier, country, timestamp, locker_id")
       .in('locker_id', lockerIds);
     
     console.log(`[DEBUG] Revenue events query for user ${userId} lockers:`, lockerIds);
@@ -215,6 +215,7 @@ export async function GET(req: NextRequest) {
     
     if (!eventsError && events) {
       userRevenue = events.reduce((sum, e) => sum + Number(e.amount), 0);
+      // Calculate average CPM (weighted by event count)
       userAvgCpm = events.length > 0 ? events.reduce((sum, e) => sum + (Number(e.amount) * 1000), 0) / events.length : 0;
       userEvents = events;
       console.log(`[DEBUG] User revenue calculated: $${userRevenue}, events: ${events.length}`);
@@ -225,7 +226,7 @@ export async function GET(req: NextRequest) {
     // For admin view, get all revenue events
     const { data: events, error: eventsError } = await supabase
       .from("revenue_events")
-      .select("amount, task_id, tier, country, timestamp, locker_id, rate_source");
+      .select("amount, task_id, tier, country, timestamp, locker_id");
     if (!eventsError && events) {
       userRevenue = events.reduce((sum, e) => sum + Number(e.amount), 0);
       userAvgCpm = events.length > 0 ? events.reduce((sum, e) => sum + (Number(e.amount) * 1000), 0) / events.length : 0;

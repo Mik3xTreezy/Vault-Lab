@@ -56,10 +56,10 @@ export default function Landing() {
     
     try {
       await signIn?.authenticateWithRedirect({
-        strategy,
-        redirectUrl: "/dashboard",
-        redirectUrlComplete: "/dashboard"
-      });
+      strategy,
+      redirectUrl: "/dashboard",
+      redirectUrlComplete: "/dashboard"
+    });
     } catch (err: any) {
       console.error("Social sign-in error:", err)
       setError("Social sign-in failed. Please try again.")
@@ -227,7 +227,7 @@ export default function Landing() {
                 {isLoading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4" />
                 )}
               </button>
             </div>

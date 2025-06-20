@@ -42,7 +42,6 @@ export async function POST(req: NextRequest) {
         extra,
         country, // Store country in dedicated column for geographic analytics
         task_index: null, // Keep this null since we're using task_id now
-        task_id, // Add task_id to the insert
       })
       .select();
 

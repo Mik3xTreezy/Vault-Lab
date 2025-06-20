@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
-import { ChevronRight, Lock, Unlock, ExternalLink, Gift, FileText, Check, Zap, Loader2, Clock, CheckCircle2 } from "lucide-react"
+import { ChevronRight, Lock, Unlock, ExternalLink, Gift, FileText, Check, Zap, Loader2 } from "lucide-react"
 import { trackLockerEvent } from "@/lib/analytics"
 import { useUser } from "@clerk/nextjs"
 import { getUserLocationClient } from "@/lib/geolocation"
@@ -40,13 +40,13 @@ declare interface Task {
   id: string
   title: string
   description: string
-  loading: boolean
-  completed: boolean
+  loadingText: string
   icon: React.ReactNode
+  completed: boolean
+  loading: boolean
   adUrl?: string
-  ad_url?: string
   completionTimeSeconds?: number
-  completion_time_seconds?: number
+  deviceSpecificCpm?: number
   action: () => void
 }
 
@@ -201,38 +201,20 @@ export default function LinkLocker({ title = "Premium Content Download", destina
             ? deviceSpecificConfig.adUrl 
             : task.ad_url;
           
-          console.log(`[TASK MAPPING] Task "${task.title}" - Raw task data:`, {
-            id: task.id,
-            ad_url: task.ad_url,
-            deviceSpecificConfig,
-            effectiveAdUrl,
-            deviceTargetKey
-          });
-          
-          // Choose icon based on task title
-          const getTaskIcon = () => {
-            if (task.title.toLowerCase().includes('opera')) {
-              // Opera GX icon - using a gaming browser icon
-              return (
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M3 3h18v18H3V3zm16 16V5H5v14h14zm-8-2h2v-2h-2v2zm0-3h2V8h-2v6z"/>
-                  <circle cx="12" cy="12" r="2"/>
-                </svg>
-              );
-            }
-            return <Gift className="w-5 h-5" />;
-          };
+          console.log(`[TASK MAPPING] Task "${task.title}" - Using ad URL: ${effectiveAdUrl} ${deviceSpecificConfig?.adUrl ? '(device-specific)' : '(default)'}`);
           
           return {
             id: task.id.toString(),
             title: task.title,
             description: task.description,
-            loading: false,
+            loadingText: "Completing task...",
+            icon: <Gift className="w-5 h-5" />,
             completed: false,
-            icon: getTaskIcon(),
+            loading: false,
             adUrl: effectiveAdUrl,
             completionTimeSeconds: task.completion_time_seconds || 60,
-            action: () => handleTaskClick(task.id.toString(), effectiveAdUrl)
+            deviceSpecificCpm: deviceSpecificConfig?.cpm, // Store device-specific CPM for revenue calculation
+            action: () => handleTaskClick(task.id.toString()),
           };
         })
 
@@ -300,31 +282,29 @@ export default function LinkLocker({ title = "Premium Content Download", destina
     }
   }, [userReady, user, lockerId])
 
-  type HandleTaskClick = (taskId: string, adUrl?: string, countryCode?: string, tier?: string) => void
+  type HandleTaskClick = (taskId: string, countryCode?: string, tier?: string) => void
 
-  const handleTaskClick: HandleTaskClick = (taskId, adUrl, countryCode = 'US', tier = 'tier1') => {
+  const handleTaskClick: HandleTaskClick = (taskId, countryCode = 'US', tier = 'tier1') => {
     const task = tasks.find((t) => t.id === taskId);
     console.log('[TASK CLICK] Starting task click:', { 
-      taskId,
+      taskId, 
       task: task ? { id: task.id, title: task.title } : 'not found',
       userReady,
       userId: user?.id
     });
     
-    // Use the passed adUrl or try to get it from the task
-    const finalAdUrl = adUrl || task?.adUrl;
-    
+    const adUrl = task?.adUrl || (task as any)?.ad_url;
     if (task?.completed || task?.loading) {
       console.log('[TASK CLICK] Task already completed or loading, skipping');
       return;
     }
 
     // Open adUrl if present and valid
-    if (finalAdUrl && typeof finalAdUrl === 'string' && finalAdUrl.trim() !== '') {
-      console.log('[TASK CLICK] Opening ad URL:', finalAdUrl);
-      window.open(finalAdUrl, '_blank', 'noopener,noreferrer');
+    if (adUrl && typeof adUrl === 'string' && adUrl.trim() !== '') {
+      console.log('[TASK CLICK] Opening ad URL:', adUrl);
+      window.open(adUrl, '_blank', 'noopener,noreferrer');
     } else {
-      console.error('[TASK CLICK] No valid ad URL found:', finalAdUrl);
+      console.error('[TASK CLICK] No valid ad URL found:', adUrl);
       alert('No Ad URL set for this task.');
       return;
     }
@@ -364,7 +344,7 @@ export default function LinkLocker({ title = "Premium Content Download", destina
         setTasks((prevTasks) =>
           prevTasks.map((task) => (task.id === taskId ? { ...task, loading: false, completed: true } : task)),
         );
-        
+
         // Only track analytics if IP tracking allows it
         if (ipTrackingResult.shouldCount) {
           console.log('[TASK COMPLETION] ✅ IP tracking allows analytics counting');
@@ -588,7 +568,7 @@ export default function LinkLocker({ title = "Premium Content Download", destina
               <button
                 key={task.id}
                 type="button"
-                onClick={task.action}
+                onClick={() => handleTaskClick(task.id)}
                 className={`
                   group relative overflow-hidden backdrop-blur-xl border transition-all duration-300 cursor-pointer
                   ${
@@ -605,48 +585,44 @@ export default function LinkLocker({ title = "Premium Content Download", destina
                   transform: task.completed ? "scale(1.02)" : "scale(1)",
                 }}
               >
-                <div
-                  className={`absolute inset-0 bg-gradient-to-br ${
-                    task.completed
-                      ? "from-green-100 to-green-200"
-                      : "from-gray-100 to-gray-200"
-                  } opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
-                />
-                <div className="relative flex items-center justify-between">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <div
-                      className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
+                      className={`
+                      relative flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-300
+                      ${
                         task.completed
-                          ? "bg-green-500 text-white"
+                          ? "bg-gradient-to-r from-emerald-500 to-green-500 shadow-md"
                           : task.loading
-                          ? "bg-emerald-500/20 text-emerald-400"
-                          : "bg-white/10 text-gray-300 group-hover:bg-white/20"
-                      }`}
+                            ? "bg-gradient-to-r from-emerald-500 to-green-500 shadow-md"
+                            : "bg-white/10 group-hover:bg-white/15 group-hover:shadow-sm"
+                      }
+                    `}
                     >
                       {task.completed ? (
-                        <Check className="w-6 h-6" />
+                        <Check className="w-6 h-6 text-black" />
                       ) : (
                         task.icon
                       )}
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-white">{task.title}</h3>
-                      <p className="text-sm text-gray-400">{task.description}</p>
+
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold mb-1 text-white">{task.title}</h3>
+                      <p className="text-gray-400 text-sm">{task.loading ? task.loadingText : task.description}</p>
                     </div>
                   </div>
-                  <div className="flex items-center">
-                    {task.loading ? (
-                      <div className="flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin text-emerald-400" />
-                        <span className="text-sm text-gray-300">Loading...</span>
+
+                  <div className="ml-4">
+                    {task.completed ? (
+                      <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                        <Check className="w-4 h-4 text-emerald-400" />
                       </div>
-                    ) : task.completed ? (
-                      <div className="flex items-center gap-2 text-green-400">
-                        <span className="text-sm">Completed</span>
-                        <CheckCircle2 className="h-5 w-5" />
+                    ) : task.loading ? (
+                      <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                        <Loader2 className="w-4 h-4 text-emerald-400 animate-spin" />
                       </div>
                     ) : (
-                      <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-gray-300 transition-colors" />
+                      <ChevronRight className="w-6 h-6 text-gray-500 group-hover:text-white group-hover:translate-x-1 transition-all duration-200" />
                     )}
                   </div>
                 </div>
