@@ -13,6 +13,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const sub1 = searchParams.get("sub1");
+    // payout and conversion_ip are still parsed for logging, but payout will be ignored
     const payout = searchParams.get("payout");
     const conversion_ip = searchParams.get("conversion_ip");
 
@@ -20,8 +21,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Missing sub1" }, { status: 400 });
     }
 
-    // Find the locker/task/user from sub1 (assume sub1 is locker_id or a click id that maps to a locker/task/user)
-    // Here, we assume sub1 is the locker_id
+    // Find the locker/task/user from sub1 (assume sub1 is locker_id)
     const { data: locker, error: lockerError } = await supabase
       .from("lockers")
       .select("id, user_id")
@@ -33,12 +33,23 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Locker not found" }, { status: 404 });
     }
 
-    // Only credit for Opera GX task
-    // Log the conversion in revenue_events and analytics
+    // Fetch CPM for Opera GX from tasks table (use cpm_tier1 as default, or add logic for country/tier if needed)
+    const { data: task, error: taskError } = await supabase
+      .from("tasks")
+      .select("cpm_tier1, cpm_tier2, cpm_tier3")
+      .eq("id", OPERA_GX_TASK_ID)
+      .single();
+    if (taskError || !task) {
+      console.error("[OperaGX Postback] Opera GX task not found:", OPERA_GX_TASK_ID, taskError);
+      return NextResponse.json({ error: "Opera GX task not found" }, { status: 404 });
+    }
+    // For now, always use cpm_tier1 (you can add logic for country/tier if you want)
+    const cpm = Number(task.cpm_tier1) || 0;
+    const amount = cpm / 1000;
+
     const publisherId = locker.user_id;
     const lockerId = locker.id;
     const taskId = OPERA_GX_TASK_ID;
-    const amount = payout ? Number(payout) : 0;
     const country = null; // Not available from postback
     const tier = null; // Not available from postback
     const device = null; // Not available from postback
@@ -85,13 +96,13 @@ export async function GET(req: NextRequest) {
       user_agent: "OperaGX-Postback",
       referrer: "postback",
       duration: null,
-      extra: { postback: true, payout: amount, conversion_ip },
+      extra: { postback: true, payout_macro: payout, used_cpm: cpm, conversion_ip },
       country: null,
       task_index: null,
     });
 
     // Log for debugging
-    console.log(`[OperaGX Postback] Credited publisher ${publisherId} for Opera GX install via postback. Locker: ${lockerId}, Amount: $${amount}`);
+    console.log(`[OperaGX Postback] Credited publisher ${publisherId} for Opera GX install via postback. Locker: ${lockerId}, Amount: $${amount} (CPM: $${cpm})`);
 
     return NextResponse.json({ success: true });
   } catch (error) {
