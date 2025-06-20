@@ -2842,9 +2842,14 @@ Singapore,3.50,SG`;
   };
 
   const generateRandomSecret = () => {
-    return Array.from(crypto.getRandomValues(new Uint8Array(32)))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
+    if (typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues) {
+      return Array.from(window.crypto.getRandomValues(new Uint8Array(32)))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+    } else {
+      // Fallback for environments without crypto
+      return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    }
   };
 
   const savePostbackConfig = async () => {
