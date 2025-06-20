@@ -74,7 +74,8 @@ export default function Admin() {
       tier1: "$4.50",
       tier2: "$2.80",
       tier3: "$1.50"
-    }
+    },
+    targetTiers: ["tier1", "tier2", "tier3"] as string[] // Default: show to all tiers
   });
 
   // CPM Rate Management
@@ -261,6 +262,7 @@ export default function Admin() {
           cpm_tier1: parseFloat(taskData.countryRates.tier1.replace("$", "")) || 0,
           cpm_tier2: parseFloat(taskData.countryRates.tier2.replace("$", "")) || 0,
           cpm_tier3: parseFloat(taskData.countryRates.tier3.replace("$", "")) || 0,
+          target_tiers: taskData.targetTiers || ["tier1", "tier2", "tier3"],
           status: "Active"
         })
       });
@@ -278,7 +280,8 @@ export default function Admin() {
           tier1: "$4.50",
           tier2: "$2.80",
           tier3: "$1.50"
-        }
+        },
+        targetTiers: ["tier1", "tier2", "tier3"]
       });
     } catch (error) {
       console.error("Error adding task:", error);
@@ -359,6 +362,15 @@ export default function Admin() {
       excludedBrowsers: checked 
         ? [...prev.excludedBrowsers, browser]
         : prev.excludedBrowsers.filter((b: string) => b !== browser)
+    }));
+  };
+
+  const handleTierChange = (tier: string, checked: boolean) => {
+    setNewTask(prev => ({
+      ...prev,
+      targetTiers: checked 
+        ? [...prev.targetTiers, tier]
+        : prev.targetTiers.filter((t: string) => t !== tier)
     }));
   };
 
@@ -1410,6 +1422,34 @@ export default function Admin() {
                   ))}
                 </div>
                 <p className="text-gray-500 text-xs mt-1">This task will be hidden from users using these browsers</p>
+              </div>
+
+              <div>
+                <Label>Target Country Tiers</Label>
+                <div className="grid grid-cols-3 gap-3 mt-2">
+                  {[
+                    { tier: "tier1", label: "Tier 1", desc: "US, UK, CA, AU, DE, NL, SE, NO", color: "emerald" },
+                    { tier: "tier2", label: "Tier 2", desc: "FR, IT, ES, JP, KR, SG, HK", color: "blue" },
+                    { tier: "tier3", label: "Tier 3", desc: "All other countries", color: "orange" }
+                  ].map(({ tier, label, desc, color }) => (
+                    <label key={tier} className={`flex items-start space-x-2 p-3 bg-${color}-500/10 border border-${color}-500/20 rounded-lg cursor-pointer hover:bg-${color}-500/20 transition-colors`}>
+                      <input 
+                        type="checkbox" 
+                        className="rounded bg-white/5 border-white/10 mt-0.5"
+                        checked={newTask.targetTiers.includes(tier)}
+                        onChange={(e) => handleTierChange(tier, e.target.checked)}
+                      />
+                      <div className="flex-1">
+                        <span className={`text-${color}-400 text-sm font-medium`}>{label}</span>
+                        <p className="text-gray-400 text-xs mt-1">{desc}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-gray-500 text-xs mt-2">This task will only be shown to users from selected country tiers</p>
+                {newTask.targetTiers.length === 0 && (
+                  <p className="text-red-400 text-xs mt-1">⚠️ Warning: Task will not be visible to any users if no tiers are selected</p>
+                )}
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>

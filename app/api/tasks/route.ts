@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   if (!(await isAdmin(req))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const body = await req.json();
-  const { title, description, ad_url, devices, completion_time_seconds, excluded_browsers, cpm_tier1, cpm_tier2, cpm_tier3, country_cpm, status } = body;
+  const { title, description, ad_url, devices, completion_time_seconds, excluded_browsers, cpm_tier1, cpm_tier2, cpm_tier3, target_tiers, country_cpm, status } = body;
   const { data, error } = await supabase.from("tasks").insert([
     { 
       title, 
@@ -46,6 +46,7 @@ export async function POST(req: NextRequest) {
       cpm_tier1, 
       cpm_tier2, 
       cpm_tier3, 
+      target_tiers: target_tiers || ["tier1", "tier2", "tier3"],
       country_cpm, 
       status 
     }
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   if (!(await isAdmin(req))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const body = await req.json();
-  const { id, title, description, ad_url, devices, completion_time_seconds, excluded_browsers, cpm_tier1, cpm_tier2, cpm_tier3, status } = body;
+  const { id, title, description, ad_url, devices, completion_time_seconds, excluded_browsers, cpm_tier1, cpm_tier2, cpm_tier3, target_tiers, status } = body;
   const { data, error } = await supabase.from('tasks').update({
     title, 
     description, 
@@ -69,6 +70,7 @@ export async function PUT(req: NextRequest) {
     cpm_tier1, 
     cpm_tier2, 
     cpm_tier3, 
+    target_tiers: target_tiers || ["tier1", "tier2", "tier3"],
     status
   }).eq('id', id).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
