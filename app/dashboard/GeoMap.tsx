@@ -86,12 +86,91 @@ const countryNames: Record<string, string> = {
   NZ: "New Zealand",
 };
 
-// Helper to normalize all values to numbers
+// Reverse mapping: country name to country code (for legacy data compatibility)
+const countryNameToCode: Record<string, string> = {
+  "United States": "US",
+  "United Kingdom": "GB",
+  "Canada": "CA",
+  "Australia": "AU",
+  "Germany": "DE",
+  "France": "FR",
+  "Italy": "IT",
+  "Spain": "ES",
+  "Netherlands": "NL",
+  "Belgium": "BE",
+  "Switzerland": "CH",
+  "Austria": "AT",
+  "Sweden": "SE",
+  "Norway": "NO",
+  "Denmark": "DK",
+  "Finland": "FI",
+  "Ireland": "IE",
+  "Portugal": "PT",
+  "Greece": "GR",
+  "Poland": "PL",
+  "Czech Republic": "CZ",
+  "Hungary": "HU",
+  "Romania": "RO",
+  "Bulgaria": "BG",
+  "Croatia": "HR",
+  "Slovenia": "SI",
+  "Slovakia": "SK",
+  "Lithuania": "LT",
+  "Latvia": "LV",
+  "Estonia": "EE",
+  "Japan": "JP",
+  "South Korea": "KR",
+  "China": "CN",
+  "India": "IN",
+  "Singapore": "SG",
+  "Malaysia": "MY",
+  "Thailand": "TH",
+  "Indonesia": "ID",
+  "Philippines": "PH",
+  "Vietnam": "VN",
+  "Taiwan": "TW",
+  "Hong Kong": "HK",
+  "Brazil": "BR",
+  "Mexico": "MX",
+  "Argentina": "AR",
+  "Chile": "CL",
+  "Colombia": "CO",
+  "Peru": "PE",
+  "Venezuela": "VE",
+  "Uruguay": "UY",
+  "Paraguay": "PY",
+  "Bolivia": "BO",
+  "Ecuador": "EC",
+  "South Africa": "ZA",
+  "Egypt": "EG",
+  "Morocco": "MA",
+  "Nigeria": "NG",
+  "Kenya": "KE",
+  "Ghana": "GH",
+  "Tunisia": "TN",
+  "Algeria": "DZ",
+  "Israel": "IL",
+  "UAE": "AE",
+  "Saudi Arabia": "SA",
+  "Turkey": "TR",
+  "Russia": "RU",
+  "Ukraine": "UA",
+  "Belarus": "BY",
+  "Kazakhstan": "KZ",
+  "Uzbekistan": "UZ",
+  "New Zealand": "NZ",
+};
+
+// Helper to normalize all values to numbers and convert country names to codes
 function normalizeCountryData(data: Record<string, number | string>): Record<string, number> {
   const result: Record<string, number> = {};
   for (const [k, v] of Object.entries(data)) {
     const num = Number(v);
-    if (!isNaN(num)) result[k] = num;
+    if (!isNaN(num)) {
+      // Convert country name to country code if needed (for legacy data)
+      const countryCode = countryNameToCode[k] || k; // Use code if already a code, or convert if it's a name
+      result[countryCode] = (result[countryCode] || 0) + num; // Aggregate if there are duplicates
+    }
   }
   return result;
 }
@@ -111,7 +190,10 @@ export default function GeoMap({ countryData: initialCountryData, userId }: GeoM
         if (!res.ok) throw new Error("Failed to fetch country data");
         const data = await res.json();
         if (data.countryData) {
-          setCountryData(normalizeCountryData(data.countryData));
+          console.log('[GeoMap] Raw country data from API:', data.countryData);
+          const normalizedData = normalizeCountryData(data.countryData);
+          console.log('[GeoMap] Normalized country data:', normalizedData);
+          setCountryData(normalizedData);
         }
       } catch (error) {
         console.error('Error fetching country data:', error);
@@ -241,6 +323,11 @@ export default function GeoMap({ countryData: initialCountryData, userId }: GeoM
                       const code = geo.properties.ISO_A2;
                       const views = countryData[code] || 0;
                       const countryName = countryNames[code] || geo.properties.NAME || code;
+                      
+                      // Debug logging for US and IN
+                      if (code === 'US' || code === 'IN') {
+                        console.log(`[GeoMap] Country ${code} (${countryName}): ${views} views, color: ${views > 0 ? colorScale(views) : "#1e293b"}`);
+                      }
                       
                       return (
                         <Geography

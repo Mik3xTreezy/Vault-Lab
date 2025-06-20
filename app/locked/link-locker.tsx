@@ -333,7 +333,7 @@ export default function LinkLocker({ title = "Premium Content Download", destina
               event_type: "task_complete",
               task_id: taskId, // Use the actual UUID
               extra: { 
-                country: location.country, 
+                country: location.country, // Already contains countryCode from getUserLocation
                 tier: location.tier,
                 isVpn: location.isVpn,
                 isProxy: location.isProxy,
@@ -358,7 +358,7 @@ export default function LinkLocker({ title = "Premium Content Download", destina
               event_type: "task_complete",
               task_id: taskId, // Use the actual UUID instead of task_index
               extra: { 
-                country: location.country, 
+                country: location.country, // Already contains countryCode from getUserLocation
                 tier: location.tier,
                 isVpn: location.isVpn,
                 isProxy: location.isProxy,
