@@ -220,7 +220,7 @@ export default function LinkLocker({ title = "Premium Content Download", destina
             icon: <Gift className="w-5 h-5" />,
             adUrl: effectiveAdUrl,
             completionTimeSeconds: task.completion_time_seconds || 60,
-            action: () => handleTaskClick(task.id.toString())
+            action: () => handleTaskClick(task.id.toString(), effectiveAdUrl)
           };
         })
 
@@ -238,6 +238,20 @@ export default function LinkLocker({ title = "Premium Content Download", destina
 
     fetchTasks()
   }, [])
+
+  // Debug: Monitor tasks state changes
+  useEffect(() => {
+    console.log('[TASKS STATE] Tasks updated:', {
+      count: tasks.length,
+      tasks: tasks.map(t => ({
+        id: t.id,
+        title: t.title,
+        adUrl: t.adUrl,
+        hasAdUrl: 'adUrl' in t,
+        keys: Object.keys(t)
+      }))
+    });
+  }, [tasks]);
 
   // Track initial visit when user is ready (with IP tracking)
   useEffect(() => {
@@ -288,39 +302,47 @@ export default function LinkLocker({ title = "Premium Content Download", destina
     }
   }, [userReady, user, lockerId])
 
-  type HandleTaskClick = (taskId: string, countryCode?: string, tier?: string) => void
+  type HandleTaskClick = (taskId: string, adUrl?: string, countryCode?: string, tier?: string) => void
 
-  const handleTaskClick: HandleTaskClick = (taskId, countryCode = 'US', tier = 'tier1') => {
+  const handleTaskClick: HandleTaskClick = (taskId, adUrl, countryCode = 'US', tier = 'tier1') => {
     const task = tasks.find((t) => t.id === taskId);
     console.log('[TASK CLICK] Starting task click:', { 
-      taskId, 
+      taskId,
+      passedAdUrl: adUrl,
       task: task ? { 
         id: task.id, 
         title: task.title,
         adUrl: task.adUrl,
         ad_url: (task as any)?.ad_url,
-        fullTask: task
+        hasAdUrl: 'adUrl' in task,
+        taskKeys: Object.keys(task),
+        fullTask: JSON.stringify(task)
       } : 'not found',
       userReady,
-      userId: user?.id
+      userId: user?.id,
+      allTasks: tasks
     });
     
-    const adUrl = task?.adUrl || (task as any)?.ad_url;
+    // Use the passed adUrl or try to get it from the task
+    const finalAdUrl = adUrl || task?.adUrl || (task as any)?.ad_url || (task as any)?.['adUrl'];
+    
     if (task?.completed || task?.loading) {
       console.log('[TASK CLICK] Task already completed or loading, skipping');
       return;
     }
 
     // Open adUrl if present and valid
-    if (adUrl && typeof adUrl === 'string' && adUrl.trim() !== '') {
-      console.log('[TASK CLICK] Opening ad URL:', adUrl);
-      window.open(adUrl, '_blank', 'noopener,noreferrer');
+    if (finalAdUrl && typeof finalAdUrl === 'string' && finalAdUrl.trim() !== '') {
+      console.log('[TASK CLICK] Opening ad URL:', finalAdUrl);
+      window.open(finalAdUrl, '_blank', 'noopener,noreferrer');
     } else {
       console.error('[TASK CLICK] No valid ad URL found:', {
-        adUrl,
+        passedAdUrl: adUrl,
+        finalAdUrl,
         taskAdUrl: task?.adUrl,
         taskAdUrlAlt: (task as any)?.ad_url,
-        task
+        task,
+        taskStringified: JSON.stringify(task)
       });
       alert('No Ad URL set for this task.');
       return;
