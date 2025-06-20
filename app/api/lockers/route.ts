@@ -15,11 +15,17 @@ export async function POST(req: NextRequest) {
   const user = await currentUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { title, destinationUrl } = await req.json();
+  const { title, destinationUrl, allowedTaskTypes } = await req.json();
   const shortId = generateShortId(5);
   const { data, error } = await supabase
     .from('lockers')
-    .insert([{ id: shortId, user_id: user.id, title, destination_url: destinationUrl }])
+    .insert([{ 
+      id: shortId, 
+      user_id: user.id, 
+      title, 
+      destination_url: destinationUrl,
+      allowed_task_types: allowedTaskTypes || ["adult", "game", "minecraft", "roblox"]
+    }])
     .select()
     .single();
 

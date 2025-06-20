@@ -15,6 +15,7 @@ export default function Create() {
   const [formData, setFormData] = useState({
     title: "",
     destinationUrl: "",
+    allowedTaskTypes: ["adult", "game", "minecraft", "roblox"] as string[], // Default: allow all task types
   })
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
@@ -47,6 +48,11 @@ export default function Create() {
       }
     }
 
+    if (formData.allowedTaskTypes.length === 0) {
+      setError("Please select at least one task type")
+      isValid = false
+    }
+
     setErrors(newErrors)
     return isValid
   }
@@ -66,6 +72,7 @@ export default function Create() {
         body: JSON.stringify({
           title: formData.title,
           destinationUrl: formData.destinationUrl,
+          allowedTaskTypes: formData.allowedTaskTypes,
         }),
       });
       if (!res.ok) throw new Error("Failed to create locker");
@@ -84,6 +91,15 @@ export default function Create() {
     if (errors[field as keyof typeof errors]) {
       setErrors((prev) => ({ ...prev, [field]: "" }))
     }
+  }
+
+  const handleTaskTypeChange = (taskType: string, checked: boolean) => {
+    setFormData((prev) => ({
+      ...prev,
+      allowedTaskTypes: checked 
+        ? [...prev.allowedTaskTypes, taskType]
+        : prev.allowedTaskTypes.filter(type => type !== taskType)
+    }))
   }
 
   const copyToClipboard = async () => {
@@ -106,7 +122,7 @@ export default function Create() {
   }, [showCopyNotification])
 
   const resetForm = () => {
-    setFormData({ title: "", destinationUrl: "" })
+    setFormData({ title: "", destinationUrl: "", allowedTaskTypes: ["adult", "game", "minecraft", "roblox"] })
     setIsSuccess(false)
     setGeneratedLink("")
     setErrors({ title: "", destinationUrl: "" })
@@ -316,6 +332,40 @@ export default function Create() {
                 )}
               </div>
 
+              {/* Task Type Selection */}
+              <div className="space-y-3">
+                <Label className="text-gray-300 font-medium">
+                  Allowed Task Types
+                </Label>
+                <p className="text-gray-400 text-xs">Select which types of tasks visitors can complete to unlock your content</p>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { type: "adult", label: "🔞 Adult Tasks", desc: "18+ content tasks" },
+                    { type: "game", label: "🎮 Game Tasks", desc: "Gaming related tasks" },
+                    { type: "minecraft", label: "⛏️ Minecraft Tasks", desc: "Minecraft specific tasks" },
+                    { type: "roblox", label: "🟦 Roblox Tasks", desc: "Roblox related tasks" }
+                  ].map(({ type, label, desc }) => (
+                    <label key={type} className="flex items-start space-x-3 p-3 bg-white/5 border border-white/10 rounded-lg cursor-pointer hover:bg-white/10 transition-colors">
+                      <input 
+                        type="checkbox" 
+                        className="rounded bg-white/5 border-white/10 mt-1"
+                        checked={formData.allowedTaskTypes.includes(type)}
+                        onChange={(e) => handleTaskTypeChange(type, e.target.checked)}
+                      />
+                      <div className="flex-1">
+                        <span className="text-white text-sm font-medium block">{label}</span>
+                        <span className="text-gray-400 text-xs">{desc}</span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                
+                {formData.allowedTaskTypes.length === 0 && (
+                  <p className="text-red-400 text-xs">⚠️ Please select at least one task type</p>
+                )}
+              </div>
+
               {/* Info Box */}
               <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4">
                 <div className="flex items-start space-x-3">
@@ -325,8 +375,7 @@ export default function Create() {
                   <div>
                     <h4 className="text-emerald-400 font-medium text-sm mb-1">How it works</h4>
                     <p className="text-gray-300 text-xs leading-relaxed">
-                      Users will complete tasks to unlock access to your destination URL. You earn revenue from each
-                      completed task.
+                      Users will complete tasks from your selected categories to unlock access to your destination URL. You earn revenue from each completed task.
                     </p>
                   </div>
                 </div>

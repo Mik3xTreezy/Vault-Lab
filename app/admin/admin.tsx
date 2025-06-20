@@ -75,7 +75,8 @@ export default function Admin() {
       tier2: "$2.80",
       tier3: "$1.50"
     },
-    targetTiers: ["tier1", "tier2", "tier3"] as string[] // Default: show to all tiers
+    targetTiers: ["tier1", "tier2", "tier3"] as string[], // Default: show to all tiers
+    taskType: "adult" as string // Default task type
   });
 
   // CPM Rate Management
@@ -263,6 +264,7 @@ export default function Admin() {
           cpm_tier2: parseFloat(taskData.countryRates.tier2.replace("$", "")) || 0,
           cpm_tier3: parseFloat(taskData.countryRates.tier3.replace("$", "")) || 0,
           target_tiers: taskData.targetTiers || ["tier1", "tier2", "tier3"],
+          task_type: taskData.taskType || "adult",
           status: "Active"
         })
       });
@@ -281,7 +283,8 @@ export default function Admin() {
           tier2: "$2.80",
           tier3: "$1.50"
         },
-        targetTiers: ["tier1", "tier2", "tier3"]
+        targetTiers: ["tier1", "tier2", "tier3"],
+        taskType: "adult"
       });
     } catch (error) {
       console.error("Error adding task:", error);
@@ -1371,6 +1374,21 @@ export default function Admin() {
                   value={newTask.adUrl}
                   onChange={(e) => setNewTask(prev => ({ ...prev, adUrl: e.target.value }))}
                 />
+              </div>
+
+              <div>
+                <Label>Task Type</Label>
+                <select 
+                  className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-white text-sm focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 mt-2"
+                  value={newTask.taskType}
+                  onChange={(e) => setNewTask(prev => ({ ...prev, taskType: e.target.value }))}
+                >
+                  <option value="adult" className="bg-gray-800 text-white">🔞 Adult Tasks</option>
+                  <option value="game" className="bg-gray-800 text-white">🎮 Game Tasks</option>
+                  <option value="minecraft" className="bg-gray-800 text-white">⛏️ Minecraft Tasks</option>
+                  <option value="roblox" className="bg-gray-800 text-white">🟦 Roblox Tasks</option>
+                </select>
+                <p className="text-gray-500 text-xs mt-1">Select the category for this task</p>
               </div>
               <div>
                 <Label>Target Devices</Label>
