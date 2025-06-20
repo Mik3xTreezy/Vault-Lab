@@ -176,9 +176,7 @@ function normalizeCountryData(data: Record<string, number | string>): Record<str
 }
 
 export default function GeoMap({ countryData: initialCountryData, userId }: GeoMapProps) {
-  // TEST: Hardcode some country data to see if the map can highlight at all
-  const testData = { "US": 78, "IN": 10 };
-  const [countryData, setCountryData] = useState<Record<string, number>>(testData);
+  const [countryData, setCountryData] = useState<Record<string, number>>(normalizeCountryData(initialCountryData));
   const [hoveredCountry, setHoveredCountry] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -192,9 +190,7 @@ export default function GeoMap({ countryData: initialCountryData, userId }: GeoM
         if (!res.ok) throw new Error("Failed to fetch country data");
         const data = await res.json();
         if (data.countryData) {
-          console.log('[GeoMap] Raw country data from API:', data.countryData);
           const normalizedData = normalizeCountryData(data.countryData);
-          console.log('[GeoMap] Normalized country data:', normalizedData);
           setCountryData(normalizedData);
         }
       } catch (error) {
@@ -217,27 +213,22 @@ export default function GeoMap({ countryData: initialCountryData, userId }: GeoM
   const maxValue = countryValues.length > 0 ? Math.max(...countryValues) : 1;
   const uniqueCountries = Object.keys(countryData).length;
   
-  // Debug logging
-  console.log('[GeoMap] Current state:', {
-    countryData,
-    countryValues,
-    totalViews,
-    maxValue,
-    uniqueCountries
-  });
-  
-  // Enhanced color scale with green gradient to match dashboard theme
-  // TEST: Use very obvious colors to see if highlighting works at all
+  // Enhanced color scale with green gradient for heat map effect
   const colorScale = scaleLinear<string>()
     .domain([0, Math.max(1, maxValue)])
-    .range(["#1e293b", "#00ff00"]); // dark to bright green
+    .range(["#0f172a", "#10b981"]); // slate-900 to emerald-500
     
-  // Test the color scale
-  console.log('[GeoMap] Color scale test:', {
-    color0: colorScale(0),
-    colorMax: colorScale(maxValue),
-    colorMid: colorScale(maxValue / 2)
-  });
+  // Create heat map intensity levels
+  const getHeatMapColor = (views: number) => {
+    if (views === 0) return "#1e293b"; // Dark background for no views
+    
+    const intensity = views / maxValue;
+    if (intensity >= 0.8) return "#10b981"; // Brightest emerald for highest views
+    if (intensity >= 0.6) return "#22c55e"; // Bright green
+    if (intensity >= 0.4) return "#4ade80"; // Medium green  
+    if (intensity >= 0.2) return "#86efac"; // Light green
+    return "#bbf7d0"; // Very light green for lowest views
+  };
 
   const topCountries = Object.entries(countryData)
     .filter(([_, views]) => views > 0)
@@ -342,31 +333,19 @@ export default function GeoMap({ countryData: initialCountryData, userId }: GeoM
                       const code = geo.properties.ISO_A2;
                       const views = countryData[code] || 0;
                       const countryName = countryNames[code] || geo.properties.NAME || code;
-                      const fillColor = views > 0 ? colorScale(views) : "#1e293b";
-                      
-                      // Debug logging for US and IN specifically
-                      if (code === 'US' || code === 'IN') {
-                        console.log(`[GeoMap] RENDERING ${code}:`, {
-                          code,
-                          countryName,
-                          views,
-                          fillColor,
-                          hasViews: views > 0,
-                          countryDataEntry: countryData[code]
-                        });
-                      }
+                      const fillColor = getHeatMapColor(views);
                       
                       return (
                         <Geography
                           key={geo.rsmKey}
                           geography={geo}
                           fill={fillColor}
-                          stroke="#334155"
-                          strokeWidth={0.5}
+                          stroke="#374151"
+                          strokeWidth={0.3}
                           style={{ 
                             outline: "none",
                             cursor: views > 0 ? "pointer" : "default",
-                            transition: "all 0.2s ease-in-out"
+                            transition: "all 0.3s ease-in-out"
                           }}
                           onMouseEnter={() => {
                             if (views > 0) setHoveredCountry(`${countryName}: ${views.toLocaleString()} views`);

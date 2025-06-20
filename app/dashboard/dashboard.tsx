@@ -44,14 +44,12 @@ export default function Dashboard() {
       setLoading(true);
       if (!user) return;
       try {
-        console.log('[DEBUG] Dashboard fetching analytics for user ID:', user.id); // Add debug log
         const res = await fetch(`/api/dashboard-analytics?user_id=${user.id}`);
         if (!res.ok) throw new Error("Failed to fetch analytics");
         const data = await res.json();
-        console.log('[DEBUG] Dashboard analytics API response:', data); // TEMP LOG
         setAnalytics(data);
       } catch (error) {
-        console.error('[DEBUG] Dashboard analytics error:', error);
+        console.error('Dashboard analytics error:', error);
         setAnalytics(null);
       }
       setLoading(false);
@@ -87,7 +85,7 @@ export default function Dashboard() {
     {
       title: "Avg. CPM",
       value: `$${analytics.userEarnings?.avgCpm?.toFixed(2) ?? "0.00"}`,
-      icon: <TrendingUp className="w-5 h-5 text-blue-400" />,
+      icon: <TrendingUp className="w-5 h-5 text-emerald-400" />,
       change: "+0%",
       changeType: "positive" as const,
     },
@@ -144,9 +142,9 @@ export default function Dashboard() {
     device,
     percentage: totalDevices ? `${((Number(count) / totalDevices) * 100).toFixed(1)}%` : "0%",
     icon:
-      device === "Desktop" ? <Monitor className="w-4 h-4" /> :
-      device === "Mobile" ? <Smartphone className="w-4 h-4" /> :
-      <Tablet className="w-4 h-4" />,
+      device === "Desktop" ? <Monitor className="w-4 h-4 text-emerald-400" /> :
+      device === "Mobile" ? <Smartphone className="w-4 h-4 text-emerald-400" /> :
+      <Tablet className="w-4 h-4 text-emerald-400" />,
   }));
 
   // Browsers
@@ -155,10 +153,10 @@ export default function Dashboard() {
     browser,
     percentage: totalBrowsers ? `${((Number(count) / totalBrowsers) * 100).toFixed(1)}%` : "0%",
     icon:
-      browser === "Chrome" ? <Chrome className="w-4 h-4" /> :
-      browser === "Firefox" ? <Chrome className="w-4 h-4" /> : // Replace with Firefox icon if available
-      browser === "Safari" ? <Chrome className="w-4 h-4" /> : // Replace with Safari icon if available
-      <Globe className="w-4 h-4" />,
+      browser === "Chrome" ? <Chrome className="w-4 h-4 text-emerald-400" /> :
+      browser === "Firefox" ? <Chrome className="w-4 h-4 text-emerald-400" /> : // Replace with Firefox icon if available
+      browser === "Safari" ? <Chrome className="w-4 h-4 text-emerald-400" /> : // Replace with Safari icon if available
+      <Globe className="w-4 h-4 text-emerald-400" />,
   }));
 
   return (
@@ -185,19 +183,16 @@ export default function Dashboard() {
               variant="outline"
               className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
               onClick={() => {
-                console.log('[DEBUG] Manual refresh clicked');
                 if (user) {
                   const fetchAnalytics = async () => {
                     setLoading(true);
                     try {
-                      console.log('[DEBUG] Manual refresh for user ID:', user.id);
                       const res = await fetch(`/api/dashboard-analytics?user_id=${user.id}&_t=${Date.now()}`);
                       if (!res.ok) throw new Error("Failed to fetch analytics");
                       const data = await res.json();
-                      console.log('[DEBUG] Manual refresh response:', data);
                       setAnalytics(data);
                     } catch (error) {
-                      console.error('[DEBUG] Manual refresh error:', error);
+                      console.error('Manual refresh error:', error);
                     }
                     setLoading(false);
                   };
@@ -348,12 +343,12 @@ export default function Dashboard() {
                     <div className="text-gray-300 font-bold uppercase tracking-wide mb-2 text-sm">Domains</div>
                     {trafficSources.map((source, idx) => (
                       <div key={idx} className="flex items-center mb-2">
-                        <Globe className="w-4 h-4 text-gray-400 mr-2" />
+                        <Globe className="w-4 h-4 text-emerald-400 mr-2" />
                         <span className="text-white text-base font-medium truncate max-w-[160px]">{source.source}</span>
-                        <span className="ml-2 text-yellow-400 text-base font-bold">{source.percentage}</span>
+                        <span className="ml-2 text-emerald-400 text-base font-bold">{source.percentage}</span>
                         <div className="ml-2 flex items-center">
                           {Array.from({ length: Math.round(Number(source.percentage.replace('%', '')) / 5) }).map((_, i) => (
-                            <div key={i} className="w-1 h-3 bg-yellow-400 rounded mr-0.5" />
+                            <div key={i} className="w-1 h-3 bg-emerald-400 rounded mr-0.5" />
                           ))}
                         </div>
                       </div>
@@ -363,17 +358,17 @@ export default function Dashboard() {
                   <div className="flex-1">
                     <div className="text-gray-300 font-bold uppercase tracking-wide mb-2 text-sm">Sources</div>
                     {[
-                      { label: "Links", icon: <Link className="w-4 h-4 text-yellow-400" />, key: "Links", color: "bg-yellow-400" },
-                      { label: "Direct", icon: <Search className="w-4 h-4 text-gray-400" />, key: "Direct", color: "bg-gray-400" },
-                      { label: "Social Media", icon: <Share2 className="w-4 h-4 text-blue-400" />, key: "Social Media", color: "bg-blue-400" },
-                      { label: "Search", icon: <Search className="w-4 h-4 text-green-400" />, key: "Search", color: "bg-green-400" },
+                      { label: "Links", icon: <Link className="w-4 h-4 text-emerald-400" />, key: "Links", color: "bg-emerald-400" },
+                      { label: "Direct", icon: <Search className="w-4 h-4 text-emerald-400" />, key: "Direct", color: "bg-emerald-400" },
+                      { label: "Social Media", icon: <Share2 className="w-4 h-4 text-emerald-400" />, key: "Social Media", color: "bg-emerald-400" },
+                      { label: "Search", icon: <Search className="w-4 h-4 text-emerald-400" />, key: "Search", color: "bg-emerald-400" },
                     ].map((src, idx) => {
                       const found = trafficSources.find(s => s.source === src.key) || { percentage: "0%" };
                       return (
                         <div key={idx} className="flex items-center mb-2">
                           {src.icon}
                           <span className="text-white text-base font-medium ml-2">{src.label}</span>
-                          <span className="ml-2 text-yellow-400 text-base font-bold">{found.percentage}</span>
+                          <span className="ml-2 text-emerald-400 text-base font-bold">{found.percentage}</span>
                           <div className="ml-2 flex items-center">
                             {Array.from({ length: Math.round(Number(found.percentage.replace('%', '')) / 5) }).map((_, i) => (
                               <div key={i} className={`w-1 h-3 ${src.color} rounded mr-0.5`} />
@@ -407,10 +402,10 @@ export default function Dashboard() {
                     <div key={idx} className="flex items-center mb-2">
                       <span className="w-6 h-6 flex items-center justify-center">{device.icon}</span>
                       <span className="text-white ml-2">{device.device}</span>
-                      <span className="ml-auto text-purple-400 font-bold">{device.percentage}</span>
+                      <span className="ml-auto text-emerald-400 font-bold">{device.percentage}</span>
                       <div className="ml-2 flex items-center">
                         {Array.from({ length: Math.round(Number(device.percentage.replace('%', '')) / 5) }).map((_, i) => (
-                          <div key={i} className="w-1 h-3 bg-purple-400 rounded mr-0.5" />
+                          <div key={i} className="w-1 h-3 bg-emerald-400 rounded mr-0.5" />
                         ))}
                       </div>
                     </div>
@@ -428,10 +423,10 @@ export default function Dashboard() {
                     <div key={idx} className="flex items-center mb-2">
                       <span className="w-6 h-6 flex items-center justify-center">{browser.icon}</span>
                       <span className="text-white ml-2">{browser.browser}</span>
-                      <span className="ml-auto text-teal-400 font-bold">{browser.percentage}</span>
+                      <span className="ml-auto text-emerald-400 font-bold">{browser.percentage}</span>
                       <div className="ml-2 flex items-center">
                         {Array.from({ length: Math.round(Number(browser.percentage.replace('%', '')) / 5) }).map((_, i) => (
-                          <div key={i} className="w-1 h-3 bg-teal-400 rounded mr-0.5" />
+                          <div key={i} className="w-1 h-3 bg-emerald-400 rounded mr-0.5" />
                         ))}
                       </div>
                     </div>
@@ -441,22 +436,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* Debug Info - Remove in production */}
-          {analytics?.userEarnings?.events && analytics.userEarnings.events.length > 0 && (
-            <Card className="bg-blue-500/5 border-blue-500/20 mb-6">
-              <CardHeader>
-                <CardTitle className="text-blue-300 text-sm">Revenue Debug Info</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-xs text-blue-200 space-y-1">
-                  <p>Total Revenue Events: {analytics.userEarnings.events.length}</p>
-                  <p>Locker IDs: {[...new Set(analytics.userEarnings.events.map((e: any) => e.locker_id))].join(', ')}</p>
-                  <p>Revenue: ${analytics.userEarnings.totalRevenue?.toFixed(4)}</p>
-                  <p>Latest Event: {analytics.userEarnings.events[0]?.timestamp}</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+
 
           {/* Geo Map Section */}
           <div className="mt-8">

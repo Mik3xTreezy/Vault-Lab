@@ -160,7 +160,7 @@ export async function GET(req: NextRequest) {
     }
   });
   
-  console.log('[DASHBOARD API] Country data aggregated:', countryData);
+
 
   // --- USER ANALYTICS ---
   // Total users
