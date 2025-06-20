@@ -31,6 +31,9 @@ import {
   CheckCircle,
   Globe,
   Loader2,
+  Upload,
+  FileText,
+  X,
 } from "lucide-react"
 import {
   ResponsiveContainer,
@@ -96,6 +99,15 @@ export default function Admin() {
   const [loadingDeviceTargeting, setLoadingDeviceTargeting] = useState(false);
   const [savingDeviceTargeting, setSavingDeviceTargeting] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // CSV Upload state
+  const [csvUploadOpen, setCsvUploadOpen] = useState(false);
+  const [selectedTaskForCsv, setSelectedTaskForCsv] = useState<number | null>(null);
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [csvData, setCsvData] = useState<any[]>([]);
+  const [csvPreview, setCsvPreview] = useState<any[]>([]);
+  const [uploadingCsv, setUploadingCsv] = useState(false);
+  const [csvError, setCsvError] = useState("");
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !user) return;
@@ -493,6 +505,134 @@ export default function Admin() {
     } finally {
       setSavingDeviceTargeting(false);
     }
+  };
+
+  // CSV Upload functions
+  const handleCsvFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setCsvFile(file);
+      setCsvError("");
+      parseCsvFile(file);
+    }
+  };
+
+  const parseCsvFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result as string;
+        const lines = text.split('\n').filter(line => line.trim());
+        
+        if (lines.length < 2) {
+          setCsvError("CSV file must have at least a header row and one data row");
+          return;
+        }
+
+        const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+        
+        // Check for required columns
+        const requiredColumns = ['country', 'cpm'];
+        const missingColumns = requiredColumns.filter(col => !headers.includes(col));
+        
+        if (missingColumns.length > 0) {
+          setCsvError(`Missing required columns: ${missingColumns.join(', ')}. Required: country, cpm`);
+          return;
+        }
+
+        const data = lines.slice(1).map((line, index) => {
+          const values = line.split(',').map(v => v.trim());
+          const row: any = {};
+          
+          headers.forEach((header, i) => {
+            row[header] = values[i] || '';
+          });
+
+          // Validate CPM value
+          const cpmValue = parseFloat(row.cpm);
+          if (isNaN(cpmValue) || cpmValue < 0) {
+            throw new Error(`Invalid CPM value "${row.cpm}" on row ${index + 2}`);
+          }
+
+          return {
+            country: row.country,
+            cpm: cpmValue,
+            countryCode: row.country_code || row.code || '', // Optional country code
+            originalRow: index + 2
+          };
+        });
+
+        setCsvData(data);
+        setCsvPreview(data.slice(0, 10)); // Show first 10 rows for preview
+        setCsvError("");
+      } catch (error) {
+        setCsvError(`Error parsing CSV: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        setCsvData([]);
+        setCsvPreview([]);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const uploadCsvRates = async () => {
+    if (!selectedTaskForCsv || csvData.length === 0) {
+      setCsvError("Please select a task and upload a valid CSV file");
+      return;
+    }
+
+    setUploadingCsv(true);
+    setCsvError("");
+
+    try {
+      const response = await fetch('/api/tasks/csv-upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          taskId: selectedTaskForCsv,
+          cpmData: csvData
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to upload CSV data');
+      }
+
+      const result = await response.json();
+      
+      // Refresh tasks and device targeting data
+      await fetchTasks();
+      
+      // Refresh device targeting to show updated CPM rates
+      const deviceRes = await fetch("/api/device-targeting");
+      if (deviceRes.ok) {
+        const deviceData = await deviceRes.json();
+        setDeviceTargeting(deviceData || {});
+      }
+
+      alert(`Successfully updated CPM rates for ${result.updatedCount} countries!`);
+      
+      // Reset CSV upload state
+      setCsvUploadOpen(false);
+      setSelectedTaskForCsv(null);
+      setCsvFile(null);
+      setCsvData([]);
+      setCsvPreview([]);
+    } catch (error) {
+      setCsvError(error instanceof Error ? error.message : 'Failed to upload CSV data');
+    } finally {
+      setUploadingCsv(false);
+    }
+  };
+
+  const resetCsvUpload = () => {
+    setCsvFile(null);
+    setCsvData([]);
+    setCsvPreview([]);
+    setCsvError("");
+    setSelectedTaskForCsv(null);
   };
 
   // Dashboard stats using real data
@@ -1482,6 +1622,202 @@ export default function Admin() {
                 ⚠️ Unsaved changes
               </span>
             )}
+            <Dialog open={csvUploadOpen} onOpenChange={setCsvUploadOpen}>
+              <DialogTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
+                  onClick={() => setCsvUploadOpen(true)}
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  CSV Upload
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-black/90 backdrop-blur-xl border-white/10 text-white max-w-4xl animate-in fade-in-0 zoom-in-95 duration-300">
+                <DialogHeader>
+                  <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-blue-400" />
+                    Bulk CPM Upload via CSV
+                  </DialogTitle>
+                  <p className="text-gray-400 text-sm">Upload a CSV file to set CPM rates for multiple countries at once</p>
+                </DialogHeader>
+                
+                <div className="space-y-6">
+                  {/* Task Selection */}
+                  <div className="space-y-2">
+                    <Label className="text-gray-300">Select Task</Label>
+                    <select 
+                      className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-white text-sm"
+                      value={selectedTaskForCsv || ""}
+                      onChange={(e) => setSelectedTaskForCsv(Number(e.target.value))}
+                    >
+                      <option value="">Choose a task to update CPM rates for...</option>
+                      {tasks.map((task) => (
+                        <option key={task.id} value={task.id} className="bg-gray-800">
+                          {task.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* CSV Format Instructions */}
+                  <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-blue-400 font-medium text-sm">📋 CSV Format Requirements</h4>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10 text-xs"
+                        onClick={() => {
+                          const csvContent = `country,cpm,country_code
+United States,4.50,US
+United Kingdom,4.20,GB
+Germany,3.80,DE
+France,3.50,FR
+Italy,3.20,IT
+Spain,3.00,ES
+Netherlands,3.80,NL
+Sweden,3.60,SE
+Norway,3.70,NO
+Denmark,3.60,DK
+Canada,4.00,CA
+Australia,3.90,AU
+Japan,3.40,JP
+South Korea,3.20,KR
+Singapore,3.50,SG`;
+                          
+                          const blob = new Blob([csvContent], { type: 'text/csv' });
+                          const url = window.URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = 'cpm_rates_template.csv';
+                          document.body.appendChild(a);
+                          a.click();
+                          document.body.removeChild(a);
+                          window.URL.revokeObjectURL(url);
+                        }}
+                      >
+                        <Download className="w-3 h-3 mr-1" />
+                        Download Template
+                      </Button>
+                    </div>
+                    <div className="text-gray-300 text-sm space-y-1">
+                      <p>• <strong>Required columns:</strong> country, cpm</p>
+                      <p>• <strong>Optional columns:</strong> country_code (or code)</p>
+                      <p>• <strong>Example:</strong></p>
+                      <div className="bg-black/50 rounded p-2 mt-2 font-mono text-xs">
+                        country,cpm,country_code<br/>
+                        United States,4.50,US<br/>
+                        United Kingdom,4.20,GB<br/>
+                        Germany,3.80,DE
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* File Upload */}
+                  <div className="space-y-2">
+                    <Label className="text-gray-300">Upload CSV File</Label>
+                    <div className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-white/30 transition-colors">
+                      <input
+                        type="file"
+                        accept=".csv"
+                        onChange={handleCsvFileChange}
+                        className="hidden"
+                        id="csv-upload"
+                      />
+                      <label htmlFor="csv-upload" className="cursor-pointer">
+                        <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-gray-300">Click to upload CSV file</p>
+                        <p className="text-gray-500 text-sm">Supports .csv files only</p>
+                      </label>
+                    </div>
+                    
+                    {csvFile && (
+                      <div className="flex items-center justify-between bg-white/5 rounded-lg p-3">
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-4 h-4 text-blue-400" />
+                          <span className="text-white text-sm">{csvFile.name}</span>
+                          <span className="text-gray-400 text-xs">({csvData.length} rows)</span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={resetCsvUpload}
+                          className="w-6 h-6 hover:bg-red-500/20 text-red-400"
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Error Display */}
+                  {csvError && (
+                    <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                      <p className="text-red-400 text-sm">{csvError}</p>
+                    </div>
+                  )}
+
+                  {/* Preview */}
+                  {csvPreview.length > 0 && (
+                    <div className="space-y-2">
+                      <Label className="text-gray-300">Preview (First 10 rows)</Label>
+                      <div className="bg-white/5 rounded-lg overflow-hidden">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="border-white/10">
+                              <TableHead className="text-gray-300">Country</TableHead>
+                              <TableHead className="text-gray-300">CPM Rate</TableHead>
+                              <TableHead className="text-gray-300">Country Code</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {csvPreview.map((row, index) => (
+                              <TableRow key={index} className="border-white/10">
+                                <TableCell className="text-white">{row.country}</TableCell>
+                                <TableCell className="text-emerald-400 font-mono">${row.cpm.toFixed(2)}</TableCell>
+                                <TableCell className="text-gray-300">{row.countryCode || '-'}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                      {csvData.length > 10 && (
+                        <p className="text-gray-400 text-sm">... and {csvData.length - 10} more rows</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex justify-end space-x-3 pt-4 border-t border-white/10">
+                    <Button
+                      variant="outline"
+                      onClick={() => setCsvUploadOpen(false)}
+                      className="border-white/10 bg-white/5 hover:bg-white/10"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={uploadCsvRates}
+                      disabled={!selectedTaskForCsv || csvData.length === 0 || uploadingCsv}
+                      className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white"
+                    >
+                      {uploadingCsv ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4 mr-2" />
+                          Upload CPM Rates ({csvData.length} countries)
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
             <Button 
               variant="outline" 
               className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
@@ -1597,11 +1933,19 @@ export default function Admin() {
                             type="number"
                             step="0.01"
                             min="0"
-                            className="bg-white/5 border-white/10 text-white text-sm w-20"
+                            className={`bg-white/5 border-white/10 text-white text-sm w-20 ${
+                              getDeviceTargetingValue(activeDeviceTab, country.code, "cpm") ? 
+                              'ring-1 ring-emerald-500/50 bg-emerald-500/10' : ''
+                            }`}
                             placeholder="2.50"
                             value={getDeviceTargetingValue(activeDeviceTab, country.code, "cpm")}
                             onChange={(e) => updateDeviceTargeting(activeDeviceTab, country.code, "cpm", e.target.value)}
                           />
+                          {getDeviceTargetingValue(activeDeviceTab, country.code, "cpm") && (
+                            <div className="flex items-center">
+                              <span className="text-emerald-400 text-xs ml-1">✓</span>
+                            </div>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
