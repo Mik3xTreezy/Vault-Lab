@@ -83,7 +83,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   size={20}
                   trigger="hover"
                   colors={isActive ? LORDICON_COLORS.emerald : item.iconColors}
-                  className="pointer-events-none transition-transform duration-200 hover:scale-110"
+                  className="transition-transform duration-200"
                 />
               </button>
             )
