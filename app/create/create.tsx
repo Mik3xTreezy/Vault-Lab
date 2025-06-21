@@ -142,7 +142,7 @@ export default function Create() {
             <h1 className="text-3xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent mb-2">
               Locker Created Successfully!
             </h1>
-            <p className="text-gray-400">Your link locker is ready to use</p>
+            <p className="text-gray-400">Your VaultLab locker is ready to use</p>
           </div>
 
           {/* Generated Link Card */}
@@ -155,7 +155,7 @@ export default function Create() {
                   </div>
                   <div>
                     <h3 className="text-white font-semibold">{formData.title}</h3>
-                    <p className="text-gray-400 text-sm">Link Locker</p>
+                    <p className="text-gray-400 text-sm">VaultLab</p>
                   </div>
                 </div>
 
@@ -264,7 +264,7 @@ export default function Create() {
           </div>
 
           <h1 className="text-3xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent mb-2">
-            Create Link Locker
+                            Create VaultLab Locker
           </h1>
           <p className="text-gray-400 text-sm">Transform any link into a monetized experience</p>
         </div>

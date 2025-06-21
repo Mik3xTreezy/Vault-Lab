@@ -75,7 +75,7 @@ export default function LinkLocker({ title = "Premium Content Download", destina
         isProxy: location.isProxy
       };
     } catch (error) {
-      console.error('[LINK LOCKER] Error getting location:', error);
+              console.error('[VAULTLAB] Error getting location:', error);
       // Fallback to US/tier1 on error
       return { country: 'US', tier: 'tier1', isVpn: false, isProxy: false };
     }

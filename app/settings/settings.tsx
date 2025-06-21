@@ -58,7 +58,7 @@ export default function Settings() {
             onClick={() => router.push('/create')}
           >
             <Plus className="w-4 h-4 mr-2" />
-            Create link locker
+                            Create VaultLab locker
           </Button>
         </div>
 
