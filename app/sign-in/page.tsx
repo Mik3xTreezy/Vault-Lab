@@ -1,11 +1,15 @@
 "use client";
 import { SignIn } from "@clerk/nextjs";
 import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 
 function SignInContent() {
   const searchParams = useSearchParams();
   const email = searchParams.get('email');
+
+  useEffect(() => {
+    document.title = "Sign In - VaultLab";
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900 flex items-center justify-center">

@@ -2,7 +2,7 @@
 import { useState, useEffect, use } from "react";
 import dynamic from "next/dynamic";
 
-const LinkLocker = dynamic(() => import("../link-locker") as any, { ssr: false });
+const LinkLocker = dynamic(() => import("../link-locker"), { ssr: false });
 
 export default function LockedLinkPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -27,12 +27,22 @@ export default function LockedLinkPage({ params }: { params: Promise<{ id: strin
     fetchLocker();
   }, [id]);
 
+  // Set page title when locker data is loaded
+  useEffect(() => {
+    if (locker?.title) {
+      document.title = `${locker.title} - VaultLab`;
+    } else if (error) {
+      document.title = "Content Not Found - VaultLab";
+    } else {
+      document.title = "Loading Content - VaultLab";
+    }
+  }, [locker, error]);
+
   if (loading) return <div className="text-center mt-20 text-white">Loading...</div>;
   if (error) return <div className="text-center mt-20 text-red-400">{error}</div>;
   if (!locker) return null;
 
   return (
-    // @ts-expect-error: dynamic import props
     <LinkLocker 
       lockerId={id} 
       title={locker.title} 

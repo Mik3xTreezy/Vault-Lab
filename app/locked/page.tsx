@@ -1,7 +1,16 @@
 "use client"
 
+import { useEffect } from "react"
 import LinkLocker from "./link-locker"
 
 export default function Page() {
-  return <LinkLocker title="Exclusive Financial Strategy Guide" destinationUrl="https://example.com/download" />
+  useEffect(() => {
+    document.title = "Content Locked - VaultLab";
+  }, []);
+
+  return <LinkLocker 
+    title="Exclusive Financial Strategy Guide" 
+    destinationUrl="https://example.com/download" 
+    lockerId="demo"
+  />
 }
