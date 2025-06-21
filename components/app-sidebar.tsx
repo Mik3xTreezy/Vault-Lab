@@ -1,8 +1,10 @@
 "use client"
 
-import { Home, Vault, Settings, DollarSign } from "lucide-react"
+import { Vault, Settings, DollarSign } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { LordIcon } from "@/components/ui/lordicon"
+import { LORDICON_COLORS } from "@/lib/lordicons"
 
 import {
   Sidebar,
@@ -17,21 +19,26 @@ const items = [
   {
     title: "Dashboard",
     url: "/dashboard",
-    icon: Home,
+    iconType: "animated",
+    iconSrc: "https://cdn.lordicon.com/msoeawqm.json", // Analytics icon
+    iconColors: LORDICON_COLORS.emerald,
   },
   {
     title: "Vault",
     url: "/vault",
+    iconType: "static",
     icon: Vault,
   },
   {
     title: "Finance",
     url: "/finance",
+    iconType: "static", 
     icon: DollarSign,
   },
   {
     title: "Settings",
     url: "/settings",
+    iconType: "static",
     icon: Settings,
   },
 ]
@@ -57,7 +64,17 @@ export function AppSidebar() {
                 className="w-full justify-center group-data-[collapsible=icon]:justify-center"
               >
                 <Link href={item.url} className="flex items-center">
-                  <item.icon className="w-5 h-5" />
+                  {item.iconType === "animated" && item.iconSrc ? (
+                    <LordIcon 
+                      src={item.iconSrc}
+                      size={20}
+                      trigger="hover"
+                      colors={pathname === item.url ? LORDICON_COLORS.emerald : item.iconColors}
+                      className="transition-transform duration-200 hover:scale-110"
+                    />
+                  ) : item.icon ? (
+                    <item.icon className="w-5 h-5" />
+                  ) : null}
                   <span className="ml-2 group-data-[collapsible=icon]:hidden">{item.title}</span>
                 </Link>
               </SidebarMenuButton>
