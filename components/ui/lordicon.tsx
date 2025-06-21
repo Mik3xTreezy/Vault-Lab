@@ -5,7 +5,7 @@ import { Player } from '@lordicon/react';
 import { cn } from '@/lib/utils';
 
 interface LordIconProps {
-  src: string;
+  src: string | object;
   size?: number;
   state?: string;
   colors?: string;
@@ -34,21 +34,28 @@ export function LordIcon({
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch icon data from URL
+  // Fetch icon data from URL or load from object
   useEffect(() => {
     let isMounted = true;
     
-    const fetchIconData = async () => {
+    const loadIconData = async () => {
       try {
         setIsLoading(true);
         setHasError(false);
         
-        const response = await fetch(src);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch icon: ${response.status}`);
-        }
+        let data;
         
-        const data = await response.json();
+        // Check if src is an object (already parsed JSON)
+        if (typeof src === 'object' && src !== null) {
+          data = src;
+        } else {
+          // Fetch from URL
+          const response = await fetch(src);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch icon: ${response.status}`);
+          }
+          data = await response.json();
+        }
         
         if (isMounted) {
           setIconData(data);
@@ -64,7 +71,7 @@ export function LordIcon({
     };
 
     if (src) {
-      fetchIconData();
+      loadIconData();
     }
 
     return () => {

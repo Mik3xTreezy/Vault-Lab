@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { LordIcon } from "@/components/ui/lordicon"
 import { LORDICON_COLORS } from "@/lib/lordicons"
+import settingsIconData from "@/public/icons/settings-cog.json"
 
 import { usePathname } from "next/navigation"
 
@@ -29,8 +30,8 @@ const navigationItems = [
   },
   {
     href: "/settings",
-    iconSrc: "https://cdn.lordicon.com/hwjcdycb.json", // Settings cog icon
-    iconColors: LORDICON_COLORS.orange,
+    iconSrc: settingsIconData, // Local settings cog icon
+    iconColors: LORDICON_COLORS.emerald, // Green theme as requested
     label: "Settings",
   },
 ]
