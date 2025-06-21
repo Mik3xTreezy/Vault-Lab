@@ -4,8 +4,7 @@ import type React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { LordIcon } from "@/components/ui/lordicon"
-import { LORDICON_COLORS } from "@/lib/lordicons"
-import settingsIconData from "@/public/icons/settings-cog.json"
+import { LORDICON_COLORS, SETTINGS_ICON_DATA } from "@/lib/lordicons"
 
 import { usePathname } from "next/navigation"
 
@@ -30,7 +29,7 @@ const navigationItems = [
   },
   {
     href: "/settings",
-    iconSrc: settingsIconData, // Local settings cog icon
+    iconSrc: SETTINGS_ICON_DATA, // Local settings cog icon
     iconColors: LORDICON_COLORS.emerald, // Green theme as requested
     label: "Settings",
   },
