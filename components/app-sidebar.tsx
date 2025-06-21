@@ -19,27 +19,30 @@ const items = [
   {
     title: "Dashboard",
     url: "/dashboard",
-    iconType: "animated",
+    iconType: "animated" as const,
     iconSrc: "https://cdn.lordicon.com/msoeawqm.json", // Analytics icon
     iconColors: LORDICON_COLORS.emerald,
   },
   {
-    title: "Vault",
+    title: "Vault", 
     url: "/vault",
-    iconType: "static",
-    icon: Vault,
+    iconType: "animated" as const,
+    iconSrc: "https://cdn.lordicon.com/yqzmiobz.json", // Folder/Lock icon
+    iconColors: LORDICON_COLORS.blue,
   },
   {
     title: "Finance",
     url: "/finance",
-    iconType: "static", 
-    icon: DollarSign,
+    iconType: "animated" as const,
+    iconSrc: "https://cdn.lordicon.com/qhgmphtg.json", // Wallet icon
+    iconColors: LORDICON_COLORS.green,
   },
   {
     title: "Settings",
-    url: "/settings",
-    iconType: "static",
-    icon: Settings,
+    url: "/settings", 
+    iconType: "animated" as const,
+    iconSrc: "https://cdn.lordicon.com/hwjcdycb.json", // Settings cog icon
+    iconColors: LORDICON_COLORS.orange,
   },
 ]
 
@@ -64,17 +67,13 @@ export function AppSidebar() {
                 className="w-full justify-center group-data-[collapsible=icon]:justify-center"
               >
                 <Link href={item.url} className="flex items-center">
-                  {item.iconType === "animated" && item.iconSrc ? (
-                    <LordIcon 
-                      src={item.iconSrc}
-                      size={20}
-                      trigger="hover"
-                      colors={pathname === item.url ? LORDICON_COLORS.emerald : item.iconColors}
-                      className="transition-transform duration-200 hover:scale-110"
-                    />
-                  ) : item.icon ? (
-                    <item.icon className="w-5 h-5" />
-                  ) : null}
+                  <LordIcon 
+                    src={item.iconSrc}
+                    size={20}
+                    trigger="hover"
+                    colors={pathname === item.url ? LORDICON_COLORS.emerald : item.iconColors}
+                    className="transition-transform duration-200 hover:scale-110"
+                  />
                   <span className="ml-2 group-data-[collapsible=icon]:hidden">{item.title}</span>
                 </Link>
               </SidebarMenuButton>
