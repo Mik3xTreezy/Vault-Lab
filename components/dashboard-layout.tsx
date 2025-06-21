@@ -3,29 +3,34 @@
 import type React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { LordIcon } from "@/components/ui/lordicon"
+import { LORDICON_COLORS } from "@/lib/lordicons"
 
-import { LayoutDashboard, FolderLock, Settings, DollarSign } from "lucide-react"
 import { usePathname } from "next/navigation"
 
 const navigationItems = [
   {
     href: "/dashboard",
-    icon: LayoutDashboard,
+    iconSrc: "https://cdn.lordicon.com/msoeawqm.json", // Analytics icon
+    iconColors: LORDICON_COLORS.emerald,
     label: "Dashboard",
   },
   {
     href: "/vault",
-    icon: FolderLock,
+    iconSrc: "https://cdn.lordicon.com/yqzmiobz.json", // Shield/Lock icon
+    iconColors: LORDICON_COLORS.blue,
     label: "Vault",
   },
   {
     href: "/finance",
-    icon: DollarSign,
+    iconSrc: "https://cdn.lordicon.com/qhgmphtg.json", // Wallet icon
+    iconColors: LORDICON_COLORS.green,
     label: "Finance",
   },
   {
     href: "/settings",
-    icon: Settings,
+    iconSrc: "https://cdn.lordicon.com/hwjcdycb.json", // Settings cog icon
+    iconColors: LORDICON_COLORS.orange,
     label: "Settings",
   },
 ]
@@ -56,7 +61,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <nav className="flex flex-col space-y-4">
           {navigationItems.map((item) => {
             const isActive = pathname === item.href
-            const Icon = item.icon
 
             return (
               <button
@@ -74,7 +78,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 aria-current={isActive ? "page" : undefined}
                 type="button"
               >
-                <Icon className="w-5 h-5 pointer-events-none" />
+                <LordIcon 
+                  src={item.iconSrc}
+                  size={20}
+                  trigger="hover"
+                  colors={isActive ? LORDICON_COLORS.emerald : item.iconColors}
+                  className="pointer-events-none transition-transform duration-200 hover:scale-110"
+                />
               </button>
             )
           })}
