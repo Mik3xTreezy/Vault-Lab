@@ -126,6 +126,7 @@ export function LordIcon({
 
   // Show loading state
   if (isLoading) {
+    console.log('LordIcon: Loading...', { src: typeof src === 'string' ? src : 'embedded-data' });
     return (
       <div
         className={cn(
@@ -133,6 +134,7 @@ export function LordIcon({
           className
         )}
         style={{ width: size, height: size }}
+        title="Loading..."
       >
         <div className="w-3 h-3 bg-slate-600 rounded-full" />
       </div>
@@ -141,18 +143,28 @@ export function LordIcon({
 
   // Show error fallback
   if (hasError || !iconData) {
+    console.log('LordIcon: Error or no data', { hasError, iconData: !!iconData, src: typeof src === 'string' ? src : 'embedded-data' });
     return (
       <div
         className={cn(
-          "inline-flex items-center justify-center bg-slate-700/50 rounded-lg border border-slate-600",
+          "inline-flex items-center justify-center bg-red-700/50 rounded-lg border border-red-600",
           className
         )}
         style={{ width: size, height: size }}
+        title="Error loading icon"
       >
-        <div className="w-3 h-3 bg-slate-500 rounded-full" />
+        <div className="w-3 h-3 bg-red-500 rounded-full" />
       </div>
     );
   }
+
+  console.log('LordIcon: Rendering Player', { 
+    hasIconData: !!iconData, 
+    trigger, 
+    colors, 
+    size,
+    src: typeof src === 'string' ? src.substring(0, 50) + '...' : 'embedded-data'
+  });
 
   return (
     <div
@@ -165,6 +177,7 @@ export function LordIcon({
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       style={{ width: size, height: size }}
+      title={`LordIcon (${trigger})`}
     >
       <Player
         ref={playerRef}
@@ -175,6 +188,7 @@ export function LordIcon({
         colorize={colorize}
         onComplete={onComplete}
         onReady={() => {
+          console.log('LordIcon: Player ready!', { trigger, colors });
           if (onReady) onReady();
         }}
       />
