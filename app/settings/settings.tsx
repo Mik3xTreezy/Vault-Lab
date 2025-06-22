@@ -117,7 +117,12 @@ export default function Settings() {
                         <div className="grid grid-cols-2 gap-4">
                           <div className="flex items-center space-x-3 p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer">
                             <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                              <span className="text-blue-400 text-sm font-bold">@</span>
+                              <LordIcon 
+                                src="https://cdn.lordicon.com/ozlkyfxg.json" 
+                                size={16} 
+                                trigger="hover" 
+                                colors="primary:#60a5fa,secondary:#3b82f6" 
+                              />
                             </div>
                             <div>
                               <p className="text-white text-sm font-medium">Email</p>
@@ -126,7 +131,12 @@ export default function Settings() {
                           </div>
                           <div className="flex items-center space-x-3 p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer">
                             <div className="w-8 h-8 bg-cyan-500/20 rounded-lg flex items-center justify-center">
-                              <span className="text-cyan-400 text-sm font-bold">T</span>
+                              <LordIcon 
+                                src="https://cdn.lordicon.com/lznlxwtc.json" 
+                                size={16} 
+                                trigger="hover" 
+                                colors="primary:#22d3ee,secondary:#0891b2" 
+                              />
                             </div>
                             <div>
                               <p className="text-white text-sm font-medium">Telegram</p>
@@ -135,7 +145,12 @@ export default function Settings() {
                           </div>
                           <div className="flex items-center space-x-3 p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer">
                             <div className="w-8 h-8 bg-indigo-500/20 rounded-lg flex items-center justify-center">
-                              <span className="text-indigo-400 text-sm font-bold">D</span>
+                              <LordIcon 
+                                src="https://cdn.lordicon.com/fdxqrdfe.json" 
+                                size={16} 
+                                trigger="hover" 
+                                colors="primary:#818cf8,secondary:#6366f1" 
+                              />
                             </div>
                             <div>
                               <p className="text-white text-sm font-medium">Discord</p>
@@ -144,7 +159,12 @@ export default function Settings() {
                           </div>
                           <div className="flex items-center space-x-3 p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer">
                             <div className="w-8 h-8 bg-gray-500/20 rounded-lg flex items-center justify-center">
-                              <span className="text-gray-400 text-sm font-bold">X</span>
+                              <LordIcon 
+                                src="https://cdn.lordicon.com/ewswvzmw.json" 
+                                size={16} 
+                                trigger="hover" 
+                                colors="primary:#9ca3af,secondary:#6b7280" 
+                              />
                             </div>
                             <div>
                               <p className="text-white text-sm font-medium">X (Twitter)</p>
