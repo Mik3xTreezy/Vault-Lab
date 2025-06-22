@@ -4,7 +4,8 @@ import type React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { LordIcon } from "@/components/ui/lordicon"
-import { LORDICON_COLORS, SETTINGS_ICON_DATA, WALLET_ICON_DATA } from "@/lib/lordicons"
+import { LORDICON_COLORS, SETTINGS_ICON_DATA } from "@/lib/lordicons"
+import { WALLET_ICON_DATA } from "@/lib/wallet-icon-data"
 
 import { usePathname } from "next/navigation"
 
@@ -23,7 +24,7 @@ const navigationItems = [
   },
   {
     href: "/finance",
-    iconSrc: WALLET_ICON_DATA, // Local wallet icon
+    iconSrc: WALLET_ICON_DATA, // Animated wallet icon
     iconColors: LORDICON_COLORS.green,
     label: "Finance",
   },
@@ -67,7 +68,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 key={item.href}
                 onClick={(e) => handleNavigation(item.href, e)}
                 className={`
-                  w-12 h-12 rounded-lg flex items-center justify-center transition-all duration-200 cursor-pointer relative z-20 border-none bg-transparent
+                  w-12 h-12 rounded-lg flex items-center justify-center transition-all duration-200 cursor-pointer relative z-20 border-none bg-transparent group
                   ${
                     isActive
                       ? "bg-emerald-500/20 text-emerald-400 shadow-lg shadow-emerald-500/25"
@@ -78,12 +79,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 aria-current={isActive ? "page" : undefined}
                 type="button"
               >
-                <LordIcon 
-                  src={item.iconSrc}
-                  size={24}
-                  trigger="hover"
-                  colors={isActive ? LORDICON_COLORS.emerald : item.iconColors}
-                />
+                <div className="group-hover:scale-110 transition-transform duration-200">
+                  <LordIcon 
+                    src={item.iconSrc}
+                    size={24}
+                    trigger="hover"
+                    colors={isActive ? LORDICON_COLORS.emerald : item.iconColors}
+                  />
+                </div>
               </button>
             )
           })}
