@@ -24,7 +24,7 @@ const items = [
     iconColors: LORDICON_COLORS.emerald,
   },
   {
-    title: "Vault", 
+    title: "Vault",
     url: "/vault",
     iconType: "animated" as const,
     iconSrc: "https://cdn.lordicon.com/yqzmiobz.json", // Folder/Lock icon
@@ -39,7 +39,7 @@ const items = [
   },
   {
     title: "Settings",
-    url: "/settings", 
+    url: "/settings",
     iconType: "animated" as const,
     iconSrc: "https://cdn.lordicon.com/hwjcdycb.json", // Settings cog icon
     iconColors: LORDICON_COLORS.orange,

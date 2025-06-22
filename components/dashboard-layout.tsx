@@ -4,7 +4,7 @@ import type React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { LordIcon } from "@/components/ui/lordicon"
-import { LORDICON_COLORS, SETTINGS_ICON_DATA } from "@/lib/lordicons"
+import { LORDICON_COLORS, SETTINGS_ICON_DATA, WALLET_ICON_DATA } from "@/lib/lordicons"
 
 import { usePathname } from "next/navigation"
 
@@ -23,7 +23,7 @@ const navigationItems = [
   },
   {
     href: "/finance",
-    iconSrc: "https://cdn.lordicon.com/qhgmphtg.json", // Wallet icon
+    iconSrc: WALLET_ICON_DATA, // Local wallet icon
     iconColors: LORDICON_COLORS.green,
     label: "Finance",
   },

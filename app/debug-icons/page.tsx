@@ -1,7 +1,7 @@
 "use client"
 
 import { LordIcon } from '@/components/ui/lordicon';
-import { SETTINGS_ICON_DATA, LORDICON_COLORS } from '@/lib/lordicons';
+import { SETTINGS_ICON_DATA, WALLET_ICON_DATA, LORDICON_COLORS } from '@/lib/lordicons';
 
 export default function DebugIconsPage() {
   return (
@@ -68,13 +68,31 @@ export default function DebugIconsPage() {
           </div>
         </div>
 
+        {/* Test 5: Wallet Icon */}
+        <div className="bg-slate-800 p-6 rounded-lg">
+          <h2 className="text-white text-xl mb-4">Test 5: Wallet Icon</h2>
+          <div className="flex items-center gap-4">
+            <LordIcon 
+              src={WALLET_ICON_DATA}
+              size={48}
+              trigger="hover"
+              colors={LORDICON_COLORS.green}
+              className="border border-white"
+            />
+            <p className="text-white">Hover over this wallet icon for finance tab</p>
+          </div>
+        </div>
+
         {/* Debug info */}
         <div className="bg-slate-800 p-6 rounded-lg">
           <h2 className="text-white text-xl mb-4">Debug Info</h2>
           <div className="text-sm text-gray-300 space-y-2">
             <p>Settings Icon Data Type: {typeof SETTINGS_ICON_DATA}</p>
             <p>Settings Icon Data Keys: {Object.keys(SETTINGS_ICON_DATA).join(', ')}</p>
-            <p>Colors: {LORDICON_COLORS.emerald}</p>
+            <p>Wallet Icon Data Type: {typeof WALLET_ICON_DATA}</p>
+            <p>Wallet Icon Data Keys: {Object.keys(WALLET_ICON_DATA).join(', ')}</p>
+            <p>Emerald Colors: {LORDICON_COLORS.emerald}</p>
+            <p>Green Colors: {LORDICON_COLORS.green}</p>
             <p>Open browser console to check for errors</p>
           </div>
         </div>
