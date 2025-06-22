@@ -17,8 +17,8 @@ const navigationItems = [
   },
   {
     href: "/vault",
-    iconSrc: "https://cdn.lordicon.com/yqzmiobz.json", // Shield/Lock icon
-    iconColors: LORDICON_COLORS.blue,
+    iconSrc: "https://cdn.lordicon.com/rrfthkgx.json", // Vault icon
+    iconColors: LORDICON_COLORS.emerald,
     label: "Vault",
   },
   {

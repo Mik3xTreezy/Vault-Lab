@@ -98,6 +98,21 @@ export default function DebugIconsPage() {
           </div>
         </div>
 
+        {/* Test 7: Vault Icon */}
+        <div className="bg-slate-800 p-6 rounded-lg">
+          <h2 className="text-white text-xl mb-4">Test 7: Vault Icon</h2>
+          <div className="flex items-center gap-4">
+            <LordIcon 
+              src="https://cdn.lordicon.com/rrfthkgx.json"
+              size={48}
+              trigger="hover"
+              colors={LORDICON_COLORS.emerald}
+              className="border border-white"
+            />
+            <p className="text-white">Hover over this icon (should be animated vault)</p>
+          </div>
+        </div>
+
         {/* Debug info */}
         <div className="bg-slate-800 p-6 rounded-lg">
           <h2 className="text-white text-xl mb-4">Debug Info</h2>
