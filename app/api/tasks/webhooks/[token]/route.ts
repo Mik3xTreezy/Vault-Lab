@@ -8,7 +8,7 @@ const supabase = createClient(
 
 // Generate a secure token for webhook URL
 export function generateWebhookToken(taskId: string, publisherId: string): string {
-  const data = `${taskId}-${publisherId}-${process.env.WEBHOOK_SECRET || 'default-secret'}`;
+  const data = `${taskId}|${publisherId}|${process.env.WEBHOOK_SECRET || 'default-secret'}`;
   return Buffer.from(data).toString('base64url');
 }
 
@@ -16,8 +16,12 @@ export function generateWebhookToken(taskId: string, publisherId: string): strin
 export function decodeWebhookToken(token: string): { taskId: string; publisherId: string } | null {
   try {
     const decoded = Buffer.from(token, 'base64url').toString();
-    const [taskId, publisherId] = decoded.split('-');
-    return { taskId, publisherId };
+    const parts = decoded.split('|');
+    if (parts.length < 2) {
+      console.error('[WEBHOOK] Invalid token format');
+      return null;
+    }
+    return { taskId: parts[0], publisherId: parts[1] };
   } catch (error) {
     console.error('[WEBHOOK] Error decoding token:', error);
     return null;
@@ -26,16 +30,18 @@ export function decodeWebhookToken(token: string): { taskId: string; publisherId
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
-  return handleWebhook(req, params.token);
+  const { token } = await params;
+  return handleWebhook(req, token);
 }
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
-  return handleWebhook(req, params.token);
+  const { token } = await params;
+  return handleWebhook(req, token);
 }
 
 async function handleWebhook(req: NextRequest, token: string) {

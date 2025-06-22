@@ -54,8 +54,9 @@ const COLORS = ['#10b981', '#3b82f6', '#f59e42', '#6366f1', '#f43f5e', '#a3e635'
 
 // Helper function to generate webhook URL for a task
 const generateWebhookUrl = (taskId: string, publisherId: string): string => {
-  // Generate a simple token based on task and publisher IDs
-  const token = btoa(`${taskId}-${publisherId}`).replace(/=/g, '');
+  // Generate token with pipe separator (same as webhook route)
+  const data = `${taskId}|${publisherId}|${process.env.WEBHOOK_SECRET || 'default-secret'}`;
+  const token = btoa(data).replace(/=/g, '');
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
   return `${baseUrl}/api/tasks/webhooks/${token}`;
 };
