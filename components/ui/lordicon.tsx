@@ -177,7 +177,7 @@ export function LordIcon({
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       style={{ width: size, height: size }}
-      title={`LordIcon (${trigger})`}
+      title=""
     >
       <Player
         ref={playerRef}
