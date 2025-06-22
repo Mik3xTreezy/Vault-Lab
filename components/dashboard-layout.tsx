@@ -23,7 +23,7 @@ const navigationItems = [
   },
   {
     href: "/finance",
-    iconSrc: "https://cdn.lordicon.com/bsdkzyjd.json", // Wallet icon
+    iconSrc: "https://cdn.lordicon.com/yycecovd.json", // Wallet icon
     iconColors: LORDICON_COLORS.emerald,
     label: "Finance",
   },

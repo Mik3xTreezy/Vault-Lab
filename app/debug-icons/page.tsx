@@ -73,7 +73,7 @@ export default function DebugIconsPage() {
           <h2 className="text-white text-xl mb-4">Test 5: Wallet Icon (Finance)</h2>
           <div className="flex items-center gap-4">
             <LordIcon 
-              src="https://cdn.lordicon.com/bsdkzyjd.json"
+              src="https://cdn.lordicon.com/yycecovd.json"
               size={48}
               trigger="hover"
               colors={LORDICON_COLORS.emerald}
