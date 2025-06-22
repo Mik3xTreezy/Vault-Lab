@@ -299,10 +299,35 @@ export default function LinkLocker({ title = "Premium Content Download", destina
       return;
     }
 
+    // Generate a unique sub_id for this click
+    const sub1 = `${lockerId}_${taskId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    console.log('[TASK CLICK] Generated sub_id:', sub1);
+    
+    // Store sub_id in localStorage for later verification if needed
+    const clickData = {
+      sub_id: sub1,
+      task_id: taskId,
+      locker_id: lockerId,
+      timestamp: Date.now()
+    };
+    localStorage.setItem(`click_${sub1}`, JSON.stringify(clickData));
+
     // Open adUrl if present and valid
     if (adUrl && typeof adUrl === 'string' && adUrl.trim() !== '') {
-      console.log('[TASK CLICK] Opening ad URL:', adUrl);
-      window.open(adUrl, '_blank', 'noopener,noreferrer');
+      // Append sub1 to the task URL
+      let taskUrl = adUrl;
+      try {
+        const url = new URL(taskUrl);
+        url.searchParams.set('sub1', sub1);
+        taskUrl = url.toString();
+      } catch (e) {
+        // If URL parsing fails, append manually
+        const separator = taskUrl.includes('?') ? '&' : '?';
+        taskUrl = `${taskUrl}${separator}sub1=${sub1}`;
+      }
+      
+      console.log('[TASK CLICK] Opening ad URL with sub_id:', taskUrl);
+      window.open(taskUrl, '_blank', 'noopener,noreferrer');
     } else {
       console.error('[TASK CLICK] No valid ad URL found:', adUrl);
       alert('No Ad URL set for this task.');

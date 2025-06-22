@@ -34,6 +34,8 @@ import {
   Upload,
   FileText,
   X,
+  Copy,
+  Link,
 } from "lucide-react"
 import {
   ResponsiveContainer,
@@ -49,6 +51,14 @@ import {
 } from 'recharts';
 
 const COLORS = ['#10b981', '#3b82f6', '#f59e42', '#6366f1', '#f43f5e', '#a3e635', '#fbbf24', '#818cf8'];
+
+// Helper function to generate webhook URL for a task
+const generateWebhookUrl = (taskId: string, publisherId: string): string => {
+  // Generate a simple token based on task and publisher IDs
+  const token = btoa(`${taskId}-${publisherId}`).replace(/=/g, '');
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+  return `${baseUrl}/api/tasks/webhooks/${token}`;
+};
 
 export default function Admin() {
   const { user, isLoaded, isSignedIn } = useUser();
@@ -1481,15 +1491,16 @@ export default function Admin() {
                 <TableHead className="text-gray-300">Task</TableHead>
                 <TableHead className="text-gray-300">Settings</TableHead>
                 <TableHead className="text-gray-300">CPM Rates</TableHead>
+                <TableHead className="text-gray-300">Webhook</TableHead>
                 <TableHead className="text-gray-300">Status</TableHead>
                 <TableHead className="text-gray-300">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loadingTasks ? (
-                <TableRow><TableCell colSpan={5}>Loading...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6}>Loading...</TableCell></TableRow>
               ) : tasks.length === 0 ? (
-                <TableRow><TableCell colSpan={5}>No tasks found.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6}>No tasks found.</TableCell></TableRow>
               ) : tasks.map((task) => (
                 <TableRow key={task.id} className="border-white/10 hover:bg-white/5">
                   <TableCell>
@@ -1688,6 +1699,36 @@ export default function Admin() {
                         </div>
                       </DialogContent>
                     </Dialog>
+                  </TableCell>
+                  <TableCell>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Link className="w-3 h-3 text-gray-400" />
+                        <span className="text-xs text-gray-400">Webhook URL</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="text"
+                          readOnly
+                          value={generateWebhookUrl(task.id, user?.id || 'demo')}
+                          className="bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-gray-300 flex-1 max-w-[200px]"
+                          onClick={(e) => (e.target as HTMLInputElement).select()}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="w-6 h-6 hover:bg-white/10"
+                          onClick={() => {
+                            const url = generateWebhookUrl(task.id, user?.id || 'demo');
+                            navigator.clipboard.writeText(url);
+                            // You could add a toast notification here
+                          }}
+                        >
+                          <Copy className="w-3 h-3 text-gray-400" />
+                        </Button>
+                      </div>
+                      <p className="text-xs text-gray-500">Params: sub1, payout, conversion_ip</p>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <span
