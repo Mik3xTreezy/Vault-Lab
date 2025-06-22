@@ -6,13 +6,14 @@ import { useRouter } from "next/navigation"
 import { LordIcon } from "@/components/ui/lordicon"
 import { LORDICON_COLORS, SETTINGS_ICON_DATA } from "@/lib/lordicons"
 import { WALLET_ICON_DATA } from "@/lib/wallet-icon-data"
+import { ANALYTICS_ICON_DATA } from "@/lib/analytics-icon-data"
 
 import { usePathname } from "next/navigation"
 
 const navigationItems = [
   {
     href: "/dashboard",
-    iconSrc: "https://cdn.lordicon.com/msoeawqm.json", // Analytics icon
+    iconSrc: ANALYTICS_ICON_DATA, // Animated analytics icon
     iconColors: LORDICON_COLORS.emerald,
     label: "Dashboard",
   },
