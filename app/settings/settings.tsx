@@ -2,7 +2,9 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Plus, Shield, Code, Users, HelpCircle, Fingerprint } from "lucide-react"
+import { Plus, Fingerprint } from "lucide-react"
+import { LordIcon } from "@/components/ui/lordicon"
+import { LORDICON_COLORS } from "@/lib/lordicons"
 import { useAuth, useUser } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
 
@@ -19,22 +21,42 @@ export default function Settings() {
     {
       title: "Security",
       description: "Manage your account security settings.",
-      icon: <Shield className="w-5 h-5 text-blue-400" />,
+      icon: <LordIcon 
+        src="https://cdn.lordicon.com/kzjebklh.json" 
+        size={20} 
+        trigger="hover" 
+        colors={LORDICON_COLORS.blue} 
+      />,
     },
     {
       title: "API",
       description: "Easily create lockers in your application.",
-      icon: <Code className="w-5 h-5 text-purple-400" />,
+      icon: <LordIcon 
+        src="https://cdn.lordicon.com/hwjcdycb.json" 
+        size={20} 
+        trigger="hover" 
+        colors={LORDICON_COLORS.purple} 
+      />,
     },
     {
       title: "Referrals",
       description: "Invite friends to Lockr and earn.",
-      icon: <Users className="w-5 h-5 text-orange-400" />,
+      icon: <LordIcon 
+        src="https://cdn.lordicon.com/dxjqoygy.json" 
+        size={20} 
+        trigger="hover" 
+        colors={LORDICON_COLORS.orange} 
+      />,
     },
     {
       title: "Help",
       description: "Get support and find contact details.",
-      icon: <HelpCircle className="w-5 h-5 text-red-400" />,
+      icon: <LordIcon 
+        src="https://cdn.lordicon.com/akqsdstj.json" 
+        size={20} 
+        trigger="hover" 
+        colors={LORDICON_COLORS.red} 
+      />,
     },
   ]
 
