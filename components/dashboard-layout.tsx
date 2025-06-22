@@ -67,7 +67,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 key={item.href}
                 onClick={(e) => handleNavigation(item.href, e)}
                 className={`
-                  w-12 h-12 rounded-lg flex items-center justify-center transition-all duration-200 cursor-pointer relative z-20 border-none bg-transparent group
+                  w-12 h-12 rounded-lg flex items-center justify-center transition-all duration-200 cursor-pointer relative z-20 border-none bg-transparent
                   ${
                     isActive
                       ? "bg-emerald-500/20 text-emerald-400 shadow-lg shadow-emerald-500/25"
@@ -78,14 +78,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 aria-current={isActive ? "page" : undefined}
                 type="button"
               >
-                <div className="group-hover:scale-110 transition-transform duration-200">
-                  <LordIcon 
-                    src={item.iconSrc}
-                    size={24}
-                    trigger="hover"
-                    colors={isActive ? LORDICON_COLORS.emerald : item.iconColors}
-                  />
-                </div>
+                <LordIcon 
+                  src={item.iconSrc}
+                  size={24}
+                  trigger="hover"
+                  colors={isActive ? LORDICON_COLORS.emerald : item.iconColors}
+                />
               </button>
             )
           })}

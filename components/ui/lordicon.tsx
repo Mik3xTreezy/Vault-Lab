@@ -171,7 +171,6 @@ export function LordIcon({
       className={cn(
         "inline-flex items-center justify-center",
         trigger === 'click' && "cursor-pointer",
-        trigger === 'hover' && "hover:scale-105 transition-transform duration-200",
         className
       )}
       onClick={handleClick}
