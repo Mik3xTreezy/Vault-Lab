@@ -14,7 +14,7 @@ export default function DebugIconsPage() {
           <h2 className="text-white text-xl mb-4">Test 1: Simple URL Icon</h2>
           <div className="flex items-center gap-4">
             <LordIcon 
-              src="https://cdn.lordicon.com/msoeawqm.json"
+              src="https://cdn.lordicon.com/lrzdmsmx.json"
               size={48}
               trigger="hover"
               className="border border-white"
@@ -73,10 +73,10 @@ export default function DebugIconsPage() {
           <h2 className="text-white text-xl mb-4">Test 5: Wallet Icon (Finance)</h2>
           <div className="flex items-center gap-4">
             <LordIcon 
-              src="https://cdn.lordicon.com/qhgmphtg.json"
+              src="https://cdn.lordicon.com/bsdkzyjd.json"
               size={48}
               trigger="hover"
-              colors={LORDICON_COLORS.green}
+              colors={LORDICON_COLORS.emerald}
               className="border border-white"
             />
             <p className="text-white">Hover over this icon (should be animated wallet/coins)</p>
@@ -88,7 +88,7 @@ export default function DebugIconsPage() {
           <h2 className="text-white text-xl mb-4">Test 6: Analytics Icon (Dashboard)</h2>
           <div className="flex items-center gap-4">
             <LordIcon 
-              src="https://cdn.lordicon.com/msoeawqm.json"
+              src="https://cdn.lordicon.com/lrzdmsmx.json"
               size={48}
               trigger="hover"
               colors={LORDICON_COLORS.emerald}
@@ -106,8 +106,8 @@ export default function DebugIconsPage() {
             <p>Settings Icon Data Keys: {Object.keys(SETTINGS_ICON_DATA).join(', ')}</p>
             <p>Wallet Icon Data Type: CDN URL</p>
             <p>Analytics Icon Data Type: CDN URL</p>
-            <p>Colors: {LORDICON_COLORS.emerald}</p>
-            <p>Green Colors: {LORDICON_COLORS.green}</p>
+            <p>Theme Colors (Emerald): {LORDICON_COLORS.emerald}</p>
+            <p>Both icons now use emerald theme colors</p>
             <p>Open browser console to check for errors</p>
           </div>
         </div>

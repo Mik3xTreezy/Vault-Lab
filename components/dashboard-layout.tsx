@@ -11,7 +11,7 @@ import { usePathname } from "next/navigation"
 const navigationItems = [
   {
     href: "/dashboard",
-    iconSrc: "https://cdn.lordicon.com/msoeawqm.json", // Analytics icon
+    iconSrc: "https://cdn.lordicon.com/lrzdmsmx.json", // Analytics icon
     iconColors: LORDICON_COLORS.emerald,
     label: "Dashboard",
   },
@@ -23,8 +23,8 @@ const navigationItems = [
   },
   {
     href: "/finance",
-    iconSrc: "https://cdn.lordicon.com/qhgmphtg.json", // Wallet icon
-    iconColors: LORDICON_COLORS.green,
+    iconSrc: "https://cdn.lordicon.com/bsdkzyjd.json", // Wallet icon
+    iconColors: LORDICON_COLORS.emerald,
     label: "Finance",
   },
   {
