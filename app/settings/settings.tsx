@@ -22,7 +22,7 @@ export default function Settings() {
       title: "Security",
       description: "Manage your account security settings.",
       icon: <LordIcon 
-        src="https://cdn.lordicon.com/kzjebklh.json" 
+        src="https://cdn.lordicon.com/gbycmzod.json" 
         size={20} 
         trigger="hover" 
         colors={LORDICON_COLORS.blue} 
@@ -32,7 +32,7 @@ export default function Settings() {
       title: "API",
       description: "Easily create lockers in your application.",
       icon: <LordIcon 
-        src="https://cdn.lordicon.com/hwjcdycb.json" 
+        src="https://cdn.lordicon.com/lrubprlz.json" 
         size={20} 
         trigger="hover" 
         colors={LORDICON_COLORS.purple} 
@@ -42,7 +42,7 @@ export default function Settings() {
       title: "Referrals",
       description: "Invite friends to Lockr and earn.",
       icon: <LordIcon 
-        src="https://cdn.lordicon.com/dxjqoygy.json" 
+        src="https://cdn.lordicon.com/kphwxuxr.json" 
         size={20} 
         trigger="hover" 
         colors={LORDICON_COLORS.orange} 
@@ -52,7 +52,7 @@ export default function Settings() {
       title: "Help",
       description: "Get support and find contact details.",
       icon: <LordIcon 
-        src="https://cdn.lordicon.com/akqsdstj.json" 
+        src="https://cdn.lordicon.com/hvenareh.json" 
         size={20} 
         trigger="hover" 
         colors={LORDICON_COLORS.red} 
