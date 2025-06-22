@@ -116,6 +116,27 @@ export default function Admin() {
   const [cpmViewerData, setCpmViewerData] = useState<any[]>([]);
   const [loadingCpmViewer, setLoadingCpmViewer] = useState(false);
 
+  // Add new state for unified modal
+  const [unifiedTaskModal, setUnifiedTaskModal] = useState(false);
+  const [taskFormData, setTaskFormData] = useState({
+    title: "",
+    description: "",
+    adUrl: "",
+    taskType: "adult",
+    devices: [] as string[],
+    excludedBrowsers: [] as string[],
+    completionTimeSeconds: 60,
+    targetTiers: ["tier1", "tier2", "tier3"] as string[],
+    cpmMethod: "general" as "general" | "csv", // New: CPM setting method
+    generalCpm: {
+      tier1: "$4.50",
+      tier2: "$2.80", 
+      tier3: "$1.50"
+    },
+    csvFile: null as File | null,
+    csvData: [] as any[]
+  });
+
   useEffect(() => {
     if (!isLoaded || !isSignedIn || !user) return;
     
@@ -203,6 +224,8 @@ export default function Admin() {
   ) {
     return <div className="text-white p-8">Access denied.</div>;
   }
+
+
 
   // Task CRUD operations
   const fetchTasks = async () => {
@@ -465,6 +488,109 @@ export default function Admin() {
   const cancelEditingCpm = () => {
     setEditingCpmTask(null);
     setTempCpmRates({ tier1: "", tier2: "", tier3: "" });
+  };
+
+  // Unified task creation functions
+  const resetTaskForm = () => {
+    setTaskFormData({
+      title: "",
+      description: "",
+      adUrl: "",
+      taskType: "adult",
+      devices: [],
+      excludedBrowsers: [],
+      completionTimeSeconds: 60,
+      targetTiers: ["tier1", "tier2", "tier3"],
+      cpmMethod: "general",
+      generalCpm: {
+        tier1: "$4.50",
+        tier2: "$2.80", 
+        tier3: "$1.50"
+      },
+      csvFile: null,
+      csvData: []
+    });
+  };
+
+  const handleUnifiedTaskCreation = async () => {
+    // Validation
+    if (!taskFormData.title || !taskFormData.description || !taskFormData.adUrl || taskFormData.devices.length === 0) {
+      alert("Please fill in all required fields (Title, Description, Ad URL, and at least one target device)");
+      return;
+    }
+
+    if (taskFormData.targetTiers.length === 0) {
+      alert("Please select at least one target country tier");
+      return;
+    }
+
+    setIsAddingTask(true);
+    try {
+      const taskPayload: any = {
+        title: taskFormData.title,
+        description: taskFormData.description,
+        ad_url: taskFormData.adUrl,
+        devices: taskFormData.devices,
+        completion_time_seconds: taskFormData.completionTimeSeconds,
+        excluded_browsers: taskFormData.excludedBrowsers,
+        target_tiers: taskFormData.targetTiers,
+        task_type: taskFormData.taskType,
+        status: "Active"
+      };
+
+      // Handle CPM based on method selected
+      if (taskFormData.cpmMethod === "general") {
+        taskPayload.cpm_tier1 = parseFloat(taskFormData.generalCpm.tier1.replace("$", "")) || 0;
+        taskPayload.cpm_tier2 = parseFloat(taskFormData.generalCpm.tier2.replace("$", "")) || 0;
+        taskPayload.cpm_tier3 = parseFloat(taskFormData.generalCpm.tier3.replace("$", "")) || 0;
+      } else {
+        // For CSV method, set default CPM rates and handle CSV upload separately
+        taskPayload.cpm_tier1 = 0;
+        taskPayload.cpm_tier2 = 0;
+        taskPayload.cpm_tier3 = 0;
+      }
+
+      const res = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(taskPayload)
+      });
+
+      if (!res.ok) throw new Error("Failed to create task");
+      
+      const newTask = await res.json();
+
+      // If CSV method was selected and file exists, upload the CSV data
+      if (taskFormData.cpmMethod === "csv" && taskFormData.csvFile) {
+        try {
+          const formData = new FormData();
+          formData.append('csv', taskFormData.csvFile);
+          formData.append('taskId', newTask.id || newTask.task_id);
+
+          const csvRes = await fetch("/api/tasks/csv-upload", {
+            method: "POST",
+            body: formData
+          });
+
+          if (!csvRes.ok) {
+            console.warn("Task created but CSV upload failed");
+          }
+        } catch (csvError) {
+          console.error("CSV upload error:", csvError);
+          alert("Task created successfully, but CSV upload failed. You can upload CPM rates later via the Device Targeting tab.");
+        }
+      }
+
+      await fetchTasks();
+      setUnifiedTaskModal(false);
+      resetTaskForm();
+      alert("Task created successfully!");
+    } catch (error) {
+      console.error("Error creating task:", error);
+      alert("Failed to create task. Please try again.");
+    } finally {
+      setIsAddingTask(false);
+    }
   };
 
   const fixLegacyTasks = async () => {
@@ -1336,187 +1462,13 @@ export default function Admin() {
           >
             🔧 Fix Legacy Tasks
           </Button>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Task
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="bg-black/80 backdrop-blur-xl border-white/10 text-white max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Add New Task</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>Task Title</Label>
-                <Input 
-                  className="bg-white/5 border-white/10 text-white" 
-                  placeholder="Enter task title"
-                  value={newTask.title}
-                  onChange={(e) => setNewTask(prev => ({ ...prev, title: e.target.value }))}
-                />
-              </div>
-              <div>
-                <Label>Description</Label>
-                <Textarea 
-                  className="bg-white/5 border-white/10 text-white" 
-                  placeholder="Enter task description"
-                  value={newTask.description}
-                  onChange={(e) => setNewTask(prev => ({ ...prev, description: e.target.value }))}
-                />
-              </div>
-              <div>
-                <Label>Ad URL</Label>
-                <Input
-                  className="bg-white/5 border-white/10 text-white"
-                  placeholder="https://example.com/ad"
-                  value={newTask.adUrl}
-                  onChange={(e) => setNewTask(prev => ({ ...prev, adUrl: e.target.value }))}
-                />
-              </div>
-
-              <div>
-                <Label>Task Type</Label>
-                <select 
-                  className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-white text-sm focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 mt-2"
-                  value={newTask.taskType}
-                  onChange={(e) => setNewTask(prev => ({ ...prev, taskType: e.target.value }))}
-                >
-                  <option value="adult" className="bg-gray-800 text-white">🔞 Adult Tasks</option>
-                  <option value="game" className="bg-gray-800 text-white">🎮 Game Tasks</option>
-                  <option value="minecraft" className="bg-gray-800 text-white">⛏️ Minecraft Tasks</option>
-                  <option value="roblox" className="bg-gray-800 text-white">🟦 Roblox Tasks</option>
-                </select>
-                <p className="text-gray-500 text-xs mt-1">Select the category for this task</p>
-              </div>
-              <div>
-                <Label>Target Devices</Label>
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  {["Windows", "Mac", "Android", "iOS"].map((device) => (
-                    <label key={device} className="flex items-center space-x-2">
-                      <input 
-                        type="checkbox" 
-                        className="rounded bg-white/5 border-white/10"
-                        checked={newTask.devices.includes(device)}
-                        onChange={(e) => handleDeviceChange(device, e.target.checked)}
-                      />
-                      <span className="text-gray-300 text-sm">{device}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-              
-              <div>
-                <Label>Task Completion Time</Label>
-                <div className="flex items-center space-x-2 mt-2">
-                  <Input 
-                    type="number"
-                    className="bg-white/5 border-white/10 text-white flex-1" 
-                    placeholder="60"
-                    min="5"
-                    max="300"
-                    value={newTask.completionTimeSeconds}
-                    onChange={(e) => setNewTask(prev => ({ ...prev, completionTimeSeconds: parseInt(e.target.value) || 60 }))}
-                  />
-                  <span className="text-gray-400 text-sm">seconds</span>
-                </div>
-                <p className="text-gray-500 text-xs mt-1">Time users must wait before task completion (5-300 seconds)</p>
-              </div>
-
-              <div>
-                <Label>Exclude Browsers</Label>
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  {["Chrome", "Firefox", "Safari", "Edge", "Opera", "Opera GX"].map((browser) => (
-                    <label key={browser} className="flex items-center space-x-2">
-                      <input 
-                        type="checkbox" 
-                        className="rounded bg-white/5 border-white/10"
-                        checked={newTask.excludedBrowsers.includes(browser)}
-                        onChange={(e) => handleBrowserChange(browser, e.target.checked)}
-                      />
-                      <span className="text-gray-300 text-sm">{browser}</span>
-                    </label>
-                  ))}
-                </div>
-                <p className="text-gray-500 text-xs mt-1">This task will be hidden from users using these browsers</p>
-              </div>
-
-              <div>
-                <Label>Target Country Tiers</Label>
-                <div className="grid grid-cols-3 gap-3 mt-2">
-                  {[
-                    { tier: "tier1", label: "Tier 1", desc: "US, UK, CA, AU, DE, NL, SE, NO", color: "emerald" },
-                    { tier: "tier2", label: "Tier 2", desc: "FR, IT, ES, JP, KR, SG, HK", color: "blue" },
-                    { tier: "tier3", label: "Tier 3", desc: "All other countries", color: "orange" }
-                  ].map(({ tier, label, desc, color }) => (
-                    <label key={tier} className={`flex items-start space-x-2 p-3 bg-${color}-500/10 border border-${color}-500/20 rounded-lg cursor-pointer hover:bg-${color}-500/20 transition-colors`}>
-                      <input 
-                        type="checkbox" 
-                        className="rounded bg-white/5 border-white/10 mt-0.5"
-                        checked={newTask.targetTiers.includes(tier)}
-                        onChange={(e) => handleTierChange(tier, e.target.checked)}
-                      />
-                      <div className="flex-1">
-                        <span className={`text-${color}-400 text-sm font-medium`}>{label}</span>
-                        <p className="text-gray-400 text-xs mt-1">{desc}</p>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-                <p className="text-gray-500 text-xs mt-2">This task will only be shown to users from selected country tiers</p>
-                {newTask.targetTiers.length === 0 && (
-                  <p className="text-red-400 text-xs mt-1">⚠️ Warning: Task will not be visible to any users if no tiers are selected</p>
-                )}
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <Label>Tier 1 CPM</Label>
-                  <Input 
-                    className="bg-white/5 border-white/10 text-white" 
-                    placeholder="$4.50"
-                    value={newTask.countryRates.tier1}
-                    onChange={(e) => setNewTask(prev => ({
-                      ...prev,
-                      countryRates: { ...prev.countryRates, tier1: e.target.value }
-                    }))}
-                  />
-                </div>
-                <div>
-                  <Label>Tier 2 CPM</Label>
-                  <Input 
-                    className="bg-white/5 border-white/10 text-white" 
-                    placeholder="$2.80"
-                    value={newTask.countryRates.tier2}
-                    onChange={(e) => setNewTask(prev => ({
-                      ...prev,
-                      countryRates: { ...prev.countryRates, tier2: e.target.value }
-                    }))}
-                  />
-                </div>
-                <div>
-                  <Label>Tier 3 CPM</Label>
-                  <Input 
-                    className="bg-white/5 border-white/10 text-white" 
-                    placeholder="$1.50"
-                    value={newTask.countryRates.tier3}
-                    onChange={(e) => setNewTask(prev => ({
-                      ...prev,
-                      countryRates: { ...prev.countryRates, tier3: e.target.value }
-                    }))}
-                  />
-                </div>
-              </div>
-              <Button 
-                className="w-full bg-gradient-to-r from-emerald-500 to-green-500 text-black"
-                onClick={handleAddTask}
-                disabled={isAddingTask}
-              >
-                {isAddingTask ? "Creating..." : "Create Task"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button 
+          className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black"
+          onClick={() => setUnifiedTaskModal(true)}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Create Task
+        </Button>
         </div>
       </div>
 
@@ -2835,6 +2787,379 @@ Singapore,3.50,SG`;
     </div>
   )
 
+  // Add unified task creation modal
+  const renderUnifiedTaskModal = () => (
+    <Dialog open={unifiedTaskModal} onOpenChange={setUnifiedTaskModal}>
+      <DialogContent className="bg-black/90 backdrop-blur-xl border-white/10 text-white max-w-4xl max-h-[95vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold flex items-center gap-3">
+            <Plus className="w-6 h-6 text-emerald-400" />
+            Create New Task
+          </DialogTitle>
+          <p className="text-gray-400">Configure all task settings in one place</p>
+        </DialogHeader>
+        
+        <div className="space-y-8 py-4">
+          {/* Task Information Section */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-4">
+              <FileText className="w-5 h-5 text-blue-400" />
+              <h3 className="text-lg font-semibold text-white">Task Information</h3>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-gray-300">Task Title *</Label>
+                <Input 
+                  className="bg-white/5 border-white/10 text-white" 
+                  placeholder="Enter task title"
+                  value={taskFormData.title}
+                  onChange={(e) => setTaskFormData(prev => ({ ...prev, title: e.target.value }))}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-gray-300">Task Type *</Label>
+                <select 
+                  className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-white text-sm focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20"
+                  value={taskFormData.taskType}
+                  onChange={(e) => setTaskFormData(prev => ({ ...prev, taskType: e.target.value }))}
+                >
+                  <option value="adult" className="bg-gray-800 text-white">🔞 NSFW Tasks</option>
+                  <option value="game" className="bg-gray-800 text-white">🎮 Game Tasks</option>
+                  <option value="minecraft" className="bg-gray-800 text-white">⛏️ Minecraft Tasks</option>
+                  <option value="roblox" className="bg-gray-800 text-white">🟦 Roblox Tasks</option>
+                  <option value="download" className="bg-gray-800 text-white">📥 Download Tasks</option>
+                </select>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-gray-300">Description *</Label>
+              <Textarea 
+                className="bg-white/5 border-white/10 text-white min-h-[80px]" 
+                placeholder="Enter detailed task description"
+                value={taskFormData.description}
+                onChange={(e) => setTaskFormData(prev => ({ ...prev, description: e.target.value }))}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-gray-300">Ad URL *</Label>
+              <Input
+                className="bg-white/5 border-white/10 text-white"
+                placeholder="https://example.com/ad"
+                value={taskFormData.adUrl}
+                onChange={(e) => setTaskFormData(prev => ({ ...prev, adUrl: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          {/* Task Configuration Section */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Settings className="w-5 h-5 text-purple-400" />
+              <h3 className="text-lg font-semibold text-white">Task Configuration</h3>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Target Devices */}
+              <div className="space-y-3">
+                <Label className="text-gray-300">Target Devices *</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {["Windows", "Mac", "Android", "iOS"].map((device) => (
+                    <label key={device} className="flex items-center space-x-2 p-3 bg-white/5 border border-white/10 rounded-lg cursor-pointer hover:bg-white/10 transition-colors">
+                      <input 
+                        type="checkbox" 
+                        className="rounded bg-white/5 border-white/10"
+                        checked={taskFormData.devices.includes(device)}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setTaskFormData(prev => ({
+                            ...prev,
+                            devices: checked 
+                              ? [...prev.devices, device]
+                              : prev.devices.filter(d => d !== device)
+                          }));
+                        }}
+                      />
+                      <span className="text-gray-300 text-sm">{device}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Excluded Browsers */}
+              <div className="space-y-3">
+                <Label className="text-gray-300">Excluded Browsers</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {["Chrome", "Firefox", "Safari", "Edge", "Opera", "Opera GX"].map((browser) => (
+                    <label key={browser} className="flex items-center space-x-2">
+                      <input 
+                        type="checkbox" 
+                        className="rounded bg-white/5 border-white/10"
+                        checked={taskFormData.excludedBrowsers.includes(browser)}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setTaskFormData(prev => ({
+                            ...prev,
+                            excludedBrowsers: checked 
+                              ? [...prev.excludedBrowsers, browser]
+                              : prev.excludedBrowsers.filter(b => b !== browser)
+                          }));
+                        }}
+                      />
+                      <span className="text-gray-300 text-xs">{browser}</span>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-gray-500 text-xs">Task will be hidden from users using these browsers</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Task Completion Time */}
+              <div className="space-y-3">
+                <Label className="text-gray-300">Task Completion Time</Label>
+                <div className="flex items-center space-x-2">
+                  <Input 
+                    type="number"
+                    className="bg-white/5 border-white/10 text-white" 
+                    placeholder="60"
+                    min="5"
+                    max="300"
+                    value={taskFormData.completionTimeSeconds}
+                    onChange={(e) => setTaskFormData(prev => ({ ...prev, completionTimeSeconds: parseInt(e.target.value) || 60 }))}
+                  />
+                  <span className="text-gray-400 text-sm">seconds</span>
+                </div>
+                <p className="text-gray-500 text-xs">Time users must wait (5-300 seconds)</p>
+              </div>
+
+              {/* Target Country Tiers */}
+              <div className="space-y-3">
+                <Label className="text-gray-300">Target Country Tiers *</Label>
+                <div className="space-y-2">
+                  {[
+                    { tier: "tier1", label: "Tier 1", desc: "US, UK, CA, AU, DE, NL, SE, NO", color: "emerald" },
+                    { tier: "tier2", label: "Tier 2", desc: "FR, IT, ES, JP, KR, SG, HK", color: "blue" },
+                    { tier: "tier3", label: "Tier 3", desc: "All other countries", color: "orange" }
+                  ].map(({ tier, label, desc, color }) => (
+                    <label key={tier} className={`flex items-start space-x-2 p-2 bg-${color}-500/10 border border-${color}-500/20 rounded-lg cursor-pointer hover:bg-${color}-500/20 transition-colors`}>
+                      <input 
+                        type="checkbox" 
+                        className="rounded bg-white/5 border-white/10 mt-0.5"
+                        checked={taskFormData.targetTiers.includes(tier)}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setTaskFormData(prev => ({
+                            ...prev,
+                            targetTiers: checked 
+                              ? [...prev.targetTiers, tier]
+                              : prev.targetTiers.filter(t => t !== tier)
+                          }));
+                        }}
+                      />
+                      <div className="flex-1">
+                        <span className={`text-${color}-400 text-sm font-medium`}>{label}</span>
+                        <p className="text-gray-400 text-xs">{desc}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                {taskFormData.targetTiers.length === 0 && (
+                  <p className="text-red-400 text-xs">⚠️ Warning: Task will not be visible to any users</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* CPM Pricing Section */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-4">
+              <DollarSign className="w-5 h-5 text-emerald-400" />
+              <h3 className="text-lg font-semibold text-white">CPM Pricing Configuration</h3>
+            </div>
+            
+            {/* CPM Method Selection */}
+            <div className="space-y-4">
+              <Label className="text-gray-300">Choose CPM Setting Method</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <label className={`flex items-start space-x-3 p-4 border rounded-lg cursor-pointer transition-colors ${
+                  taskFormData.cpmMethod === "general" 
+                    ? "border-emerald-500/50 bg-emerald-500/10" 
+                    : "border-white/10 bg-white/5 hover:bg-white/10"
+                }`}>
+                  <input
+                    type="radio"
+                    name="cpmMethod"
+                    value="general"
+                    checked={taskFormData.cpmMethod === "general"}
+                    onChange={(e) => setTaskFormData(prev => ({ ...prev, cpmMethod: e.target.value as "general" | "csv" }))}
+                    className="mt-1"
+                  />
+                  <div>
+                    <div className="text-white font-medium">General Tier CPM</div>
+                    <div className="text-gray-400 text-sm">Set simple CPM rates for each country tier</div>
+                  </div>
+                </label>
+                
+                <label className={`flex items-start space-x-3 p-4 border rounded-lg cursor-pointer transition-colors ${
+                  taskFormData.cpmMethod === "csv" 
+                    ? "border-blue-500/50 bg-blue-500/10" 
+                    : "border-white/10 bg-white/5 hover:bg-white/10"
+                }`}>
+                  <input
+                    type="radio"
+                    name="cpmMethod"
+                    value="csv"
+                    checked={taskFormData.cpmMethod === "csv"}
+                    onChange={(e) => setTaskFormData(prev => ({ ...prev, cpmMethod: e.target.value as "general" | "csv" }))}
+                    className="mt-1"
+                  />
+                  <div>
+                    <div className="text-white font-medium">Country-Specific CSV</div>
+                    <div className="text-gray-400 text-sm">Upload CSV file with country-specific CPM rates</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* General CPM Configuration */}
+            {taskFormData.cpmMethod === "general" && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card className="bg-emerald-500/10 border-emerald-500/20">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm text-emerald-400">Tier 1 CPM</CardTitle>
+                      <p className="text-xs text-gray-400">US, UK, CA, AU, DE, NL, SE, NO</p>
+                    </CardHeader>
+                    <CardContent>
+                      <Input
+                        className="bg-white/5 border-white/10 text-white"
+                        placeholder="4.50"
+                        value={taskFormData.generalCpm.tier1}
+                        onChange={(e) => setTaskFormData(prev => ({
+                          ...prev,
+                          generalCpm: { ...prev.generalCpm, tier1: e.target.value }
+                        }))}
+                      />
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-blue-500/10 border-blue-500/20">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm text-blue-400">Tier 2 CPM</CardTitle>
+                      <p className="text-xs text-gray-400">FR, IT, ES, JP, KR, SG, HK</p>
+                    </CardHeader>
+                    <CardContent>
+                      <Input
+                        className="bg-white/5 border-white/10 text-white"
+                        placeholder="2.80"
+                        value={taskFormData.generalCpm.tier2}
+                        onChange={(e) => setTaskFormData(prev => ({
+                          ...prev,
+                          generalCpm: { ...prev.generalCpm, tier2: e.target.value }
+                        }))}
+                      />
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-orange-500/10 border-orange-500/20">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm text-orange-400">Tier 3 CPM</CardTitle>
+                      <p className="text-xs text-gray-400">All other countries</p>
+                    </CardHeader>
+                    <CardContent>
+                      <Input
+                        className="bg-white/5 border-white/10 text-white"
+                        placeholder="1.50"
+                        value={taskFormData.generalCpm.tier3}
+                        onChange={(e) => setTaskFormData(prev => ({
+                          ...prev,
+                          generalCpm: { ...prev.generalCpm, tier3: e.target.value }
+                        }))}
+                      />
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            )}
+
+            {/* CSV Upload Configuration */}
+            {taskFormData.cpmMethod === "csv" && (
+              <div className="space-y-4">
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                  <h4 className="text-blue-400 font-medium text-sm mb-2">📋 CSV Format Requirements</h4>
+                  <div className="text-xs text-gray-300 space-y-1">
+                    <p>• Headers: <code className="bg-white/10 px-1 rounded">country,cpm,country_code</code></p>
+                    <p>• Example: <code className="bg-white/10 px-1 rounded">United States,4.50,US</code></p>
+                    <p>• CPM values should be numeric (without $ symbol)</p>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-gray-300">Upload CSV File</Label>
+                  <input
+                    type="file"
+                    accept=".csv"
+                    className="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-500/20 file:text-blue-400 hover:file:bg-blue-500/30"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setTaskFormData(prev => ({ ...prev, csvFile: file }));
+                        // Here you would typically parse the CSV file
+                      }
+                    }}
+                  />
+                </div>
+                
+                {taskFormData.csvFile && (
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3">
+                    <div className="text-emerald-400 text-sm">
+                      ✓ File selected: {taskFormData.csvFile.name}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex space-x-4 pt-4 border-t border-white/10">
+            <Button 
+              className="flex-1 bg-gradient-to-r from-emerald-500 to-green-500 text-black font-medium"
+              onClick={handleUnifiedTaskCreation}
+              disabled={isAddingTask}
+            >
+              {isAddingTask ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Creating Task...
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Task
+                </>
+              )}
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setUnifiedTaskModal(false);
+                resetTaskForm();
+              }}
+              className="border-white/10 bg-white/5 hover:bg-white/10 text-white"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900 text-white">
       {/* Background Effects */}
@@ -2943,6 +3268,7 @@ Singapore,3.50,SG`;
           </DialogContent>
         </Dialog>
       )}
+      {unifiedTaskModal && renderUnifiedTaskModal()}
     </div>
   )
 }
