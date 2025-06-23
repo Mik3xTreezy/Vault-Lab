@@ -171,17 +171,90 @@ export default function Create() {
             transition={{ duration: 0.8, type: "spring", stiffness: 100 }}
           >
             <motion.div 
-              className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-emerald-500 to-green-500 rounded-full mb-6"
-              animate={{ 
-                scale: [1, 1.1, 1],
-                rotate: [0, 360, 360]
-              }}
-              transition={{
-                scale: { duration: 2, repeat: Infinity },
-                rotate: { duration: 2, ease: "easeInOut" }
+              className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-emerald-500 to-green-500 rounded-full mb-6 relative overflow-hidden"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ 
+                type: "spring", 
+                stiffness: 200, 
+                damping: 15,
+                delay: 0.2 
               }}
             >
-              <CheckCircle className="w-10 h-10 text-black" />
+              {/* Animated Checkmark SVG */}
+              <motion.svg
+                width="40"
+                height="40"
+                viewBox="0 0 40 40"
+                fill="none"
+                className="text-black"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.8 }}
+              >
+                <motion.path
+                  d="M8 20L18 28L32 12"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  fill="none"
+                  initial={{ pathLength: 0, opacity: 0 }}
+                  animate={{ pathLength: 1, opacity: 1 }}
+                  transition={{
+                    pathLength: { 
+                      duration: 0.8, 
+                      ease: "easeInOut",
+                      delay: 1
+                    },
+                    opacity: { duration: 0.1, delay: 1 }
+                  }}
+                />
+              </motion.svg>
+              
+              {/* Success particles */}
+              {[...Array(8)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute w-1 h-1 bg-white rounded-full"
+                  style={{
+                    top: "50%",
+                    left: "50%",
+                  }}
+                  initial={{ 
+                    scale: 0,
+                    x: 0,
+                    y: 0,
+                    opacity: 0
+                  }}
+                  animate={{ 
+                    scale: [0, 1, 0],
+                    x: Math.cos(i * 45 * Math.PI / 180) * 30,
+                    y: Math.sin(i * 45 * Math.PI / 180) * 30,
+                    opacity: [0, 1, 0]
+                  }}
+                  transition={{
+                    duration: 1.5,
+                    delay: 1.8 + i * 0.1,
+                    ease: "easeOut"
+                  }}
+                />
+              ))}
+              
+              {/* Ring animation */}
+              <motion.div
+                className="absolute inset-0 border-2 border-white/30 rounded-full"
+                initial={{ scale: 1, opacity: 0 }}
+                animate={{ 
+                  scale: [1, 1.2, 1.4],
+                  opacity: [0, 0.6, 0]
+                }}
+                transition={{
+                  duration: 1.5,
+                  delay: 1.2,
+                  ease: "easeOut"
+                }}
+              />
             </motion.div>
             <motion.h1 
               className="text-3xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent mb-2"

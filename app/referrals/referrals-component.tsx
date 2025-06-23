@@ -139,11 +139,23 @@ export default function ReferralsComponent() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-green-500 bg-clip-text text-transparent">
-              Partner Program
-            </h1>
-            <p className="text-slate-400 mt-2">Build your network and earn passive income</p>
+          <div className="flex items-center gap-4">
+            <Button 
+              onClick={() => window.location.href = '/dashboard'}
+              variant="outline" 
+              className="border-slate-600/50 hover:bg-slate-700/50 text-slate-300 hover:text-white"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Dashboard
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-green-500 bg-clip-text text-transparent">
+                Partner Program
+              </h1>
+              <p className="text-slate-400 mt-2">Build your network and earn passive income</p>
+            </div>
           </div>
           <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
             <DialogTrigger asChild>
@@ -247,33 +259,33 @@ export default function ReferralsComponent() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
               {/* Main Earnings Card */}
               <div className="lg:col-span-2">
-                <Card className="bg-gradient-to-br from-emerald-500/10 to-green-600/10 border border-emerald-500/20 backdrop-blur-xl">
+                <Card className="bg-gradient-to-br from-emerald-500/15 to-green-600/15 border border-emerald-500/30 backdrop-blur-xl">
                   <CardHeader className="pb-4">
                     <div className="flex items-center justify-between">
                       <div>
                         <CardTitle className="text-xl font-bold text-white">Your Earnings</CardTitle>
                         <p className="text-slate-400 text-sm mt-1">Lifetime commission earned</p>
                       </div>
-                      <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                        <DollarSign className="w-6 h-6 text-emerald-400" />
+                      <div className="w-12 h-12 rounded-full bg-emerald-500/30 flex items-center justify-center">
+                        <DollarSign className="w-6 h-6 text-emerald-300" />
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      <div className="text-3xl font-bold text-emerald-400">
+                      <div className="text-3xl font-bold text-emerald-300">
                         ${referralData?.stats.totalCommission || '0.00'}
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="bg-white/5 rounded-lg p-3">
                           <div className="text-sm text-slate-400">Active Partners</div>
-                          <div className="text-lg font-semibold text-white">
+                          <div className="text-lg font-semibold text-emerald-300">
                             {referralData?.stats.activeReferrals || 0}
                           </div>
                         </div>
-                        <div className="bg-white/5 rounded-lg p-3">
-                          <div className="text-sm text-slate-400">Commission Rate</div>
-                          <div className="text-lg font-semibold text-emerald-400">
+                        <div className="bg-emerald-500/10 rounded-lg p-3 border border-emerald-500/20">
+                          <div className="text-sm text-emerald-400">Commission Rate</div>
+                          <div className="text-lg font-semibold text-emerald-300">
                             {referralData?.commissionRate || 10}%
                           </div>
                         </div>
@@ -420,7 +432,7 @@ export default function ReferralsComponent() {
                                 </div>
                               </div>
                             </div>
-                            <div className="text-emerald-400 font-semibold">
+                            <div className="text-emerald-300 font-bold">
                               ${user.commission.toFixed(2)}
                             </div>
                           </div>
@@ -434,14 +446,14 @@ export default function ReferralsComponent() {
                       </div>
                     )}
                     {referralData?.referredUsers && referralData.referredUsers.length > 3 && (
-                      <div className="flex items-center justify-between p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+                      <div className="flex items-center justify-between p-3 bg-emerald-500/15 rounded-lg border border-emerald-500/30">
                         <div>
-                          <div className="text-sm text-emerald-400">Total Network</div>
-                          <div className="text-lg font-semibold text-emerald-300">
+                          <div className="text-sm text-emerald-300">Total Network</div>
+                          <div className="text-lg font-bold text-emerald-200">
                             {referralData.stats.totalReferrals}
                           </div>
                         </div>
-                        <div className="text-emerald-400">
+                        <div className="text-emerald-300">
                           <Users className="w-5 h-5" />
                         </div>
                       </div>
@@ -463,7 +475,7 @@ export default function ReferralsComponent() {
                     <div className="text-sm text-slate-400">
                       {referralData?.referredUsers?.length || 0} members
                     </div>
-                    <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+                    <div className="w-2 h-2 rounded-full bg-emerald-300 shadow-sm"></div>
                   </div>
                 </div>
               </CardHeader>
@@ -485,7 +497,7 @@ export default function ReferralsComponent() {
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="text-right">
-                            <div className="text-emerald-400 font-semibold">
+                            <div className="text-emerald-300 font-semibold">
                               ${user.commission.toFixed(2)}
                             </div>
                             <div className="text-slate-400 text-sm">earned</div>
@@ -528,11 +540,11 @@ export default function ReferralsComponent() {
 
             {/* Partnership Benefits */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="bg-gradient-to-br from-emerald-500/10 to-green-600/10 border border-emerald-500/20 backdrop-blur-xl">
+              <Card className="bg-gradient-to-br from-emerald-500/15 to-green-600/15 border border-emerald-500/30 backdrop-blur-xl">
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4">
-                    <div className="w-16 h-16 rounded-xl bg-gradient-to-r from-emerald-500 to-green-500 flex items-center justify-center flex-shrink-0">
-                      <span className="text-2xl font-bold text-white">{referralData?.commissionRate || 10}%</span>
+                    <div className="w-16 h-16 rounded-xl bg-gradient-to-r from-emerald-400 to-green-400 flex items-center justify-center flex-shrink-0 shadow-lg">
+                      <span className="text-2xl font-bold text-slate-900">{referralData?.commissionRate || 10}%</span>
                     </div>
                     <div className="flex-1">
                       <h3 className="text-xl font-bold text-white mb-2">Your Commission Rate</h3>
@@ -540,7 +552,7 @@ export default function ReferralsComponent() {
                         Earn {referralData?.commissionRate || 10}% commission on all earnings from your referrals. 
                         The more successful they are, the more you earn.
                       </p>
-                      <div className="flex items-center gap-2 text-emerald-400 text-sm">
+                      <div className="flex items-center gap-2 text-emerald-300 text-sm font-medium">
                         <CheckCircle className="w-4 h-4" />
                         Lifetime earnings
                       </div>
