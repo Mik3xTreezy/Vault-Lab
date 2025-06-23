@@ -5,20 +5,19 @@ import { useUser } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import {
   Users,
   DollarSign,
-  UserPlus,
   Share2,
   Copy,
   TrendingUp,
   Calendar,
-  Mail,
   ExternalLink,
   Loader2,
   CheckCircle,
+  Clock,
 } from "lucide-react"
 import {
   LineChart,
@@ -141,71 +140,97 @@ export default function ReferralsComponent() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-green-500 bg-clip-text text-transparent">
-              Referrals
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
+              Partner Program
             </h1>
-            <p className="text-gray-400 mt-2">Earn commission on every referral's earnings</p>
+            <p className="text-slate-400 mt-2">Build your network and earn passive income</p>
           </div>
           <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black font-medium">
-                <UserPlus className="w-4 h-4 mr-2" />
-                Refer a Friend
+              <Button className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white font-medium shadow-lg">
+                <Share2 className="w-4 h-4 mr-2" />
+                Share & Earn
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-black/90 backdrop-blur-xl border-white/10 text-white">
+            <DialogContent className="bg-slate-900/95 backdrop-blur-xl border-slate-700/50 text-white max-w-md">
               <DialogHeader>
-                <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                  <Share2 className="w-5 h-5 text-emerald-400" />
-                  Share Your Referral Link
+                <DialogTitle className="text-2xl font-bold flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                    <Share2 className="w-4 h-4 text-blue-400" />
+                  </div>
+                  Partner Link
                 </DialogTitle>
+                <p className="text-slate-400 text-sm">Share your unique link and start earning</p>
               </DialogHeader>
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div>
-                  <label className="text-sm font-medium text-gray-300 mb-2 block">Your Referral Code</label>
+                  <label className="text-sm font-semibold text-slate-300 mb-3 block">Your Partner Code</label>
                   <div className="flex items-center gap-2">
                     <Input
                       value={referralData?.referralCode || ''}
                       readOnly
-                      className="bg-white/5 border-white/10 text-white flex-1"
+                      className="bg-slate-800/50 border-slate-600/50 text-white flex-1 font-mono"
                     />
                     <Button
                       variant="outline"
                       size="icon"
                       onClick={() => navigator.clipboard.writeText(referralData?.referralCode || '')}
-                      className="border-white/10 hover:bg-white/10"
+                      className="border-slate-600/50 hover:bg-slate-700/50 text-slate-400 hover:text-white"
                     >
                       <Copy className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-300 mb-2 block">Referral Link</label>
+                  <label className="text-sm font-semibold text-slate-300 mb-3 block">Partner Link</label>
                   <div className="flex items-center gap-2">
                     <Input
                       value={referralData?.referralUrl || ''}
                       readOnly
-                      className="bg-white/5 border-white/10 text-white flex-1"
+                      className="bg-slate-800/50 border-slate-600/50 text-white flex-1 text-sm"
                     />
                     <Button
                       variant="outline"
                       size="icon"
                       onClick={copyReferralUrl}
-                      className="border-white/10 hover:bg-white/10"
+                      className="border-slate-600/50 hover:bg-slate-700/50 text-slate-400 hover:text-white"
                     >
                       {copySuccess ? <CheckCircle className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
                     </Button>
                   </div>
                 </div>
-                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4">
-                  <h4 className="text-emerald-400 font-medium mb-2">How it works:</h4>
-                  <ul className="text-sm text-gray-300 space-y-1">
-                    <li>• Share your referral link with friends</li>
-                    <li>• They sign up and start creating lockers</li>
-                    <li>• You earn a percentage of their total earnings forever</li>
-                    <li>• Get paid when you reach $5 minimum</li>
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-5 h-5 rounded bg-blue-500/20 flex items-center justify-center">
+                      <DollarSign className="w-3 h-3 text-blue-400" />
+                    </div>
+                    <h4 className="text-blue-400 font-semibold">Earning {referralData?.commissionRate || 10}%</h4>
+                  </div>
+                  <ul className="text-sm text-slate-300 space-y-2">
+                    <li className="flex items-start gap-2">
+                      <div className="w-1 h-1 rounded-full bg-blue-400 mt-2 flex-shrink-0"></div>
+                      <span>Share with content creators and marketers</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <div className="w-1 h-1 rounded-full bg-blue-400 mt-2 flex-shrink-0"></div>
+                      <span>They join VaultLab and start earning</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <div className="w-1 h-1 rounded-full bg-blue-400 mt-2 flex-shrink-0"></div>
+                      <span>You earn {referralData?.commissionRate || 10}% of their lifetime earnings</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <div className="w-1 h-1 rounded-full bg-blue-400 mt-2 flex-shrink-0"></div>
+                      <span>Payments processed automatically</span>
+                    </li>
                   </ul>
                 </div>
+                <Button 
+                  onClick={() => setShareDialogOpen(false)}
+                  className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white font-medium"
+                >
+                  Got it!
+                </Button>
               </div>
             </DialogContent>
           </Dialog>
@@ -218,177 +243,318 @@ export default function ReferralsComponent() {
           </div>
         ) : (
           <>
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <Card className="bg-white/5 backdrop-blur-xl border-white/10">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-gray-400 flex items-center gap-2">
-                    <Users className="w-4 h-4" />
-                    Inactive Referrals
-                  </CardTitle>
+            {/* Overview Dashboard */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+              {/* Main Earnings Card */}
+              <div className="lg:col-span-2">
+                <Card className="bg-gradient-to-br from-blue-500/10 to-indigo-600/10 border border-blue-500/20 backdrop-blur-xl">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-xl font-bold text-white">Your Earnings</CardTitle>
+                        <p className="text-slate-400 text-sm mt-1">Lifetime commission earned</p>
+                      </div>
+                      <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center">
+                        <DollarSign className="w-6 h-6 text-blue-400" />
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="text-3xl font-bold text-blue-400">
+                        ${referralData?.stats.totalCommission || '0.00'}
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-white/5 rounded-lg p-3">
+                          <div className="text-sm text-slate-400">Active Partners</div>
+                          <div className="text-lg font-semibold text-white">
+                            {referralData?.stats.activeReferrals || 0}
+                          </div>
+                        </div>
+                        <div className="bg-white/5 rounded-lg p-3">
+                          <div className="text-sm text-slate-400">Commission Rate</div>
+                          <div className="text-lg font-semibold text-blue-400">
+                            {referralData?.commissionRate || 10}%
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Quick Stats */}
+              <div className="space-y-4">
+                <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-xl">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm text-slate-400">Total Network</div>
+                        <div className="text-xl font-bold text-white">
+                          {referralData?.stats.totalReferrals || 0}
+                        </div>
+                      </div>
+                      <Users className="w-8 h-8 text-slate-400" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-xl">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm text-slate-400">Pending</div>
+                        <div className="text-xl font-bold text-yellow-400">
+                          {referralData?.stats.inactiveReferrals || 0}
+                        </div>
+                      </div>
+                      <Clock className="w-8 h-8 text-yellow-400" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-slate-800/50 border-slate-700/50 backdrop-blur-xl">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm text-slate-400">Growth</div>
+                        <div className="text-xl font-bold text-green-400">
+                          +{referralData?.stats.activeReferrals || 0}
+                        </div>
+                      </div>
+                      <TrendingUp className="w-8 h-8 text-green-400" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
+            {/* Analytics & Performance */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              {/* Commission Timeline */}
+              <Card className="bg-slate-800/30 backdrop-blur-xl border-slate-700/50">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-white">Earnings Timeline</CardTitle>
+                      <p className="text-slate-400 text-sm">Track your commission growth</p>
+                    </div>
+                    <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                      <TrendingUp className="w-5 h-5 text-blue-400" />
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold text-white">
-                    {referralData?.stats.inactiveReferrals || 0}
-                  </p>
+                  {chartData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={250}>
+                      <LineChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                        <XAxis dataKey="day" stroke="#64748B" fontSize={12} />
+                        <YAxis stroke="#64748B" fontSize={12} />
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: '#1E293B', 
+                            border: '1px solid #334155',
+                            borderRadius: '8px',
+                            color: '#F1F5F9'
+                          }}
+                          labelStyle={{ color: '#E2E8F0' }}
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="commission" 
+                          stroke="#3B82F6" 
+                          strokeWidth={3}
+                          dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
+                          activeDot={{ r: 6, stroke: '#3B82F6', strokeWidth: 2 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-[250px] text-slate-400">
+                      <div className="text-center">
+                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-700/50 flex items-center justify-center">
+                          <TrendingUp className="w-8 h-8 text-slate-500" />
+                        </div>
+                        <p className="font-medium mb-1">No earnings yet</p>
+                        <p className="text-sm text-slate-500">Start building your network to see growth!</p>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
-              <Card className="bg-white/5 backdrop-blur-xl border-white/10">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-gray-400 flex items-center gap-2">
-                    <DollarSign className="w-4 h-4" />
-                    Total Commission
-                  </CardTitle>
+              {/* Link Performance */}
+              <Card className="bg-slate-800/30 backdrop-blur-xl border-slate-700/50">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-white">Link Performance</CardTitle>
+                      <p className="text-slate-400 text-sm">Your referral link stats</p>
+                    </div>
+                    <div className="w-10 h-10 rounded-lg bg-indigo-500/20 flex items-center justify-center">
+                      <ExternalLink className="w-5 h-5 text-indigo-400" />
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold text-emerald-400">
-                    ${referralData?.stats.totalCommission || '0.00'}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white/5 backdrop-blur-xl border-white/10">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-gray-400 flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4" />
-                    Active Referrals
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-2xl font-bold text-white">
-                    {referralData?.stats.activeReferrals || 0}
-                  </p>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg">
+                      <div>
+                        <div className="text-sm text-slate-400">Click Rate</div>
+                        <div className="text-lg font-semibold text-white">--</div>
+                      </div>
+                      <div className="text-slate-500">
+                        <Calendar className="w-5 h-5" />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg">
+                      <div>
+                        <div className="text-sm text-slate-400">Conversion Rate</div>
+                        <div className="text-lg font-semibold text-white">--</div>
+                      </div>
+                      <div className="text-slate-500">
+                        <CheckCircle className="w-5 h-5" />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                      <div>
+                        <div className="text-sm text-blue-400">Total Referred</div>
+                        <div className="text-lg font-semibold text-blue-300">
+                          {referralData?.stats.totalReferrals || 0}
+                        </div>
+                      </div>
+                      <div className="text-blue-400">
+                        <Users className="w-5 h-5" />
+                      </div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Commission Chart */}
-            <Card className="bg-white/5 backdrop-blur-xl border-white/10 mb-8">
+            {/* Network Overview */}
+            <Card className="bg-slate-800/30 backdrop-blur-xl border-slate-700/50 mb-8">
               <CardHeader>
-                <CardTitle className="text-white">Referral Commissions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {chartData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                      <XAxis dataKey="day" stroke="#9CA3AF" />
-                      <YAxis stroke="#9CA3AF" />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: '#1F2937', 
-                          border: '1px solid #374151',
-                          borderRadius: '8px'
-                        }}
-                        labelStyle={{ color: '#F9FAFB' }}
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="commission" 
-                        stroke="#10B981" 
-                        strokeWidth={2}
-                        dot={{ fill: '#10B981' }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="flex items-center justify-center h-[300px] text-gray-400">
-                    <div className="text-center">
-                      <TrendingUp className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>No commission data yet</p>
-                      <p className="text-sm">Start referring friends to see your earnings!</p>
-                    </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-white">Your Network</CardTitle>
+                    <p className="text-slate-400 text-sm">Partners you've brought to VaultLab</p>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Referred Users Table */}
-            <Card className="bg-white/5 backdrop-blur-xl border-white/10 mb-8">
-              <CardHeader>
-                <CardTitle className="text-white">Your Referred Users</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm text-slate-400">
+                      {referralData?.referredUsers?.length || 0} members
+                    </div>
+                    <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 {referralData?.referredUsers && referralData.referredUsers.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="border-white/10">
-                        <TableHead className="text-gray-300">User</TableHead>
-                        <TableHead className="text-gray-300">Commission</TableHead>
-                        <TableHead className="text-gray-300">Last Activity</TableHead>
-                        <TableHead className="text-gray-300">Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {referralData.referredUsers.map((user) => (
-                        <TableRow key={user.id} className="border-white/10 hover:bg-white/5">
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-emerald-500 to-green-500 flex items-center justify-center text-black font-medium text-sm">
-                                {user.email.charAt(0).toUpperCase()}
-                              </div>
-                              <span className="text-white">{user.email}</span>
+                  <div className="space-y-3">
+                    {referralData.referredUsers.map((user) => (
+                      <div key={user.id} className="flex items-center justify-between p-4 bg-slate-700/30 rounded-lg border border-slate-600/30 hover:bg-slate-700/50 transition-colors">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center text-white font-medium">
+                            {user.email.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="text-white font-medium">{user.email}</div>
+                            <div className="text-slate-400 text-sm">
+                              Joined {formatDate(user.lastActivity)}
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-emerald-400 font-medium">
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <div className="text-blue-400 font-semibold">
                               ${user.commission.toFixed(2)}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-gray-300">
-                            {formatDate(user.lastActivity)}
-                          </TableCell>
-                          <TableCell>
-                            <span className={`px-2 py-1 rounded-full text-xs ${
-                              user.status === 'active' 
-                                ? 'bg-emerald-500/20 text-emerald-400'
-                                : user.status === 'pending'
-                                  ? 'bg-yellow-500/20 text-yellow-400'
-                                  : 'bg-gray-500/20 text-gray-400'
-                            }`}>
-                              {user.status}
-                            </span>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                            </div>
+                            <div className="text-slate-400 text-sm">earned</div>
+                          </div>
+                          <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            user.status === 'active' 
+                              ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                              : user.status === 'pending'
+                                ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                                : 'bg-slate-500/20 text-slate-400 border border-slate-500/30'
+                          }`}>
+                            {user.status}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 ) : (
-                  <div className="flex items-center justify-center py-12 text-gray-400">
+                  <div className="flex items-center justify-center py-16">
                     <div className="text-center">
-                      <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p className="text-lg font-medium mb-2">No referrals yet</p>
-                      <p className="text-sm">Share your referral link to start earning commissions!</p>
+                      <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-slate-700/50 flex items-center justify-center">
+                        <Users className="w-10 h-10 text-slate-500" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-white mb-2">Build Your Network</h3>
+                      <p className="text-slate-400 mb-4 max-w-sm">
+                        Start referring creators to VaultLab and earn commission on their success
+                      </p>
+                      <Button 
+                        onClick={() => setShareDialogOpen(true)}
+                        className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white"
+                      >
+                        <Share2 className="w-4 h-4 mr-2" />
+                        Get Started
+                      </Button>
                     </div>
                   </div>
                 )}
               </CardContent>
             </Card>
 
-            {/* Commission Rate */}
-            <Card className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 border-slate-600/30">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center">
+            {/* Partnership Benefits */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="bg-gradient-to-br from-blue-500/10 to-indigo-600/10 border border-blue-500/20 backdrop-blur-xl">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="w-16 h-16 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center flex-shrink-0">
                       <span className="text-2xl font-bold text-white">{referralData?.commissionRate || 10}%</span>
                     </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-white">Commission Rate</h3>
-                      <p className="text-blue-400">Earn {referralData?.commissionRate || 10}% of all referral earnings</p>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-white mb-2">Your Commission Rate</h3>
+                      <p className="text-slate-400 mb-4">
+                        Earn {referralData?.commissionRate || 10}% commission on all earnings from your referrals. 
+                        The more successful they are, the more you earn.
+                      </p>
+                      <div className="flex items-center gap-2 text-blue-400 text-sm">
+                        <CheckCircle className="w-4 h-4" />
+                        Lifetime earnings
+                      </div>
                     </div>
                   </div>
-                  <Button
-                    onClick={() => setShareDialogOpen(true)}
-                    className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-400 hover:to-indigo-400 text-white font-medium"
-                  >
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Refer a Friend
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-slate-800/30 backdrop-blur-xl border-slate-700/50">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="w-16 h-16 rounded-xl bg-slate-700/50 flex items-center justify-center flex-shrink-0">
+                      <Share2 className="w-8 h-8 text-slate-400" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-white mb-2">Ready to Start?</h3>
+                      <p className="text-slate-400 mb-4">
+                        Share your unique link with creators and start building 
+                        your network today. No limits, no caps.
+                      </p>
+                      <Button
+                        onClick={() => setShareDialogOpen(true)}
+                        className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white font-medium w-full"
+                      >
+                        <Share2 className="w-4 h-4 mr-2" />
+                        Get Your Link
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </>
         )}
       </div>
