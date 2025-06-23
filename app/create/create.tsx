@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { ArrowLeft, Link, Globe, Loader2, CheckCircle, Copy, ExternalLink, Sparkles, Lock } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { motion, AnimatePresence } from "motion/react"
 
 export default function Create() {
   const router = useRouter()
@@ -126,284 +127,584 @@ export default function Create() {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900 text-white flex items-center justify-center p-6 relative overflow-hidden">
+      <motion.div 
+        className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900 text-white flex items-center justify-center p-6 relative overflow-hidden"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6 }}
+      >
         {/* Background Effects */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl"></div>
+          <motion.div 
+            className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl"
+            animate={{
+              scale: [1, 1.2, 1],
+              opacity: [0.05, 0.1, 0.05],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          />
+          <motion.div 
+            className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl"
+            animate={{
+              scale: [1, 1.3, 1],
+              opacity: [0.05, 0.08, 0.05],
+            }}
+            transition={{
+              duration: 10,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 2
+            }}
+          />
         </div>
 
         <div className="max-w-lg w-full relative z-10">
           {/* Success Animation */}
-          <div className="text-center mb-8 animate-in fade-in-0 zoom-in-95 duration-500">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-emerald-500 to-green-500 rounded-full mb-6 animate-pulse">
+          <motion.div 
+            className="text-center mb-8"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, type: "spring", stiffness: 100 }}
+          >
+            <motion.div 
+              className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-emerald-500 to-green-500 rounded-full mb-6"
+              animate={{ 
+                scale: [1, 1.1, 1],
+                rotate: [0, 360, 360]
+              }}
+              transition={{
+                scale: { duration: 2, repeat: Infinity },
+                rotate: { duration: 2, ease: "easeInOut" }
+              }}
+            >
               <CheckCircle className="w-10 h-10 text-black" />
-            </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent mb-2">
+            </motion.div>
+            <motion.h1 
+              className="text-3xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent mb-2"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+            >
               Locker Created Successfully!
-            </h1>
-            <p className="text-gray-400">Your VaultLab locker is ready to use</p>
-          </div>
+            </motion.h1>
+            <motion.p 
+              className="text-gray-400"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.5 }}
+            >
+              Your VaultLab locker is ready to use
+            </motion.p>
+          </motion.div>
 
           {/* Generated Link Card */}
-          <Card className="bg-white/5 backdrop-blur-xl border-white/10 mb-6 animate-in slide-in-from-bottom-4 duration-700 delay-200">
-            <CardContent className="p-6">
-              <div className="space-y-4">
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
-                    <Lock className="w-5 h-5 text-emerald-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-white font-semibold">{formData.title}</h3>
-                    <p className="text-gray-400 text-sm">VaultLab</p>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-gray-300 text-sm">Your Locker Link</Label>
-                  <div className="flex items-center space-x-2">
-                    <div className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-3">
-                      <p className="text-emerald-400 font-mono text-sm break-all">{generatedLink}</p>
-                    </div>
-                    <Button
-                      onClick={copyToClipboard}
-                      variant="outline"
-                      size="icon"
-                      className="border-white/10 bg-white/5 hover:bg-white/10 text-white"
+          <motion.div
+            initial={{ opacity: 0, y: 30, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.7, type: "spring", stiffness: 100 }}
+          >
+            <Card className="bg-white/5 backdrop-blur-xl border-white/10 mb-6">
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  <motion.div 
+                    className="flex items-center space-x-3 mb-4"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.6, delay: 1 }}
+                  >
+                    <motion.div 
+                      className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center"
+                      whileHover={{ scale: 1.1, rotate: 5 }}
+                      transition={{ duration: 0.2 }}
                     >
-                      <Copy className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
+                      <Lock className="w-5 h-5 text-emerald-400" />
+                    </motion.div>
+                    <div>
+                      <h3 className="text-white font-semibold">{formData.title}</h3>
+                      <p className="text-gray-400 text-sm">VaultLab</p>
+                    </div>
+                  </motion.div>
 
-                <div className="space-y-2">
-                  <Label className="text-gray-300 text-sm">Destination</Label>
-                  <div className="flex items-center space-x-2 text-gray-400 text-sm">
-                    <Globe className="w-4 h-4" />
-                    <span className="break-all">{formData.destinationUrl}</span>
-                  </div>
+                  <motion.div 
+                    className="space-y-2"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 1.2 }}
+                  >
+                    <Label className="text-gray-300 text-sm">Your Locker Link</Label>
+                    <div className="flex items-center space-x-2">
+                      <motion.div 
+                        className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-3"
+                        whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.1)" }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <p className="text-emerald-400 font-mono text-sm break-all">{generatedLink}</p>
+                      </motion.div>
+                      <motion.div
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                      >
+                        <Button
+                          onClick={copyToClipboard}
+                          variant="outline"
+                          size="icon"
+                          className="border-white/10 bg-white/5 hover:bg-white/10 text-white"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </Button>
+                      </motion.div>
+                    </div>
+                  </motion.div>
+
+                  <motion.div 
+                    className="space-y-2"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 1.4 }}
+                  >
+                    <Label className="text-gray-300 text-sm">Destination</Label>
+                    <div className="flex items-center space-x-2 text-gray-400 text-sm">
+                      <Globe className="w-4 h-4" />
+                      <span className="break-all">{formData.destinationUrl}</span>
+                    </div>
+                  </motion.div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </motion.div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col space-y-3 animate-in slide-in-from-bottom-4 duration-700 delay-400">
-            <Button
-              onClick={() => window.open(generatedLink, "_blank")}
-              className="w-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black font-medium py-3"
+          <motion.div 
+            className="flex flex-col space-y-3"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 1.6 }}
+          >
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Test Your Locker
-            </Button>
+              <Button
+                onClick={() => window.open(generatedLink, "_blank")}
+                className="w-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black font-medium py-3"
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Test Your Locker
+              </Button>
+            </motion.div>
 
             <div className="grid grid-cols-2 gap-3">
-              <Button
-                onClick={resetForm}
-                variant="outline"
-                className="border-white/10 bg-white/5 hover:bg-white/10 text-white backdrop-blur-xl"
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
-                Create Another
-              </Button>
-              <Button
-                onClick={() => router.push("/vault")}
-                variant="outline"
-                className="border-white/10 bg-white/5 hover:bg-white/10 text-white backdrop-blur-xl"
+                <Button
+                  onClick={resetForm}
+                  variant="outline"
+                  className="border-white/10 bg-white/5 hover:bg-white/10 text-white backdrop-blur-xl"
+                >
+                  Create Another
+                </Button>
+              </motion.div>
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
-                View in Vault
-              </Button>
+                <Button
+                  onClick={() => router.push("/vault")}
+                  variant="outline"
+                  className="border-white/10 bg-white/5 hover:bg-white/10 text-white backdrop-blur-xl"
+                >
+                  View in Vault
+                </Button>
+              </motion.div>
             </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* Copy Notification Toast */}
-        {showCopyNotification && (
-          <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 animate-in slide-in-from-bottom-8 duration-500 ease-out">
-            <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl px-6 py-4 shadow-2xl shadow-black/20">
-              <div className="flex items-center space-x-3">
-                <div className="w-6 h-6 bg-emerald-500/20 rounded-full flex items-center justify-center">
-                  <CheckCircle className="w-4 h-4 text-emerald-400" />
+        <AnimatePresence>
+          {showCopyNotification && (
+            <motion.div 
+              className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50"
+              initial={{ opacity: 0, y: 100, scale: 0.8 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 100, scale: 0.8 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            >
+              <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl px-6 py-4 shadow-2xl shadow-black/20">
+                <div className="flex items-center space-x-3">
+                  <motion.div 
+                    className="w-6 h-6 bg-emerald-500/20 rounded-full flex items-center justify-center"
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 0.6 }}
+                  >
+                    <CheckCircle className="w-4 h-4 text-emerald-400" />
+                  </motion.div>
+                  <span className="text-white font-medium text-sm">Link copied to clipboard!</span>
                 </div>
-                <span className="text-white font-medium text-sm">Link copied to clipboard!</span>
               </div>
-            </div>
-          </div>
-        )}
-      </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900 text-white flex items-center justify-center p-6 relative overflow-hidden">
+    <motion.div 
+      className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900 text-white flex items-center justify-center p-6 relative overflow-hidden"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.6 }}
+    >
       {/* Background Effects */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl"></div>
+        <motion.div 
+          className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl"
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.05, 0.1, 0.05],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+        <motion.div 
+          className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl"
+          animate={{
+            scale: [1, 1.3, 1],
+            opacity: [0.05, 0.08, 0.05],
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            ease: "easeInOut",  
+            delay: 2
+          }}
+        />
 
         {/* Floating particles */}
-        <div
-          className="absolute top-1/4 left-1/4 w-2 h-2 bg-emerald-400/30 rounded-full animate-bounce"
-          style={{ animationDelay: "0s", animationDuration: "3s" }}
-        ></div>
-        <div
-          className="absolute top-1/2 right-1/4 w-1 h-1 bg-green-400/40 rounded-full animate-bounce"
-          style={{ animationDelay: "1s", animationDuration: "4s" }}
-        ></div>
-        <div
-          className="absolute bottom-1/3 left-1/3 w-1.5 h-1.5 bg-cyan-400/30 rounded-full animate-bounce"
-          style={{ animationDelay: "2s", animationDuration: "5s" }}
-        ></div>
+        {[...Array(3)].map((_, i) => (
+          <motion.div
+            key={i}
+            className={`absolute w-${i % 2 === 0 ? '2' : '1'} h-${i % 2 === 0 ? '2' : '1'} bg-emerald-400/30 rounded-full`}
+            style={{
+              top: `${25 + i * 20}%`,
+              left: `${25 + i * 15}%`,
+            }}
+            animate={{
+              y: [-20, 20, -20],
+              x: [-10, 10, -10],
+              opacity: [0.3, 0.7, 0.3],
+            }}
+            transition={{
+              duration: 3 + i,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: i * 0.5
+            }}
+          />
+        ))}
       </div>
 
       <div className="max-w-lg w-full relative z-10">
         {/* Header */}
-        <div className="text-center mb-8 animate-in fade-in-0 slide-in-from-top-4 duration-700">
-          <div className="inline-flex items-center space-x-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full px-4 py-2 mb-6">
+        <motion.div 
+          className="text-center mb-8"
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.1 }}
+        >
+          <motion.div 
+            className="inline-flex items-center space-x-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full px-4 py-2 mb-6"
+            whileHover={{ 
+              backgroundColor: "rgba(255, 255, 255, 0.1)",
+              scale: 1.05 
+            }}
+            transition={{ duration: 0.2 }}
+          >
             <Sparkles className="w-4 h-4 text-emerald-400" />
             <span className="text-xs font-medium text-emerald-400 uppercase tracking-wider">Create Locker</span>
-          </div>
+          </motion.div>
 
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent mb-2">
-                            Create VaultLab Locker
-          </h1>
-          <p className="text-gray-400 text-sm">Transform any link into a monetized experience</p>
-        </div>
+          <motion.h1 
+            className="text-3xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent mb-2"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+          >
+            Create VaultLab Locker
+          </motion.h1>
+          <motion.p 
+            className="text-gray-400 text-sm"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.5 }}
+          >
+            Transform any link into a monetized experience
+          </motion.p>
+        </motion.div>
 
         {/* Form Card */}
-        <Card className="bg-white/5 backdrop-blur-xl border-white/10 animate-in fade-in-0 slide-in-from-bottom-4 duration-700 delay-200">
-          <CardContent className="p-8">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Title Field */}
-              <div className="space-y-2">
-                <Label htmlFor="title" className="text-gray-300 font-medium">
-                  Locker Title
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="title"
-                    type="text"
-                    placeholder="e.g., Premium Content Download"
-                    value={formData.title}
-                    onChange={(e) => handleInputChange("title", e.target.value)}
-                    className={`bg-white/5 border-white/10 text-white placeholder-gray-400 focus:border-emerald-500/50 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none transition-all duration-300 pl-12 ${
-                      errors.title ? "border-red-500/50" : ""
-                    }`}
-                    style={{ boxShadow: "none" }}
-                  />
-                  <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
-                    <Link className="w-4 h-4 text-gray-400" />
-                  </div>
-                </div>
-                {errors.title && (
-                  <p className="text-red-400 text-sm animate-in slide-in-from-top-1 duration-300">{errors.title}</p>
-                )}
-              </div>
-
-              {/* Destination URL Field */}
-              <div className="space-y-2">
-                <Label htmlFor="destinationUrl" className="text-gray-300 font-medium">
-                  Destination URL
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="destinationUrl"
-                    type="url"
-                    placeholder="https://example.com/your-content"
-                    value={formData.destinationUrl}
-                    onChange={(e) => handleInputChange("destinationUrl", e.target.value)}
-                    className={`bg-white/5 border-white/10 text-white placeholder-gray-400 focus:border-emerald-500/50 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none transition-all duration-300 pl-12 ${
-                      errors.destinationUrl ? "border-red-500/50" : ""
-                    }`}
-                    style={{ boxShadow: "none" }}
-                  />
-                  <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
-                    <Globe className="w-4 h-4 text-gray-400" />
-                  </div>
-                </div>
-                {errors.destinationUrl && (
-                  <p className="text-red-400 text-sm animate-in slide-in-from-top-1 duration-300">
-                    {errors.destinationUrl}
-                  </p>
-                )}
-              </div>
-
-              {/* Task Type Selection */}
-              <div className="space-y-2">
-                <Label className="text-gray-300 font-medium">
-                  Task Type
-                </Label>
-                <p className="text-gray-400 text-xs">Select the type of tasks visitors will complete to unlock your content</p>
-                
-                <select 
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white text-sm focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none transition-all duration-300 hover:bg-white/10 hover:border-white/20 cursor-pointer"
-                  value={formData.taskType}
-                  onChange={(e) => handleTaskTypeChange(e.target.value)}
+        <motion.div
+          initial={{ opacity: 0, y: 30, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.8, delay: 0.7, type: "spring", stiffness: 100 }}
+        >
+          <Card className="bg-white/5 backdrop-blur-xl border-white/10">
+            <CardContent className="p-8">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Title Field */}
+                <motion.div 
+                  className="space-y-2"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6, delay: 0.9 }}
                 >
-                  <option value="adult" className="bg-gray-800 text-white py-2">Adult Tasks</option>
-                  <option value="game" className="bg-gray-800 text-white py-2">Game Tasks</option>
-                  <option value="minecraft" className="bg-gray-800 text-white py-2">Minecraft Tasks</option>
-                  <option value="roblox" className="bg-gray-800 text-white py-2">Roblox Tasks</option>
-                </select>
-                
-                <div className="mt-2 p-3 bg-white/5 rounded-lg border border-white/10">
-                  <p className="text-gray-300 text-xs">
-                    {formData.taskType === "adult" && "18+ content tasks for mature audiences"}
-                    {formData.taskType === "game" && "General gaming related tasks and activities"}
-                    {formData.taskType === "minecraft" && "Minecraft specific tasks and server activities"}
-                    {formData.taskType === "roblox" && "Roblox related tasks and game experiences"}
-                  </p>
-                </div>
-              </div>
-
-              {/* Info Box */}
-              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4">
-                <div className="flex items-start space-x-3">
-                  <div className="w-5 h-5 bg-emerald-500/20 rounded-full flex items-center justify-center mt-0.5">
-                    <Sparkles className="w-3 h-3 text-emerald-400" />
+                  <Label htmlFor="title" className="text-gray-300 font-medium">
+                    Locker Title
+                  </Label>
+                  <div className="relative">
+                    <motion.div
+                      whileFocus={{ scale: 1.02 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Input
+                        id="title"
+                        type="text"
+                        placeholder="e.g., Premium Content Download"
+                        value={formData.title}
+                        onChange={(e) => handleInputChange("title", e.target.value)}
+                        className={`bg-white/5 border-white/10 text-white placeholder-gray-400 focus:border-emerald-500/50 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none transition-all duration-300 pl-12 ${
+                          errors.title ? "border-red-500/50" : ""
+                        }`}
+                        style={{ boxShadow: "none" }}
+                        required
+                        disabled={isLoading}
+                      />
+                    </motion.div>
+                    <motion.div 
+                      className="absolute left-4 top-1/2 transform -translate-y-1/2"
+                      whileHover={{ scale: 1.1 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Link className="w-4 h-4 text-gray-400" />
+                    </motion.div>
                   </div>
-                  <div>
-                    <h4 className="text-emerald-400 font-medium text-sm mb-1">How it works</h4>
-                    <p className="text-gray-300 text-xs leading-relaxed">
-                      Users will complete tasks from your selected category to unlock access to your destination URL. You earn revenue from each completed task.
+                  <AnimatePresence>
+                    {errors.title && (
+                      <motion.p 
+                        className="text-red-400 text-sm"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        {errors.title}
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+
+                {/* Destination URL Field */}
+                <motion.div 
+                  className="space-y-2"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6, delay: 1.1 }}
+                >
+                  <Label htmlFor="destinationUrl" className="text-gray-300 font-medium">
+                    Destination URL
+                  </Label>
+                  <div className="relative">
+                    <motion.div
+                      whileFocus={{ scale: 1.02 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Input
+                        id="destinationUrl"
+                        type="url"
+                        placeholder="https://example.com/your-content"
+                        value={formData.destinationUrl}
+                        onChange={(e) => handleInputChange("destinationUrl", e.target.value)}
+                        className={`bg-white/5 border-white/10 text-white placeholder-gray-400 focus:border-emerald-500/50 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none transition-all duration-300 pl-12 ${
+                          errors.destinationUrl ? "border-red-500/50" : ""
+                        }`}
+                        style={{ boxShadow: "none" }}
+                        required
+                        disabled={isLoading}
+                      />
+                    </motion.div>
+                    <motion.div 
+                      className="absolute left-4 top-1/2 transform -translate-y-1/2"
+                      whileHover={{ scale: 1.1 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Globe className="w-4 h-4 text-gray-400" />
+                    </motion.div>
+                  </div>
+                  <AnimatePresence>
+                    {errors.destinationUrl && (
+                      <motion.p 
+                        className="text-red-400 text-sm"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        {errors.destinationUrl}
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+
+                {/* Task Type Selection */}
+                <motion.div 
+                  className="space-y-2"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6, delay: 1.3 }}
+                >
+                  <Label className="text-gray-300 font-medium">
+                    Task Type
+                  </Label>
+                  <p className="text-gray-400 text-xs">Select the type of tasks visitors will complete to unlock your content</p>
+                  
+                  <motion.select 
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white text-sm focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none transition-all duration-300 hover:bg-white/10 hover:border-white/20 cursor-pointer"
+                    value={formData.taskType}
+                    onChange={(e) => handleTaskTypeChange(e.target.value)}
+                    whileFocus={{ scale: 1.02 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <option value="adult" className="bg-gray-800 text-white py-2">Adult Tasks</option>
+                    <option value="game" className="bg-gray-800 text-white py-2">Game Tasks</option>
+                    <option value="minecraft" className="bg-gray-800 text-white py-2">Minecraft Tasks</option>
+                    <option value="roblox" className="bg-gray-800 text-white py-2">Roblox Tasks</option>
+                  </motion.select>
+                  
+                  <motion.div 
+                    className="mt-2 p-3 bg-white/5 rounded-lg border border-white/10"
+                    whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.1)" }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <p className="text-gray-300 text-xs">
+                      {formData.taskType === "adult" && "18+ content tasks for mature audiences"}
+                      {formData.taskType === "game" && "General gaming related tasks and activities"}
+                      {formData.taskType === "minecraft" && "Minecraft specific tasks and server activities"}
+                      {formData.taskType === "roblox" && "Roblox related tasks and game experiences"}
                     </p>
-                  </div>
-                </div>
-              </div>
+                  </motion.div>
+                </motion.div>
 
-              {/* Submit Button */}
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="w-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black font-medium py-3 transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-              >
-                {isLoading ? (
-                  <div className="flex items-center justify-center space-x-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Creating Locker...</span>
+                {/* Info Box */}
+                <motion.div 
+                  className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 1.5 }}
+                  whileHover={{ 
+                    backgroundColor: "rgba(16, 185, 129, 0.15)",
+                    borderColor: "rgba(16, 185, 129, 0.3)" 
+                  }}
+                >
+                  <div className="flex items-start space-x-3">
+                    <motion.div 
+                      className="w-5 h-5 bg-emerald-500/20 rounded-full flex items-center justify-center mt-0.5"
+                      animate={{ rotate: [0, 360] }}
+                      transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                    >
+                      <Sparkles className="w-3 h-3 text-emerald-400" />
+                    </motion.div>
+                    <div>
+                      <h4 className="text-emerald-400 font-medium text-sm mb-1">How it works</h4>
+                      <p className="text-gray-300 text-xs leading-relaxed">
+                        Users will complete tasks from your selected category to unlock access to your destination URL. You earn revenue from each completed task.
+                      </p>
+                    </div>
                   </div>
-                ) : (
-                  <div className="flex items-center justify-center space-x-2">
-                    <Lock className="w-4 h-4" />
-                    <span>Create Locker</span>
-                  </div>
-                )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+                </motion.div>
+
+                {/* Error Display */}
+                <AnimatePresence>
+                  {error && (
+                    <motion.div 
+                      className="bg-red-500/10 border border-red-500/20 rounded-lg p-4"
+                      initial={{ opacity: 0, scale: 0.9, y: -10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <p className="text-red-400 text-sm">{error}</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Submit Button */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 1.7 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black font-medium py-3 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? (
+                      <div className="flex items-center justify-center space-x-2">
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        >
+                          <Loader2 className="w-4 h-4" />
+                        </motion.div>
+                        <span>Creating Locker...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center space-x-2">
+                        <Lock className="w-4 h-4" />
+                        <span>Create Locker</span>
+                      </div>
+                    )}
+                  </Button>
+                </motion.div>
+              </form>
+            </CardContent>
+          </Card>
+        </motion.div>
 
         {/* Back Button */}
-        <div className="text-center mt-6 animate-in fade-in-0 slide-in-from-bottom-4 duration-700 delay-400">
-          <Button
-            onClick={() => router.back()}
-            variant="ghost"
-            className="text-gray-400 hover:text-white hover:underline transition-all duration-200 hover:bg-transparent"
+        <motion.div 
+          className="text-center mt-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 1.9 }}
+        >
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dashboard
-          </Button>
-        </div>
+            <Button
+              onClick={() => router.back()}
+              variant="ghost"
+              className="text-gray-400 hover:text-white hover:underline transition-all duration-200 hover:bg-transparent"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </Button>
+          </motion.div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   )
 }
