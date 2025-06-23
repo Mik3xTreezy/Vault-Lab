@@ -57,6 +57,7 @@ interface ReferralData {
   referredUsers: ReferredUser[]
   commissions: Commission[]
   referralUrl: string
+  commissionRate: number
 }
 
 export default function ReferralsComponent() {
@@ -143,7 +144,7 @@ export default function ReferralsComponent() {
             <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-green-500 bg-clip-text text-transparent">
               Referrals
             </h1>
-            <p className="text-gray-400 mt-2">Earn 5% commission on every referral's earnings</p>
+            <p className="text-gray-400 mt-2">Earn commission on every referral's earnings</p>
           </div>
           <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
             <DialogTrigger asChild>
@@ -201,7 +202,7 @@ export default function ReferralsComponent() {
                   <ul className="text-sm text-gray-300 space-y-1">
                     <li>• Share your referral link with friends</li>
                     <li>• They sign up and start creating lockers</li>
-                    <li>• You earn 5% of their total earnings forever</li>
+                    <li>• You earn a percentage of their total earnings forever</li>
                     <li>• Get paid when you reach $5 minimum</li>
                   </ul>
                 </div>
@@ -366,21 +367,21 @@ export default function ReferralsComponent() {
             </Card>
 
             {/* Commission Rate */}
-            <Card className="bg-gradient-to-r from-emerald-500/10 to-green-500/10 border-emerald-500/20">
+            <Card className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 border-slate-600/30">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-r from-emerald-500 to-green-500 flex items-center justify-center">
-                      <span className="text-2xl font-bold text-black">5%</span>
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center">
+                      <span className="text-2xl font-bold text-white">{referralData?.commissionRate || 10}%</span>
                     </div>
                     <div>
                       <h3 className="text-xl font-bold text-white">Commission Rate</h3>
-                      <p className="text-emerald-400">Earn 5% of all referral earnings</p>
+                      <p className="text-blue-400">Earn {referralData?.commissionRate || 10}% of all referral earnings</p>
                     </div>
                   </div>
                   <Button
                     onClick={() => setShareDialogOpen(true)}
-                    className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black font-medium"
+                    className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-400 hover:to-indigo-400 text-white font-medium"
                   >
                     <UserPlus className="w-4 h-4 mr-2" />
                     Refer a Friend

@@ -245,8 +245,15 @@ export async function POST(req: NextRequest) {
           .single();
 
         if (!referralError && referralInfo?.referred_by) {
-          // Calculate 5% commission for the referrer
-          const commissionAmount = revenue * 0.05;
+          // Get referrer's commission rate
+          const { data: referrerInfo, error: referrerError } = await supabase
+            .from('users')
+            .select('referral_commission_rate')
+            .eq('id', referralInfo.referred_by)
+            .single();
+
+          const commissionRate = referrerInfo?.referral_commission_rate || 10;
+          const commissionAmount = revenue * (commissionRate / 100);
           
           console.log('[ANALYTICS API] Calculating referral commission:', {
             publisherId,

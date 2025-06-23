@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS referral_commissions (
 ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code TEXT UNIQUE;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by TEXT REFERENCES users(id);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS total_referral_earnings DECIMAL(10,2) DEFAULT 0.00;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_commission_rate DECIMAL(5,2) DEFAULT 10.00; -- Custom referral rate per user (10% default)
 
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_referrals_referrer_id ON referrals(referrer_id);

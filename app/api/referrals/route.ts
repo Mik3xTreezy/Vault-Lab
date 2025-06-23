@@ -16,10 +16,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get user's referral code
+    // Get user's referral code and commission rate
     const { data: user, error: userError } = await supabase
       .from('users')
-      .select('referral_code, total_referral_earnings')
+      .select('referral_code, total_referral_earnings, referral_commission_rate')
       .eq('id', userId)
       .single();
 
@@ -84,7 +84,8 @@ export async function GET(req: NextRequest) {
       },
       referredUsers,
       commissions: commissions || [],
-      referralUrl: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://vaultlab.co'}/sign-up?ref=${user.referral_code}`
+      referralUrl: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://vaultlab.co'}/sign-up?ref=${user.referral_code}`,
+      commissionRate: user.referral_commission_rate || 10
     });
 
   } catch (error) {

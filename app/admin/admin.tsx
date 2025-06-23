@@ -128,6 +128,20 @@ export default function Admin() {
   const [cpmViewerData, setCpmViewerData] = useState<any[]>([]);
   const [loadingCpmViewer, setLoadingCpmViewer] = useState(false);
 
+  // User management state
+  const [userDialogOpen, setUserDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<any | null>(null);
+  const [newUser, setNewUser] = useState({
+    id: "",
+    email: "",
+    full_name: "",
+    balance: 0,
+    status: "Active",
+    role: "user",
+    referral_commission_rate: 10,
+    notes: ""
+  });
+
   // Add new state for unified modal
   const [unifiedTaskModal, setUnifiedTaskModal] = useState(false);
   const [taskFormData, setTaskFormData] = useState({
@@ -500,6 +514,90 @@ export default function Admin() {
   const cancelEditingCpm = () => {
     setEditingCpmTask(null);
     setTempCpmRates({ tier1: "", tier2: "", tier3: "" });
+  };
+
+  // User management functions
+  const handleUserSave = async () => {
+    try {
+      const method = editingUser ? "PUT" : "POST";
+      const res = await fetch("/api/users", {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...newUser,
+          id: editingUser?.id || newUser.id,
+        })
+      });
+
+      if (!res.ok) throw new Error("Failed to save user");
+      
+      // Refresh users list
+      const usersRes = await fetch("/api/users");
+      if (usersRes.ok) {
+        const usersData = await usersRes.json();
+        setUsers(Array.isArray(usersData) ? usersData : []);
+      }
+
+      // Reset form and close dialog
+      setNewUser({
+        id: "",
+        email: "",
+        full_name: "",
+        balance: 0,
+        status: "Active",
+        role: "user",
+        referral_commission_rate: 10,
+        notes: ""
+      });
+      setEditingUser(null);
+      setUserDialogOpen(false);
+      
+      alert(editingUser ? "User updated successfully!" : "User created successfully!");
+    } catch (error) {
+      console.error("Error saving user:", error);
+      alert("Failed to save user. Please try again.");
+    }
+  };
+
+  const handleUserEdit = (user: any) => {
+    setEditingUser(user);
+    setNewUser({
+      id: user.id,
+      email: user.email,
+      full_name: user.full_name,
+      balance: user.balance,
+      status: user.status,
+      role: user.role,
+      referral_commission_rate: user.referral_commission_rate || 10,
+      notes: user.notes || ""
+    });
+    setUserDialogOpen(true);
+  };
+
+  const handleUserDelete = async (userId: string) => {
+    if (!confirm("Are you sure you want to delete this user?")) return;
+    
+    try {
+      const res = await fetch("/api/users", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: userId })
+      });
+
+      if (!res.ok) throw new Error("Failed to delete user");
+      
+      // Refresh users list
+      const usersRes = await fetch("/api/users");
+      if (usersRes.ok) {
+        const usersData = await usersRes.json();
+        setUsers(Array.isArray(usersData) ? usersData : []);
+      }
+      
+      alert("User deleted successfully!");
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      alert("Failed to delete user. Please try again.");
+    }
   };
 
   // Unified task creation functions
@@ -1170,37 +1268,129 @@ export default function Admin() {
             </Button>
           </div>
           <div className="flex items-center space-x-2">
-            <Dialog>
+            <Dialog open={userDialogOpen} onOpenChange={setUserDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black">
+                <Button 
+                  className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black"
+                  onClick={() => {
+                    setEditingUser(null);
+                    setNewUser({
+                      id: "",
+                      email: "",
+                      full_name: "",
+                      balance: 0,
+                      status: "Active",
+                      role: "user",
+                      referral_commission_rate: 10,
+                      notes: ""
+                    });
+                    setUserDialogOpen(true);
+                  }}
+                >
                   <Plus className="w-4 h-4 mr-2" />
                   Add User
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-black/80 backdrop-blur-xl border-white/10 text-white">
+              <DialogContent className="bg-black/90 backdrop-blur-xl border-white/10 text-white max-w-md">
                 <DialogHeader>
-                  <DialogTitle>Add New User</DialogTitle>
+                  <DialogTitle className="text-xl font-bold">
+                    {editingUser ? 'Edit User' : 'Add New User'}
+                  </DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4">
+                <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleUserSave(); }}>
                   <div>
-                    <Label>Email Address</Label>
-                    <Input className="bg-white/5 border-white/10 text-white" placeholder="user@example.com" />
+                    <Label htmlFor="user-email">Email</Label>
+                    <Input
+                      id="user-email"
+                      value={newUser.email}
+                      onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+                      placeholder="user@example.com"
+                      className="bg-white/5 border-white/10 text-white"
+                      required
+                    />
                   </div>
                   <div>
-                    <Label>Initial Balance</Label>
-                    <Input className="bg-white/5 border-white/10 text-white" placeholder="$0.00" />
+                    <Label htmlFor="user-name">Full Name</Label>
+                    <Input
+                      id="user-name"
+                      value={newUser.full_name}
+                      onChange={(e) => setNewUser({...newUser, full_name: e.target.value})}
+                      placeholder="John Doe"
+                      className="bg-white/5 border-white/10 text-white"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="user-balance">Balance</Label>
+                      <Input
+                        id="user-balance"
+                        type="number"
+                        step="0.01"
+                        value={newUser.balance}
+                        onChange={(e) => setNewUser({...newUser, balance: parseFloat(e.target.value) || 0})}
+                        placeholder="0.00"
+                        className="bg-white/5 border-white/10 text-white"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="user-role">Role</Label>
+                      <select
+                        id="user-role"
+                        value={newUser.role}
+                        onChange={(e) => setNewUser({...newUser, role: e.target.value})}
+                        className="w-full p-2 bg-white/5 border border-white/10 text-white rounded-md"
+                      >
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </div>
                   </div>
                   <div>
-                    <Label>Status</Label>
-                    <select className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-white">
+                    <Label htmlFor="user-referral-rate">Referral Commission Rate (%)</Label>
+                    <Input
+                      id="user-referral-rate"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      value={newUser.referral_commission_rate}
+                      onChange={(e) => setNewUser({...newUser, referral_commission_rate: parseFloat(e.target.value) || 10})}
+                      placeholder="10.00"
+                      className="bg-white/5 border-white/10 text-white"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">Commission rate this user earns from referrals (0-100%)</p>
+                  </div>
+                  <div>
+                    <Label htmlFor="user-status">Status</Label>
+                    <select
+                      id="user-status"
+                      value={newUser.status}
+                      onChange={(e) => setNewUser({...newUser, status: e.target.value})}
+                      className="w-full p-2 bg-white/5 border border-white/10 text-white rounded-md"
+                    >
                       <option value="Active">Active</option>
                       <option value="Suspended">Suspended</option>
                     </select>
                   </div>
-                  <Button className="w-full bg-gradient-to-r from-emerald-500 to-green-500 text-black">
-                    Create User
-                  </Button>
-                </div>
+                  <div>
+                    <Label htmlFor="user-notes">Notes</Label>
+                    <Textarea
+                      id="user-notes"
+                      value={newUser.notes}
+                      onChange={(e) => setNewUser({...newUser, notes: e.target.value})}
+                      placeholder="Internal notes..."
+                      className="bg-white/5 border-white/10 text-white min-h-[80px]"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button type="submit" className="flex-1 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black font-medium">
+                      {editingUser ? 'Update User' : 'Add User'}
+                    </Button>
+                    <Button type="button" variant="outline" onClick={() => setUserDialogOpen(false)} className="border-white/10 hover:bg-white/10">
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
               </DialogContent>
             </Dialog>
             <Button variant="outline" className="border-white/10 bg-white/5 hover:bg-white/10 text-white">
@@ -1219,6 +1409,7 @@ export default function Admin() {
                   <TableHead className="text-gray-300">User</TableHead>
                   <TableHead className="text-gray-300">Balance</TableHead>
                   <TableHead className="text-gray-300">Lockers</TableHead>
+                  <TableHead className="text-gray-300">Referral Rate</TableHead>
                   <TableHead className="text-gray-300">Status</TableHead>
                   <TableHead className="text-gray-300">Joined</TableHead>
                   <TableHead className="text-gray-300">Actions</TableHead>
@@ -1226,14 +1417,15 @@ export default function Admin() {
               </TableHeader>
               <TableBody>
                 {loadingUsers ? (
-                  <TableRow><TableCell colSpan={6}>Loading...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7}>Loading...</TableCell></TableRow>
                 ) : filteredUsers.length === 0 ? (
-                  <TableRow><TableCell colSpan={6}>No users found.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7}>No users found.</TableCell></TableRow>
                 ) : filteredUsers.map((user) => (
                   <TableRow key={user.id} className="border-white/10 hover:bg-white/5">
                     <TableCell className="text-white">{user.email}</TableCell>
-                    <TableCell className="text-white">{user.balance}</TableCell>
+                    <TableCell className="text-white">${user.balance}</TableCell>
                     <TableCell className="text-white">{user.lockers}</TableCell>
+                    <TableCell className="text-blue-400 font-medium">{user.referral_commission_rate || 10}%</TableCell>
                     <TableCell>
                       <span
                         className={`px-2 py-1 rounded-full text-xs ${
@@ -1246,13 +1438,22 @@ export default function Admin() {
                     <TableCell className="text-gray-300">{user.joined ? new Date(user.joined).toLocaleDateString() : "-"}</TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
-                        <Button variant="ghost" size="icon" className="w-8 h-8 hover:bg-white/10">
-                          <Eye className="w-4 h-4 text-gray-400" />
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="w-8 h-8 hover:bg-white/10"
+                          onClick={() => handleUserEdit(user)}
+                          title="Edit User"
+                        >
+                          <Edit className="w-4 h-4 text-blue-400" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="w-8 h-8 hover:bg-white/10">
-                          <Edit className="w-4 h-4 text-gray-400" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="w-8 h-8 hover:bg-white/10">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="w-8 h-8 hover:bg-white/10"
+                          onClick={() => handleUserDelete(user.id)}
+                          title="Delete User"
+                        >
                           <Trash2 className="w-4 h-4 text-red-400" />
                         </Button>
                       </div>

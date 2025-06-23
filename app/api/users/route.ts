@@ -24,9 +24,9 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   if (!(await isAdmin(req))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const body = await req.json();
-  const { id, email, full_name, balance, status, joined, last_login, role, lockers, country, referral_code, referred_by, notes } = body;
+  const { id, email, full_name, balance, status, joined, last_login, role, lockers, country, referral_code, referred_by, notes, referral_commission_rate } = body;
   const { data, error } = await supabase.from("users").insert([
-    { id, email, full_name, balance, status, joined, last_login, role, lockers, country, referral_code, referred_by, notes }
+    { id, email, full_name, balance, status, joined, last_login, role, lockers, country, referral_code, referred_by, notes, referral_commission_rate }
   ]).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (data) return NextResponse.json(data);
@@ -36,11 +36,26 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   if (!(await isAdmin(req))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const body = await req.json();
-  const { id, ...fields } = body;
-  const { data, error } = await supabase.from("users").update(fields).eq("id", id).select().single();
+  const { id, email, full_name, balance, status, role, notes, referral_commission_rate } = body;
+  
+  const updateData: any = {};
+  if (email !== undefined) updateData.email = email;
+  if (full_name !== undefined) updateData.full_name = full_name;
+  if (balance !== undefined) updateData.balance = balance;
+  if (status !== undefined) updateData.status = status;
+  if (role !== undefined) updateData.role = role;
+  if (notes !== undefined) updateData.notes = notes;
+  if (referral_commission_rate !== undefined) updateData.referral_commission_rate = referral_commission_rate;
+  
+  const { data, error } = await supabase
+    .from("users")
+    .update(updateData)
+    .eq("id", id)
+    .select()
+    .single();
+    
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  if (data) return NextResponse.json(data);
-  return NextResponse.json(null);
+  return NextResponse.json(data);
 }
 
 export async function DELETE(req: NextRequest) {
