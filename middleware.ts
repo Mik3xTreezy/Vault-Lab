@@ -7,6 +7,7 @@ const isPublicRoute = createRouteMatcher([
   '/locked(.*)',   // Locked links are public
   '/api/lockers(.*)', // Locker API is public for locked links
   '/api/tasks(.*)',   // Tasks API is public for locked links
+  '/api/tasks/webhooks(.*)', // Webhook API must be public for advertisers
   '/api/analytics(.*)', // Analytics API is public for locked links
   '/api/dashboard-analytics(.*)', // Dashboard analytics API is public
   '/api/locker-analytics(.*)', // Locker analytics API is public
