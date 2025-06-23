@@ -237,6 +237,75 @@ export async function POST(req: NextRequest) {
 
         console.log('[ANALYTICS API] Revenue event inserted:', revenueData);
 
+        // Check if this publisher was referred by someone for commission tracking
+        const { data: referralInfo, error: referralError } = await supabase
+          .from('users')
+          .select('referred_by')
+          .eq('id', publisherId)
+          .single();
+
+        if (!referralError && referralInfo?.referred_by) {
+          // Calculate 5% commission for the referrer
+          const commissionAmount = revenue * 0.05;
+          
+          console.log('[ANALYTICS API] Calculating referral commission:', {
+            publisherId,
+            referrerId: referralInfo.referred_by,
+            revenue,
+            commissionAmount
+          });
+
+          // Find the referral record
+          const { data: referralRecord, error: referralFindError } = await supabase
+            .from('referrals')
+            .select('id, status')
+            .eq('referrer_id', referralInfo.referred_by)
+            .eq('referred_id', publisherId)
+            .single();
+
+          if (!referralFindError && referralRecord) {
+            // Update referral status to active if it's still pending
+            if (referralRecord.status === 'pending') {
+              await supabase
+                .from('referrals')
+                .update({ status: 'active', last_activity_at: new Date().toISOString() })
+                .eq('id', referralRecord.id);
+            }
+
+            // Record the commission
+            const { error: commissionError } = await supabase
+              .from('referral_commissions')
+              .insert({
+                referral_id: referralRecord.id,
+                revenue_event_id: revenueData[0].id,
+                commission_amount: commissionAmount,
+                locker_id,
+                task_id: task_id
+              });
+
+            if (!commissionError) {
+              // Update referral total earned
+              await supabase.rpc('increment_referral_earnings', {
+                referral_id: referralRecord.id,
+                amount: commissionAmount
+              });
+
+              // Update referrer balance
+              await supabase.rpc('increment_user_balance', {
+                user_id: referralInfo.referred_by,
+                amount: commissionAmount
+              });
+
+              console.log('[ANALYTICS API] Referral commission processed:', {
+                referralId: referralRecord.id,
+                commissionAmount
+              });
+            } else {
+              console.error('[ANALYTICS API] Error recording commission:', commissionError);
+            }
+          }
+        }
+
         // Update publisher balance (not visitor balance)
         const { data: currentBalance, error: balanceError } = await supabase
           .from("users")

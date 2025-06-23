@@ -16,6 +16,7 @@ const isPublicRoute = createRouteMatcher([
   '/api/geolocation(.*)', // Geolocation API is public
   '/api/device-targeting(.*)', // Device targeting API for admin
   '/api/ip-tracking(.*)', // IP tracking API for revenue validation
+  '/api/referrals(.*)', // Referrals API for commission tracking
 ]);
 
 export const middleware = clerkMiddleware(async (auth, req) => {

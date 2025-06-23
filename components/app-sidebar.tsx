@@ -38,6 +38,13 @@ const items = [
     iconColors: LORDICON_COLORS.green,
   },
   {
+    title: "Referrals",
+    url: "/referrals",
+    iconType: "animated" as const,
+    iconSrc: "https://cdn.lordicon.com/eszyyflr.json", // People/Network icon
+    iconColors: LORDICON_COLORS.purple,
+  },
+  {
     title: "Settings",
     url: "/settings",
     iconType: "animated" as const,
