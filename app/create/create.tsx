@@ -378,7 +378,7 @@ export default function Create() {
                 <Button
                   onClick={resetForm}
                   variant="outline"
-                  className="border-white/10 bg-white/5 hover:bg-white/10 text-white backdrop-blur-xl"
+                  className="border-white/10 bg-white/5 hover:bg-emerald-500/10 hover:border-emerald-500/30 hover:text-emerald-200 text-white backdrop-blur-xl transition-all duration-300"
                 >
                   Create Another
                 </Button>
@@ -390,7 +390,7 @@ export default function Create() {
                 <Button
                   onClick={() => router.push("/vault")}
                   variant="outline"
-                  className="border-white/10 bg-white/5 hover:bg-white/10 text-white backdrop-blur-xl"
+                  className="border-white/10 bg-white/5 hover:bg-emerald-500/10 hover:border-emerald-500/30 hover:text-emerald-200 text-white backdrop-blur-xl transition-all duration-300"
                 >
                   View in Vault
                 </Button>
@@ -403,24 +403,63 @@ export default function Create() {
         <AnimatePresence>
           {showCopyNotification && (
             <motion.div 
-              className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50"
+              className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50"
               initial={{ opacity: 0, y: 100, scale: 0.8 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 100, scale: 0.8 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              transition={{ 
+                type: "spring", 
+                stiffness: 400, 
+                damping: 25,
+                mass: 0.8
+              }}
+              layout
             >
-              <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl px-6 py-4 shadow-2xl shadow-black/20">
+              <motion.div 
+                className="bg-black/80 backdrop-blur-xl border border-emerald-500/30 rounded-2xl px-6 py-4 shadow-2xl shadow-emerald-500/20"
+                whileHover={{ 
+                  scale: 1.02,
+                  borderColor: "rgba(16, 185, 129, 0.5)" 
+                }}
+                transition={{ duration: 0.2 }}
+              >
                 <div className="flex items-center space-x-3">
                   <motion.div 
                     className="w-6 h-6 bg-emerald-500/20 rounded-full flex items-center justify-center"
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 0.6 }}
+                    animate={{ 
+                      scale: [1, 1.2, 1],
+                      backgroundColor: [
+                        "rgba(16, 185, 129, 0.2)",
+                        "rgba(16, 185, 129, 0.3)",
+                        "rgba(16, 185, 129, 0.2)"
+                      ]
+                    }}
+                    transition={{ 
+                      duration: 1.5,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
                   >
                     <CheckCircle className="w-4 h-4 text-emerald-400" />
                   </motion.div>
-                  <span className="text-white font-medium text-sm">Link copied to clipboard!</span>
+                  <motion.span 
+                    className="text-white font-medium text-sm"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: 0.1 }}
+                  >
+                    Link copied to clipboard!
+                  </motion.span>
                 </div>
-              </div>
+                
+                {/* Progress bar for auto-dismiss */}
+                <motion.div
+                  className="absolute bottom-0 left-0 h-0.5 bg-emerald-400 rounded-b-2xl"
+                  initial={{ width: "100%" }}
+                  animate={{ width: "0%" }}
+                  transition={{ duration: 3, ease: "linear" }}
+                />
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -770,10 +809,16 @@ export default function Create() {
             <Button
               onClick={() => router.back()}
               variant="ghost"
-              className="text-gray-400 hover:text-white hover:underline transition-all duration-200 hover:bg-transparent"
+              className="text-gray-400 hover:text-emerald-300 hover:bg-emerald-500/5 transition-all duration-300 hover:border-emerald-500/20 border border-transparent rounded-lg px-6 py-2"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
+              <motion.div
+                className="flex items-center"
+                whileHover={{ x: -2 }}
+                transition={{ duration: 0.2 }}
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Dashboard
+              </motion.div>
             </Button>
           </motion.div>
         </motion.div>
