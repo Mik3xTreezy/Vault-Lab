@@ -140,14 +140,14 @@ export default function ReferralsComponent() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-green-500 bg-clip-text text-transparent">
               Partner Program
             </h1>
             <p className="text-slate-400 mt-2">Build your network and earn passive income</p>
           </div>
           <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white font-medium shadow-lg">
+              <Button className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white font-medium shadow-lg">
                 <Share2 className="w-4 h-4 mr-2" />
                 Share & Earn
               </Button>
@@ -155,8 +155,8 @@ export default function ReferralsComponent() {
             <DialogContent className="bg-slate-900/95 backdrop-blur-xl border-slate-700/50 text-white max-w-md">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-bold flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                    <Share2 className="w-4 h-4 text-blue-400" />
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                    <Share2 className="w-4 h-4 text-emerald-400" />
                   </div>
                   Partner Link
                 </DialogTitle>
@@ -199,35 +199,35 @@ export default function ReferralsComponent() {
                     </Button>
                   </div>
                 </div>
-                <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
+                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="w-5 h-5 rounded bg-blue-500/20 flex items-center justify-center">
-                      <DollarSign className="w-3 h-3 text-blue-400" />
+                    <div className="w-5 h-5 rounded bg-emerald-500/20 flex items-center justify-center">
+                      <DollarSign className="w-3 h-3 text-emerald-400" />
                     </div>
-                    <h4 className="text-blue-400 font-semibold">Earning {referralData?.commissionRate || 10}%</h4>
+                    <h4 className="text-emerald-400 font-semibold">Earning {referralData?.commissionRate || 10}%</h4>
                   </div>
                   <ul className="text-sm text-slate-300 space-y-2">
                     <li className="flex items-start gap-2">
-                      <div className="w-1 h-1 rounded-full bg-blue-400 mt-2 flex-shrink-0"></div>
+                      <div className="w-1 h-1 rounded-full bg-emerald-400 mt-2 flex-shrink-0"></div>
                       <span>Share with content creators and marketers</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <div className="w-1 h-1 rounded-full bg-blue-400 mt-2 flex-shrink-0"></div>
+                      <div className="w-1 h-1 rounded-full bg-emerald-400 mt-2 flex-shrink-0"></div>
                       <span>They join VaultLab and start earning</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <div className="w-1 h-1 rounded-full bg-blue-400 mt-2 flex-shrink-0"></div>
+                      <div className="w-1 h-1 rounded-full bg-emerald-400 mt-2 flex-shrink-0"></div>
                       <span>You earn {referralData?.commissionRate || 10}% of their lifetime earnings</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <div className="w-1 h-1 rounded-full bg-blue-400 mt-2 flex-shrink-0"></div>
+                      <div className="w-1 h-1 rounded-full bg-emerald-400 mt-2 flex-shrink-0"></div>
                       <span>Payments processed automatically</span>
                     </li>
                   </ul>
                 </div>
                 <Button 
                   onClick={() => setShareDialogOpen(false)}
-                  className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white font-medium"
+                  className="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white font-medium"
                 >
                   Got it!
                 </Button>
@@ -247,21 +247,21 @@ export default function ReferralsComponent() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
               {/* Main Earnings Card */}
               <div className="lg:col-span-2">
-                <Card className="bg-gradient-to-br from-blue-500/10 to-indigo-600/10 border border-blue-500/20 backdrop-blur-xl">
+                <Card className="bg-gradient-to-br from-emerald-500/10 to-green-600/10 border border-emerald-500/20 backdrop-blur-xl">
                   <CardHeader className="pb-4">
                     <div className="flex items-center justify-between">
                       <div>
                         <CardTitle className="text-xl font-bold text-white">Your Earnings</CardTitle>
                         <p className="text-slate-400 text-sm mt-1">Lifetime commission earned</p>
                       </div>
-                      <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center">
-                        <DollarSign className="w-6 h-6 text-blue-400" />
+                      <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                        <DollarSign className="w-6 h-6 text-emerald-400" />
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      <div className="text-3xl font-bold text-blue-400">
+                      <div className="text-3xl font-bold text-emerald-400">
                         ${referralData?.stats.totalCommission || '0.00'}
                       </div>
                       <div className="grid grid-cols-2 gap-4">
@@ -273,7 +273,7 @@ export default function ReferralsComponent() {
                         </div>
                         <div className="bg-white/5 rounded-lg p-3">
                           <div className="text-sm text-slate-400">Commission Rate</div>
-                          <div className="text-lg font-semibold text-blue-400">
+                          <div className="text-lg font-semibold text-emerald-400">
                             {referralData?.commissionRate || 10}%
                           </div>
                         </div>
@@ -303,7 +303,7 @@ export default function ReferralsComponent() {
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="text-sm text-slate-400">Pending</div>
+                        <div className="text-sm text-slate-400">Inactive</div>
                         <div className="text-xl font-bold text-yellow-400">
                           {referralData?.stats.inactiveReferrals || 0}
                         </div>
@@ -318,11 +318,11 @@ export default function ReferralsComponent() {
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="text-sm text-slate-400">Growth</div>
-                        <div className="text-xl font-bold text-green-400">
+                        <div className="text-xl font-bold text-emerald-400">
                           +{referralData?.stats.activeReferrals || 0}
                         </div>
                       </div>
-                      <TrendingUp className="w-8 h-8 text-green-400" />
+                      <TrendingUp className="w-8 h-8 text-emerald-400" />
                     </div>
                   </CardContent>
                 </Card>
@@ -339,8 +339,8 @@ export default function ReferralsComponent() {
                       <CardTitle className="text-white">Earnings Timeline</CardTitle>
                       <p className="text-slate-400 text-sm">Track your commission growth</p>
                     </div>
-                    <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                      <TrendingUp className="w-5 h-5 text-blue-400" />
+                    <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                      <TrendingUp className="w-5 h-5 text-emerald-400" />
                     </div>
                   </div>
                 </CardHeader>
@@ -363,10 +363,10 @@ export default function ReferralsComponent() {
                         <Line 
                           type="monotone" 
                           dataKey="commission" 
-                          stroke="#3B82F6" 
+                          stroke="#10B981" 
                           strokeWidth={3}
-                          dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
-                          activeDot={{ r: 6, stroke: '#3B82F6', strokeWidth: 2 }}
+                          dot={{ fill: '#10B981', strokeWidth: 2, r: 4 }}
+                          activeDot={{ r: 6, stroke: '#10B981', strokeWidth: 2 }}
                         />
                       </LineChart>
                     </ResponsiveContainer>
@@ -384,50 +384,68 @@ export default function ReferralsComponent() {
                 </CardContent>
               </Card>
 
-              {/* Link Performance */}
+              {/* Top Referrals */}
               <Card className="bg-slate-800/30 backdrop-blur-xl border-slate-700/50">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle className="text-white">Link Performance</CardTitle>
-                      <p className="text-slate-400 text-sm">Your referral link stats</p>
+                      <CardTitle className="text-white">Top Referrals</CardTitle>
+                      <p className="text-slate-400 text-sm">Your highest earning partners</p>
                     </div>
-                    <div className="w-10 h-10 rounded-lg bg-indigo-500/20 flex items-center justify-center">
-                      <ExternalLink className="w-5 h-5 text-indigo-400" />
+                    <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                      <TrendingUp className="w-5 h-5 text-emerald-400" />
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg">
-                      <div>
-                        <div className="text-sm text-slate-400">Click Rate</div>
-                        <div className="text-lg font-semibold text-white">--</div>
-                      </div>
-                      <div className="text-slate-500">
-                        <Calendar className="w-5 h-5" />
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg">
-                      <div>
-                        <div className="text-sm text-slate-400">Conversion Rate</div>
-                        <div className="text-lg font-semibold text-white">--</div>
-                      </div>
-                      <div className="text-slate-500">
-                        <CheckCircle className="w-5 h-5" />
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                      <div>
-                        <div className="text-sm text-blue-400">Total Referred</div>
-                        <div className="text-lg font-semibold text-blue-300">
-                          {referralData?.stats.totalReferrals || 0}
+                  <div className="space-y-3">
+                    {referralData?.referredUsers && referralData.referredUsers.length > 0 ? (
+                      referralData.referredUsers
+                        .sort((a, b) => b.commission - a.commission)
+                        .slice(0, 3)
+                        .map((user, index) => (
+                          <div key={user.id} className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-medium text-sm ${
+                                index === 0 ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' :
+                                index === 1 ? 'bg-gradient-to-r from-slate-400 to-slate-500' :
+                                'bg-gradient-to-r from-orange-500 to-orange-600'
+                              }`}>
+                                {index + 1}
+                              </div>
+                              <div>
+                                <div className="text-white font-medium text-sm">{user.email}</div>
+                                <div className="text-slate-400 text-xs">
+                                  {user.status === 'active' ? 'Active' : 'Inactive'}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-emerald-400 font-semibold">
+                              ${user.commission.toFixed(2)}
+                            </div>
+                          </div>
+                        ))
+                    ) : (
+                      <div className="flex items-center justify-center py-8 text-slate-400">
+                        <div className="text-center">
+                          <TrendingUp className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm">No earnings yet</p>
                         </div>
                       </div>
-                      <div className="text-blue-400">
-                        <Users className="w-5 h-5" />
+                    )}
+                    {referralData?.referredUsers && referralData.referredUsers.length > 3 && (
+                      <div className="flex items-center justify-between p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+                        <div>
+                          <div className="text-sm text-emerald-400">Total Network</div>
+                          <div className="text-lg font-semibold text-emerald-300">
+                            {referralData.stats.totalReferrals}
+                          </div>
+                        </div>
+                        <div className="text-emerald-400">
+                          <Users className="w-5 h-5" />
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -445,7 +463,7 @@ export default function ReferralsComponent() {
                     <div className="text-sm text-slate-400">
                       {referralData?.referredUsers?.length || 0} members
                     </div>
-                    <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+                    <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
                   </div>
                 </div>
               </CardHeader>
@@ -455,7 +473,7 @@ export default function ReferralsComponent() {
                     {referralData.referredUsers.map((user) => (
                       <div key={user.id} className="flex items-center justify-between p-4 bg-slate-700/30 rounded-lg border border-slate-600/30 hover:bg-slate-700/50 transition-colors">
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center text-white font-medium">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-emerald-500 to-green-500 flex items-center justify-center text-white font-medium">
                             {user.email.charAt(0).toUpperCase()}
                           </div>
                           <div>
@@ -467,14 +485,14 @@ export default function ReferralsComponent() {
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="text-right">
-                            <div className="text-blue-400 font-semibold">
+                            <div className="text-emerald-400 font-semibold">
                               ${user.commission.toFixed(2)}
                             </div>
                             <div className="text-slate-400 text-sm">earned</div>
                           </div>
                           <div className={`px-3 py-1 rounded-full text-xs font-medium ${
                             user.status === 'active' 
-                              ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                               : user.status === 'pending'
                                 ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
                                 : 'bg-slate-500/20 text-slate-400 border border-slate-500/30'
@@ -497,7 +515,7 @@ export default function ReferralsComponent() {
                       </p>
                       <Button 
                         onClick={() => setShareDialogOpen(true)}
-                        className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white"
+                        className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white"
                       >
                         <Share2 className="w-4 h-4 mr-2" />
                         Get Started
@@ -510,10 +528,10 @@ export default function ReferralsComponent() {
 
             {/* Partnership Benefits */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="bg-gradient-to-br from-blue-500/10 to-indigo-600/10 border border-blue-500/20 backdrop-blur-xl">
+              <Card className="bg-gradient-to-br from-emerald-500/10 to-green-600/10 border border-emerald-500/20 backdrop-blur-xl">
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4">
-                    <div className="w-16 h-16 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center flex-shrink-0">
+                    <div className="w-16 h-16 rounded-xl bg-gradient-to-r from-emerald-500 to-green-500 flex items-center justify-center flex-shrink-0">
                       <span className="text-2xl font-bold text-white">{referralData?.commissionRate || 10}%</span>
                     </div>
                     <div className="flex-1">
@@ -522,7 +540,7 @@ export default function ReferralsComponent() {
                         Earn {referralData?.commissionRate || 10}% commission on all earnings from your referrals. 
                         The more successful they are, the more you earn.
                       </p>
-                      <div className="flex items-center gap-2 text-blue-400 text-sm">
+                      <div className="flex items-center gap-2 text-emerald-400 text-sm">
                         <CheckCircle className="w-4 h-4" />
                         Lifetime earnings
                       </div>
@@ -545,7 +563,7 @@ export default function ReferralsComponent() {
                       </p>
                       <Button
                         onClick={() => setShareDialogOpen(true)}
-                        className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white font-medium w-full"
+                        className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white font-medium w-full"
                       >
                         <Share2 className="w-4 h-4 mr-2" />
                         Get Your Link
