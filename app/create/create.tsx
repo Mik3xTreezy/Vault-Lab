@@ -403,7 +403,7 @@ export default function Create() {
         <AnimatePresence>
           {showCopyNotification && (
             <motion.div 
-              className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 max-w-sm w-full px-4"
+              className="fixed bottom-0 left-1/2 transform -translate-x-1/2 z-50 max-w-sm w-full px-4 pb-4"
               initial={{ opacity: 0, y: 100, scale: 0.8 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 100, scale: 0.8 }}
