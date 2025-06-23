@@ -352,7 +352,7 @@ export default function Create() {
 
           {/* Action Buttons */}
           <motion.div 
-            className="flex flex-col space-y-3"
+            className="flex flex-col space-y-4"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 1.6 }}
@@ -363,14 +363,14 @@ export default function Create() {
             >
               <Button
                 onClick={() => window.open(generatedLink, "_blank")}
-                className="w-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black font-medium py-3"
+                className="w-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black font-medium py-3 h-12"
               >
                 <ExternalLink className="w-4 h-4 mr-2" />
                 Test Your Locker
               </Button>
             </motion.div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-4">
               <motion.div
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -378,7 +378,7 @@ export default function Create() {
                 <Button
                   onClick={resetForm}
                   variant="outline"
-                  className="border-white/10 bg-white/5 hover:bg-emerald-500/10 hover:border-emerald-500/30 hover:text-emerald-200 text-white backdrop-blur-xl transition-all duration-300"
+                  className="w-full border-white/10 bg-white/5 hover:bg-emerald-500/10 hover:border-emerald-500/30 hover:text-emerald-200 text-white backdrop-blur-xl transition-all duration-300 h-12"
                 >
                   Create Another
                 </Button>
@@ -390,7 +390,7 @@ export default function Create() {
                 <Button
                   onClick={() => router.push("/vault")}
                   variant="outline"
-                  className="border-white/10 bg-white/5 hover:bg-emerald-500/10 hover:border-emerald-500/30 hover:text-emerald-200 text-white backdrop-blur-xl transition-all duration-300"
+                  className="w-full border-white/10 bg-white/5 hover:bg-emerald-500/10 hover:border-emerald-500/30 hover:text-emerald-200 text-white backdrop-blur-xl transition-all duration-300 h-12"
                 >
                   View in Vault
                 </Button>
@@ -403,7 +403,7 @@ export default function Create() {
         <AnimatePresence>
           {showCopyNotification && (
             <motion.div 
-              className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50"
+              className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 max-w-sm w-full px-4"
               initial={{ opacity: 0, y: 100, scale: 0.8 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 100, scale: 0.8 }}
@@ -416,16 +416,16 @@ export default function Create() {
               layout
             >
               <motion.div 
-                className="bg-black/80 backdrop-blur-xl border border-emerald-500/30 rounded-2xl px-6 py-4 shadow-2xl shadow-emerald-500/20"
+                className="bg-black/90 backdrop-blur-xl border border-emerald-500/30 rounded-xl px-4 py-3 shadow-2xl shadow-emerald-500/20 mx-auto"
                 whileHover={{ 
                   scale: 1.02,
                   borderColor: "rgba(16, 185, 129, 0.5)" 
                 }}
                 transition={{ duration: 0.2 }}
               >
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center justify-center space-x-3">
                   <motion.div 
-                    className="w-6 h-6 bg-emerald-500/20 rounded-full flex items-center justify-center"
+                    className="w-5 h-5 bg-emerald-500/20 rounded-full flex items-center justify-center"
                     animate={{ 
                       scale: [1, 1.2, 1],
                       backgroundColor: [
@@ -440,7 +440,7 @@ export default function Create() {
                       ease: "easeInOut"
                     }}
                   >
-                    <CheckCircle className="w-4 h-4 text-emerald-400" />
+                    <CheckCircle className="w-3 h-3 text-emerald-400" />
                   </motion.div>
                   <motion.span 
                     className="text-white font-medium text-sm"
@@ -454,7 +454,7 @@ export default function Create() {
                 
                 {/* Progress bar for auto-dismiss */}
                 <motion.div
-                  className="absolute bottom-0 left-0 h-0.5 bg-emerald-400 rounded-b-2xl"
+                  className="absolute bottom-0 left-0 h-0.5 bg-emerald-400 rounded-b-xl"
                   initial={{ width: "100%" }}
                   animate={{ width: "0%" }}
                   transition={{ duration: 3, ease: "linear" }}
