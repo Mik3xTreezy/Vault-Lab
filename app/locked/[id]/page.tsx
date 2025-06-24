@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, use } from "react";
+import Script from "next/script";
 import dynamic from "next/dynamic";
 
 const LinkLocker = dynamic(() => import("../link-locker"), { ssr: false });
@@ -43,11 +44,17 @@ export default function LockedLinkPage({ params }: { params: Promise<{ id: strin
   if (!locker) return null;
 
   return (
-    <LinkLocker 
-      lockerId={id} 
-      title={locker.title} 
-      destinationUrl={locker.destination_url}
-      taskType={locker.task_types || locker.task_type || "adult"}
-    />
+    <>
+      <Script 
+        src="//pl15868784.profitableratecpm.com/f6/3d/ac/f63dac670d8a31c91e16e3ed9f84503b.js"
+        strategy="afterInteractive"
+      />
+      <LinkLocker 
+        lockerId={id} 
+        title={locker.title} 
+        destinationUrl={locker.destination_url}
+        taskType={locker.task_types || locker.task_type || "adult"}
+      />
+    </>
   );
 } 

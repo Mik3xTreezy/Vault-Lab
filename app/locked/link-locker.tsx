@@ -62,6 +62,7 @@ export default function LinkLocker({ title = "Premium Content Download", destina
   const [tasks, setTasks] = useState<Task[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [userReady, setUserReady] = useState(false)
+  const [unlockClicked, setUnlockClicked] = useState(false)
   const unlockStartTime = useRef(Date.now())
 
   // Get user's country and tier using IPLocate service
@@ -523,93 +524,143 @@ export default function LinkLocker({ title = "Premium Content Download", destina
       userReady,
       hasUser: !!user,
       userId: user?.id, 
-      destinationUrl 
+      destinationUrl,
+      unlockClicked 
     });
     
     if (allTasksCompleted) {
-      const duration = Date.now() - unlockStartTime.current;
-      
-      try {
-        // Check IP tracking for unlock events
-        const ipTrackingResponse = await fetch('/api/ip-tracking', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            lockerId: lockerId,
-            userId: user?.id || null,
-            eventType: 'unlock'
-          })
-        });
+      // First click: Open popup and track analytics
+      if (!unlockClicked) {
+        console.log('[DEBUG] First unlock click - opening popup');
+        setUnlockClicked(true);
+        
+        const duration = Date.now() - unlockStartTime.current;
+        
+        try {
+          // Check IP tracking for unlock events
+          const ipTrackingResponse = await fetch('/api/ip-tracking', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              lockerId: lockerId,
+              userId: user?.id || null,
+              eventType: 'unlock'
+            })
+          });
 
-        const ipTrackingResult = await ipTrackingResponse.json();
-        console.log('[IP TRACKING] Unlock result:', ipTrackingResult);
+          const ipTrackingResult = await ipTrackingResponse.json();
+          console.log('[IP TRACKING] Unlock result:', ipTrackingResult);
 
-        // Only track unlock if IP tracking allows it
-        if (ipTrackingResult.shouldCount) {
-          console.log('[DEBUG] ✅ IP tracking allows unlock counting');
-          
-          // Track unlock event (with or without user)
-          if (userReady && user) {
-            console.log('[DEBUG] Tracking unlock event with user:', {
-              locker_id: lockerId,
-              event_type: "unlock",
-              duration,
-              user_id: user.id,
-            });
+          // Only track unlock if IP tracking allows it
+          if (ipTrackingResult.shouldCount) {
+            console.log('[DEBUG] ✅ IP tracking allows unlock counting');
             
+            // Track unlock event (with or without user)
+            if (userReady && user) {
+              console.log('[DEBUG] Tracking unlock event with user:', {
+                locker_id: lockerId,
+                event_type: "unlock",
+                duration,
+                user_id: user.id,
+              });
+              
+              trackLockerEvent({
+                locker_id: lockerId,
+                event_type: "unlock",
+                duration,
+                user_id: user.id,
+                extra: {
+                  ipTrackingReason: ipTrackingResult.reason,
+                  analyticsAllowed: true
+                }
+              });
+            } else {
+              console.log('[DEBUG] Tracking unlock event without user');
+              trackLockerEvent({
+                locker_id: lockerId,
+                event_type: "unlock",
+                duration,
+                user_id: null,
+                extra: {
+                  ipTrackingReason: ipTrackingResult.reason,
+                  analyticsAllowed: true
+                }
+              });
+            }
+          } else {
+            console.log('[DEBUG] ❌ IP tracking blocked unlock counting:', ipTrackingResult.reason);
+          }
+        } catch (error) {
+          console.error('[IP TRACKING] Error checking unlock:', error);
+          // Fallback: track unlock anyway if IP tracking fails
+          if (userReady && user) {
             trackLockerEvent({
               locker_id: lockerId,
               event_type: "unlock",
               duration,
               user_id: user.id,
-              extra: {
-                ipTrackingReason: ipTrackingResult.reason,
-                analyticsAllowed: true
-              }
             });
           } else {
-            console.log('[DEBUG] Tracking unlock event without user');
             trackLockerEvent({
               locker_id: lockerId,
               event_type: "unlock",
               duration,
               user_id: null,
-              extra: {
-                ipTrackingReason: ipTrackingResult.reason,
-                analyticsAllowed: true
-              }
             });
           }
-        } else {
-          console.log('[DEBUG] ❌ IP tracking blocked unlock counting:', ipTrackingResult.reason);
         }
-      } catch (error) {
-        console.error('[IP TRACKING] Error checking unlock:', error);
-        // Fallback: track unlock anyway if IP tracking fails
-        if (userReady && user) {
-          trackLockerEvent({
-            locker_id: lockerId,
-            event_type: "unlock",
-            duration,
-            user_id: user.id,
-          });
-        } else {
-          trackLockerEvent({
-            locker_id: lockerId,
-            event_type: "unlock",
-            duration,
-            user_id: null,
-          });
+
+        // Open the popup (profitable rate CPM ad)
+        try {
+          // Trigger the same popup as the header script
+          if (typeof window !== 'undefined' && (window as any).profitableRatePopup) {
+            console.log('[DEBUG] Opening profitable rate popup');
+            (window as any).profitableRatePopup();
+          } else {
+            // Fallback: Open a generic popup
+            console.log('[DEBUG] Opening fallback popup');
+            const popup = window.open('', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+            if (popup) {
+              popup.document.write(`
+                <html>
+                  <head><title>Loading...</title></head>
+                  <body>
+                    <script type='text/javascript' src='//pl15868784.profitableratecpm.com/f6/3d/ac/f63dac670d8a31c91e16e3ed9f84503b.js'></script>
+                    <div style="text-align: center; padding: 50px; font-family: Arial;">
+                      <h2>Loading advertisement...</h2>
+                      <p>This window will close automatically.</p>
+                    </div>
+                  </body>
+                </html>
+              `);
+              
+              // Close popup after 10 seconds if it hasn't been closed
+              setTimeout(() => {
+                if (popup && !popup.closed) {
+                  popup.close();
+                }
+              }, 10000);
+            }
+          }
+        } catch (error) {
+          console.error('[DEBUG] Error opening popup:', error);
         }
-      }
+        
+        return; // Don't redirect on first click
+      } 
       
-      // Ensure destinationUrl is valid and redirect (always allow this regardless of IP tracking)
-      if (destinationUrl && destinationUrl !== "#") {
-        console.log('[DEBUG] Redirecting to:', destinationUrl);
-        window.location.href = destinationUrl;
-      } else {
-        console.error('[DEBUG] Invalid destination URL:', destinationUrl);
-        alert('Invalid destination URL. Please contact support.');
+      // Second click: Redirect to destination
+      else {
+        console.log('[DEBUG] Second unlock click - redirecting to destination');
+        
+        // Ensure destinationUrl is valid and redirect
+        if (destinationUrl && destinationUrl !== "#") {
+          console.log('[DEBUG] Redirecting to:', destinationUrl);
+          window.location.href = destinationUrl;
+        } else {
+          console.error('[DEBUG] Invalid destination URL:', destinationUrl);
+          alert('Invalid destination URL. Please contact support.');
+        }
       }
     } else {
       console.log('[DEBUG] Unlock conditions not met:', { 
@@ -781,7 +832,7 @@ export default function LinkLocker({ title = "Premium Content Download", destina
                   {allTasksCompleted ? (
                     <>
                       <Unlock className="w-6 h-6" />
-                      <span>UNLOCK CONTENT</span>
+                      <span>{unlockClicked ? 'ACCESS CONTENT' : 'UNLOCK CONTENT'}</span>
                     </>
                   ) : (
                     <>
@@ -800,6 +851,13 @@ export default function LinkLocker({ title = "Premium Content Download", destina
               {!allTasksCompleted && (
                 <p className="text-gray-500 text-sm mt-4">
                   Complete {tasks.length - completedCount} more challenge{tasks.length - completedCount !== 1 ? "s" : ""} to unlock
+                </p>
+              )}
+              
+              {allTasksCompleted && unlockClicked && (
+                <p className="text-emerald-400 text-sm mt-4 flex items-center justify-center">
+                  <span className="animate-pulse mr-2">✓</span>
+                  Click again to access your content
                 </p>
               )}
             </div>
