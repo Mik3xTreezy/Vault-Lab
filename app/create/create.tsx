@@ -298,7 +298,14 @@ export default function Create() {
                     </motion.div>
                     <div>
                       <h3 className="text-white font-semibold">{formData.title}</h3>
-                      <p className="text-gray-400 text-sm">VaultLab</p>
+                      <div className="flex items-center space-x-2">
+                        <img 
+                          src="/Icon.svg" 
+                          alt="VaultLab" 
+                          className="w-4 h-4 object-contain"
+                        />
+                        <p className="text-gray-400 text-sm">VaultLab</p>
+                      </div>
                     </div>
                   </motion.div>
 

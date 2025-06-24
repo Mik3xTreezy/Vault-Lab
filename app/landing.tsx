@@ -188,6 +188,26 @@ export default function Landing() {
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center relative z-20 px-4">
+        {/* Logo Header */}
+        <motion.div 
+          className="text-center mb-8"
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.1 }}
+        >
+          <motion.div 
+            className="inline-flex items-center justify-center w-16 h-16 mb-4"
+            whileHover={{ scale: 1.1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <img 
+              src="/Logo-01.png" 
+              alt="VaultLab" 
+              className="w-full h-full object-contain"
+            />
+          </motion.div>
+        </motion.div>
+
         {/* Elite notice - Smaller and tighter */}
         <motion.div 
           className="text-center mb-6"

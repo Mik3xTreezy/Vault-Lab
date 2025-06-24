@@ -22,5 +22,12 @@ export default function RootLayout({
 }
 
 export const metadata = {
-      generator: 'v0.dev'
-    };
+  title: 'VaultLab - Monetize Your Links',
+  description: 'Transform your content into premium revenue streams with VaultLab',
+  generator: 'v0.dev',
+  icons: {
+    icon: '/Icon.svg',
+    shortcut: '/Icon.png',
+    apple: '/Icon.png',
+  },
+};

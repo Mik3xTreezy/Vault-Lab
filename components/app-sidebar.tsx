@@ -59,8 +59,12 @@ export function AppSidebar() {
   return (
     <Sidebar className="border-r border-white/10" collapsible="icon">
       <SidebarHeader className="p-4">
-        <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-r from-emerald-500 to-green-500 rounded-lg">
-          <div className="w-4 h-4 bg-black rounded-sm"></div>
+        <div className="flex items-center justify-center w-8 h-8">
+          <img 
+            src="/Icon.svg" 
+            alt="VaultLab Logo" 
+            className="w-full h-full object-contain"
+          />
         </div>
       </SidebarHeader>
       <SidebarContent className="px-2">
