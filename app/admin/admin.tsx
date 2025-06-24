@@ -936,6 +936,8 @@ export default function Admin() {
   };
 
   const uploadCsvRates = async () => {
+    console.log('[CSV UPLOAD] Function called - this should appear in logs if the button handler is working');
+    
     if (!selectedTaskForCsv || csvData.length === 0) {
       setCsvError("Please select a task and upload a valid CSV file");
       return;
@@ -2133,7 +2135,15 @@ export default function Admin() {
                   <p className="text-xs text-blue-400">Available tasks: {Array.isArray(tasks) ? tasks.filter(t => t && t.id && t.title).length : 0}</p>
                 </DialogHeader>
                 
-                <div className="space-y-6 max-h-[80vh] overflow-y-auto">
+                <form 
+                  className="space-y-6 max-h-[80vh] overflow-y-auto"
+                  onSubmit={(e) => {
+                    console.log('[CSV UPLOAD] Form submission detected and prevented');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                  }}
+                >
                   {/* Task Selection */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -2254,7 +2264,14 @@ Singapore,3.50,SG`;
                       <input
                         type="file"
                         accept=".csv"
-                        onChange={handleCsvFileChange}
+                        onChange={(e) => {
+                          console.log('[CSV UPLOAD] File input changed');
+                          handleCsvFileChange(e);
+                        }}
+                        onClick={(e) => {
+                          console.log('[CSV UPLOAD] File input clicked');
+                          e.stopPropagation();
+                        }}
                         className="hidden"
                         id="csv-upload"
                       />
@@ -2338,6 +2355,7 @@ Singapore,3.50,SG`;
                     <Button
                       type="button"
                       onClick={(e) => {
+                        console.log('[CSV UPLOAD] Button clicked - should call uploadCsvRates');
                         e.preventDefault();
                         e.stopPropagation();
                         uploadCsvRates();
@@ -2366,7 +2384,7 @@ Singapore,3.50,SG`;
                       </p>
                     )}
                   </div>
-                </div>
+                </form>
               </DialogContent>
             </Dialog>
             <Button 
