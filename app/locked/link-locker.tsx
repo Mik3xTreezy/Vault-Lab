@@ -92,6 +92,21 @@ export default function LinkLocker({ title = "Premium Content Download", destina
       return { url: deviceSpecificConfig.adUrl, source: 'device-specific' };
     }
     
+    // Check task-level ad URL configuration first
+    if (task.ad_url_mode === 'common' && task.common_ad_url) {
+      return { url: task.common_ad_url, source: 'task-common' };
+    } else if (task.ad_url_mode === 'tiered' && task.tiered_ad_urls) {
+      const tierUrls = task.tiered_ad_urls;
+      if (tierUrls[userTier]) {
+        return { url: tierUrls[userTier], source: `task-${userTier}` };
+      }
+      // Fallback to other tiers if current tier is not available
+      const fallbackUrl = tierUrls.tier1 || tierUrls.tier2 || tierUrls.tier3;
+      if (fallbackUrl) {
+        return { url: fallbackUrl, source: 'task-fallback' };
+      }
+    }
+    
     try {
       // Fetch locker data to check ad URL configuration
       const lockerRes = await fetch(`/api/lockers/${lockerId}`);
@@ -116,8 +131,9 @@ export default function LinkLocker({ title = "Premium Content Download", destina
       console.warn('Could not fetch locker ad URL configuration:', error);
     }
     
-    // Fallback to task-level ad URL
-    return { url: task.ad_url, source: 'task-default' };
+    // Fallback to task-level ad URL (check new structure first, then legacy)
+    const taskAdUrl = task.common_ad_url || task.ad_url || null;
+    return { url: taskAdUrl, source: 'task-default' };
   };
 
   // Wait for user to be ready
@@ -167,26 +183,26 @@ export default function LinkLocker({ title = "Premium Content Download", destina
           console.log(`Target devices: [${(task.devices || []).join(', ')}]`);
           
           // Check task type matching - now support multiple task types
-          const taskTypeToCheck = task.task_type || 'adult'; // Default to adult if not set
+          const taskTypesToCheck = task.task_types || [task.task_type || 'adult']; // Use new array field or fallback
           
-          // Handle both single task type (string) and multiple task types (array)
+          // Handle both single task type (string) and multiple task types (array) from locker
           let taskTypeMatches = false;
           if (typeof taskType === 'string') {
-            // Single task type (legacy support)
-            taskTypeMatches = taskTypeToCheck === taskType;
+            // Single task type from locker (legacy support)
+            taskTypeMatches = taskTypesToCheck.includes(taskType);
           } else if (Array.isArray(taskType)) {
-            // Multiple task types - check if task type is in the array
-            taskTypeMatches = taskType.includes(taskTypeToCheck);
+            // Multiple task types from locker - check if any task type matches
+            taskTypeMatches = taskType.some(lockerType => taskTypesToCheck.includes(lockerType));
           } else {
             // Fallback for unexpected formats
-            taskTypeMatches = taskTypeToCheck === 'adult';
+            taskTypeMatches = taskTypesToCheck.includes('adult');
           }
           
           if (!taskTypeMatches) {
-            console.log(`❌ EXCLUDED: Task type ${taskTypeToCheck} doesn't match locker requirements ${Array.isArray(taskType) ? taskType.join(', ') : taskType}`);
+            console.log(`❌ EXCLUDED: Task types [${taskTypesToCheck.join(', ')}] don't match locker requirements ${Array.isArray(taskType) ? taskType.join(', ') : taskType}`);
             return false;
           } else {
-            console.log(`✅ Task type check passed: ${taskTypeToCheck} matches requirements`);
+            console.log(`✅ Task type check passed: [${taskTypesToCheck.join(', ')}] matches requirements`);
           }
           
           // Check browser exclusions

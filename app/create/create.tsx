@@ -7,26 +7,16 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
-import { ArrowLeft, Link, Globe, Loader2, CheckCircle, Copy, ExternalLink, Sparkles, Lock, Settings } from "lucide-react"
+import { ArrowLeft, Link, Globe, Loader2, CheckCircle, Copy, ExternalLink, Sparkles, Lock } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "motion/react"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Textarea } from "@/components/ui/textarea"
 
 export default function Create() {
   const router = useRouter()
   const [formData, setFormData] = useState({
     title: "",
-    description: "",
     destinationUrl: "",
-    taskTypes: [] as string[], // Changed to array for multiple types
-    adUrlMode: "common" as "common" | "tiered", // New field for ad URL configuration
-    commonAdUrl: "", // Single ad URL for all tiers
-    tieredAdUrls: { // Separate ad URLs for each tier
-      tier1: "",
-      tier2: "",
-      tier3: ""
-    }
+    taskType: "adult" as string, // Single task type selection
   })
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
@@ -34,32 +24,16 @@ export default function Create() {
   const [showCopyNotification, setShowCopyNotification] = useState(false)
   const [errors, setErrors] = useState({
     title: "",
-    description: "",
     destinationUrl: "",
-    taskTypes: "",
-    adUrl: ""
   })
   const [error, setError] = useState<string | null>(null)
 
-  const taskTypeOptions = [
-    { value: "adult", label: "NSFW Tasks", icon: "🔞", description: "18+ content tasks for mature audiences" },
-    { value: "game", label: "Game Tasks", icon: "🎮", description: "General gaming related tasks and activities" },
-    { value: "minecraft", label: "Minecraft Tasks", icon: "⛏️", description: "Minecraft specific tasks and server activities" },
-    { value: "roblox", label: "Roblox Tasks", icon: "🎯", description: "Roblox related tasks and game experiences" },
-    { value: "download", label: "Download Tasks", icon: "📥", description: "Software and file download tasks" }
-  ]
-
   const validateForm = () => {
-    const newErrors = { title: "", description: "", destinationUrl: "", taskTypes: "", adUrl: "" }
+    const newErrors = { title: "", destinationUrl: "" }
     let isValid = true
 
     if (!formData.title.trim()) {
       newErrors.title = "Title is required"
-      isValid = false
-    }
-
-    if (!formData.description.trim()) {
-      newErrors.description = "Description is required"
       isValid = false
     }
 
@@ -75,54 +49,7 @@ export default function Create() {
       }
     }
 
-    if (formData.taskTypes.length === 0) {
-      newErrors.taskTypes = "Please select at least one task type"
-      isValid = false
-    }
-
-    // Validate ad URLs based on mode
-    if (formData.adUrlMode === "common") {
-      if (!formData.commonAdUrl.trim()) {
-        newErrors.adUrl = "Common ad URL is required"
-        isValid = false
-      } else {
-        try {
-          new URL(formData.commonAdUrl)
-        } catch {
-          newErrors.adUrl = "Please enter a valid ad URL"
-          isValid = false
-        }
-      }
-    } else {
-      // Check if at least one tier has an ad URL
-      const hasAnyTierUrl = formData.tieredAdUrls.tier1.trim() || 
-                           formData.tieredAdUrls.tier2.trim() || 
-                           formData.tieredAdUrls.tier3.trim()
-      
-      if (!hasAnyTierUrl) {
-        newErrors.adUrl = "Please provide at least one tier ad URL"
-        isValid = false
-      } else {
-        // Validate individual tier URLs
-        const tierUrls = [
-          { tier: "tier1", url: formData.tieredAdUrls.tier1 },
-          { tier: "tier2", url: formData.tieredAdUrls.tier2 },
-          { tier: "tier3", url: formData.tieredAdUrls.tier3 }
-        ]
-        
-        for (const { tier, url } of tierUrls) {
-          if (url.trim()) {
-            try {
-              new URL(url)
-            } catch {
-              newErrors.adUrl = `Invalid URL for ${tier.toUpperCase()}`
-              isValid = false
-              break
-            }
-          }
-        }
-      }
-    }
+    // Task type is always selected in dropdown, so no validation needed
 
     setErrors(newErrors)
     return isValid
@@ -142,12 +69,8 @@ export default function Create() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: formData.title,
-          description: formData.description,
           destinationUrl: formData.destinationUrl,
-          taskTypes: formData.taskTypes,
-          adUrlMode: formData.adUrlMode,
-          commonAdUrl: formData.commonAdUrl,
-          tieredAdUrls: formData.tieredAdUrls
+          taskType: formData.taskType,
         }),
       });
       if (!res.ok) throw new Error("Failed to create locker");
@@ -162,24 +85,8 @@ export default function Create() {
   }
 
   const handleInputChange = (field: string, value: string) => {
-    if (field.includes('.')) {
-      // Handle nested properties like tieredAdUrls.tier1
-      const [parent, child] = field.split('.')
-      setFormData((prev) => ({
-        ...prev,
-        [parent]: {
-          ...(prev[parent as keyof typeof prev] as any),
-          [child]: value
-        }
-      }))
-    } else {
-      setFormData((prev) => ({ ...prev, [field]: value }))
-    }
-    
-    // Clear related errors
-    if (field === 'commonAdUrl' || field.startsWith('tieredAdUrls')) {
-      setErrors((prev) => ({ ...prev, adUrl: "" }))
-    } else if (errors[field as keyof typeof errors]) {
+    setFormData((prev) => ({ ...prev, [field]: value }))
+    if (errors[field as keyof typeof errors]) {
       setErrors((prev) => ({ ...prev, [field]: "" }))
     }
   }
@@ -187,7 +94,7 @@ export default function Create() {
   const handleTaskTypeChange = (taskType: string) => {
     setFormData((prev) => ({
       ...prev,
-      taskTypes: prev.taskTypes.includes(taskType) ? prev.taskTypes.filter((t) => t !== taskType) : [...prev.taskTypes, taskType]
+      taskType: taskType
     }))
   }
 
@@ -211,10 +118,10 @@ export default function Create() {
   }, [showCopyNotification])
 
   const resetForm = () => {
-    setFormData({ title: "", description: "", destinationUrl: "", taskTypes: [], adUrlMode: "common", commonAdUrl: "", tieredAdUrls: { tier1: "", tier2: "", tier3: "" } })
+    setFormData({ title: "", destinationUrl: "", taskType: "adult" })
     setIsSuccess(false)
     setGeneratedLink("")
-    setErrors({ title: "", description: "", destinationUrl: "", taskTypes: "", adUrl: "" })
+    setErrors({ title: "", destinationUrl: "" })
     setShowCopyNotification(false)
   }
 
@@ -769,63 +676,12 @@ export default function Create() {
                     </AnimatePresence>
                   </motion.div>
 
-                  {/* Description Field */}
-                  <motion.div 
-                    className="space-y-2"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.6, delay: 1.1 }}
-                  >
-                    <Label htmlFor="description" className="text-gray-300 font-medium">
-                      Description
-                    </Label>
-                    <div className="relative">
-                      <motion.div
-                        whileFocus={{ scale: 1.02 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                                                 <Textarea
-                           id="description"
-                           placeholder="Enter a brief description of your locker"
-                           value={formData.description}
-                           onChange={(e) => handleInputChange("description", e.target.value)}
-                           className={`bg-white/5 border-white/10 text-white placeholder-gray-400 focus:border-emerald-500/50 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none transition-all duration-300 pl-12 ${
-                             errors.description ? "border-red-500/50" : ""
-                           }`}
-                           style={{ boxShadow: "none" }}
-                           required
-                           disabled={isLoading}
-                         />
-                       </motion.div>
-                       <motion.div 
-                         className="absolute left-4 top-4 transform"
-                         whileHover={{ scale: 1.1 }}
-                         transition={{ duration: 0.2 }}
-                       >
-                         <Settings className="w-4 h-4 text-gray-400" />
-                       </motion.div>
-                    </div>
-                    <AnimatePresence>
-                      {errors.description && (
-                        <motion.p 
-                          className="text-red-400 text-sm"
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.3 }}
-                        >
-                          {errors.description}
-                        </motion.p>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-
                   {/* Destination URL Field */}
                   <motion.div 
                     className="space-y-2"
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.6, delay: 1.3 }}
+                    transition={{ duration: 0.6, delay: 1.1 }}
                   >
                     <Label htmlFor="destinationUrl" className="text-gray-300 font-medium">
                       Destination URL
@@ -877,214 +733,46 @@ export default function Create() {
                     className="space-y-2"
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.6, delay: 1.5 }}
+                    transition={{ duration: 0.6, delay: 1.3 }}
                   >
                     <Label className="text-gray-300 font-medium">
-                      Task Types
+                      Task Type
                     </Label>
-                    <p className="text-gray-400 text-xs">Select the types of tasks visitors will complete to unlock your content</p>
-                    
-                                         <div className="grid grid-cols-1 gap-3">
-                       {taskTypeOptions.map((option) => (
-                         <motion.div
-                           key={option.value}
-                           className={`flex items-start space-x-3 p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
-                             formData.taskTypes.includes(option.value) 
-                               ? "bg-emerald-500/10 border-emerald-500/30" 
-                               : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20"
-                           }`}
-                           onClick={() => handleTaskTypeChange(option.value)}
-                           whileHover={{ scale: 1.02 }}
-                           whileTap={{ scale: 0.98 }}
-                         >
-                           <Checkbox
-                             checked={formData.taskTypes.includes(option.value)}
-                             onChange={() => handleTaskTypeChange(option.value)}
-                             className="mt-0.5"
-                           />
-                           <div className="flex-1">
-                             <div className="flex items-center space-x-2">
-                               <span className="text-lg">{option.icon}</span>
-                               <span className="text-white font-medium">{option.label}</span>
-                             </div>
-                             <p className="text-gray-400 text-xs mt-1">{option.description}</p>
-                           </div>
-                         </motion.div>
-                       ))}
-                     </div>
-                     
-                     <AnimatePresence>
-                       {errors.taskTypes && (
-                         <motion.p 
-                           className="text-red-400 text-sm"
-                           initial={{ opacity: 0, height: 0 }}
-                           animate={{ opacity: 1, height: "auto" }}
-                           exit={{ opacity: 0, height: 0 }}
-                           transition={{ duration: 0.3 }}
-                         >
-                           {errors.taskTypes}
-                         </motion.p>
-                       )}
-                     </AnimatePresence>
-                  </motion.div>
-
-                  {/* Ad URL Configuration */}
-                  <motion.div 
-                    className="space-y-2"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.6, delay: 1.7 }}
-                  >
-                    <Label className="text-gray-300 font-medium">
-                      Ad URL Configuration
-                    </Label>
-                    <p className="text-gray-400 text-xs">Select how you want to configure your ad URLs</p>
+                    <p className="text-gray-400 text-xs">Select the type of tasks visitors will complete to unlock your content</p>
                     
                     <motion.select 
                       className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white text-sm focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none transition-all duration-300 hover:bg-white/10 hover:border-white/20 cursor-pointer"
-                      value={formData.adUrlMode}
-                      onChange={(e) => handleInputChange("adUrlMode", e.target.value as "common" | "tiered")}
+                      value={formData.taskType}
+                      onChange={(e) => handleTaskTypeChange(e.target.value)}
                       whileFocus={{ scale: 1.02 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <option value="common">Common Ad URL</option>
-                      <option value="tiered">Tiered Ad URLs</option>
+                      <option value="adult" className="bg-gray-800 text-white py-2">Adult Tasks</option>
+                      <option value="game" className="bg-gray-800 text-white py-2">Game Tasks</option>
+                      <option value="minecraft" className="bg-gray-800 text-white py-2">Minecraft Tasks</option>
+                      <option value="roblox" className="bg-gray-800 text-white py-2">Roblox Tasks</option>
                     </motion.select>
+                    
+                    <motion.div 
+                      className="mt-2 p-3 bg-white/5 rounded-lg border border-white/10"
+                      whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.1)" }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <p className="text-gray-300 text-xs">
+                        {formData.taskType === "adult" && "18+ content tasks for mature audiences"}
+                        {formData.taskType === "game" && "General gaming related tasks and activities"}
+                        {formData.taskType === "minecraft" && "Minecraft specific tasks and server activities"}
+                        {formData.taskType === "roblox" && "Roblox related tasks and game experiences"}
+                      </p>
+                    </motion.div>
                   </motion.div>
-
-                  {/* Common Ad URL Field */}
-                  {formData.adUrlMode === "common" && (
-                    <motion.div 
-                      className="space-y-2"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.6, delay: 1.9 }}
-                    >
-                      <Label htmlFor="commonAdUrl" className="text-gray-300 font-medium">
-                        Common Ad URL
-                      </Label>
-                      <div className="relative">
-                        <motion.div
-                          whileFocus={{ scale: 1.02 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                                                     <Input
-                             id="commonAdUrl"
-                             type="url"
-                             placeholder="https://example.com/ad"
-                             value={formData.commonAdUrl}
-                             onChange={(e) => handleInputChange("commonAdUrl", e.target.value)}
-                             className={`bg-white/5 border-white/10 text-white placeholder-gray-400 focus:border-emerald-500/50 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none transition-all duration-300 pl-12 ${
-                               errors.adUrl ? "border-red-500/50" : ""
-                             }`}
-                             style={{ boxShadow: "none" }}
-                             required
-                             disabled={isLoading}
-                           />
-                         </motion.div>
-                         <motion.div 
-                           className="absolute left-4 top-1/2 transform -translate-y-1/2"
-                           whileHover={{ scale: 1.1 }}
-                           transition={{ duration: 0.2 }}
-                         >
-                           <Globe className="w-4 h-4 text-gray-400" />
-                         </motion.div>
-                      </div>
-                      <AnimatePresence>
-                        {errors.adUrl && (
-                          <motion.p 
-                            className="text-red-400 text-sm"
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            {errors.adUrl}
-                          </motion.p>
-                        )}
-                      </AnimatePresence>
-                    </motion.div>
-                  )}
-
-                  {/* Tiered Ad URLs */}
-                  {formData.adUrlMode === "tiered" && (
-                    <motion.div 
-                      className="space-y-2"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.6, delay: 2.1 }}
-                    >
-                      <Label className="text-gray-300 font-medium">
-                        Tiered Ad URLs
-                      </Label>
-                      <p className="text-gray-400 text-xs">Enter ad URLs for each tier</p>
-                      
-                                             <div className="space-y-4">
-                         {Object.entries(formData.tieredAdUrls).map(([tier, url]) => (
-                           <motion.div
-                             key={tier}
-                             className="space-y-2"
-                             whileHover={{ scale: 1.01 }}
-                             transition={{ duration: 0.2 }}
-                           >
-                             <Label className="text-gray-300 text-sm font-medium">
-                               {tier.toUpperCase()} - {
-                                 tier === 'tier1' ? 'US, UK, CA, AU, DE, NL, SE, NO' :
-                                 tier === 'tier2' ? 'FR, IT, ES, JP, KR, SG, HK' :
-                                 'All other countries'
-                               }
-                             </Label>
-                             <div className="relative">
-                               <motion.div
-                                 whileFocus={{ scale: 1.02 }}
-                                 transition={{ duration: 0.2 }}
-                               >
-                                 <Input
-                                   type="url"
-                                   placeholder={`https://example.com/ad-${tier}`}
-                                   value={url}
-                                   onChange={(e) => handleInputChange(`tieredAdUrls.${tier}`, e.target.value)}
-                                   className={`bg-white/5 border-white/10 text-white placeholder-gray-400 focus:border-emerald-500/50 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none transition-all duration-300 pl-12 ${
-                                     errors.adUrl ? "border-red-500/50" : ""
-                                   }`}
-                                   style={{ boxShadow: "none" }}
-                                   disabled={isLoading}
-                                 />
-                               </motion.div>
-                               <motion.div 
-                                 className="absolute left-4 top-1/2 transform -translate-y-1/2"
-                                 whileHover={{ scale: 1.1 }}
-                                 transition={{ duration: 0.2 }}
-                               >
-                                 <Globe className="w-4 h-4 text-gray-400" />
-                               </motion.div>
-                             </div>
-                           </motion.div>
-                         ))}
-                       </div>
-                       
-                       <AnimatePresence>
-                         {errors.adUrl && (
-                           <motion.p 
-                             className="text-red-400 text-sm"
-                             initial={{ opacity: 0, height: 0 }}
-                             animate={{ opacity: 1, height: "auto" }}
-                             exit={{ opacity: 0, height: 0 }}
-                             transition={{ duration: 0.3 }}
-                           >
-                             {errors.adUrl}
-                           </motion.p>
-                         )}
-                       </AnimatePresence>
-                    </motion.div>
-                  )}
 
                   {/* Info Box */}
                   <motion.div 
                     className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 2.3 }}
+                    transition={{ duration: 0.6, delay: 1.5 }}
                     whileHover={{ 
                       backgroundColor: "rgba(16, 185, 129, 0.15)",
                       borderColor: "rgba(16, 185, 129, 0.3)" 
@@ -1126,7 +814,7 @@ export default function Create() {
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 2.5 }}
+                    transition={{ duration: 0.6, delay: 1.7 }}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >

@@ -156,8 +156,14 @@ export default function Admin() {
   const [taskFormData, setTaskFormData] = useState({
     title: "",
     description: "",
-    adUrl: "",
-    taskType: "adult",
+    taskTypes: [] as string[], // Changed to array for multiple task types
+    adUrlMode: "common" as "common" | "tiered", // New: ad URL configuration mode
+    commonAdUrl: "", // Single ad URL for all tiers
+    tieredAdUrls: { // Separate ad URLs for each tier
+      tier1: "",
+      tier2: "",
+      tier3: ""
+    },
     devices: [] as string[],
     excludedBrowsers: [] as string[],
     completionTimeSeconds: 60,
@@ -620,8 +626,14 @@ export default function Admin() {
     setTaskFormData({
       title: "",
       description: "",
-      adUrl: "",
-      taskType: "adult",
+      taskTypes: [],
+      adUrlMode: "common",
+      commonAdUrl: "",
+      tieredAdUrls: {
+        tier1: "",
+        tier2: "",
+        tier3: ""
+      },
       devices: [],
       excludedBrowsers: [],
       completionTimeSeconds: 60,
@@ -639,9 +651,30 @@ export default function Admin() {
 
   const handleUnifiedTaskCreation = async () => {
     // Validation
-    if (!taskFormData.title || !taskFormData.description || !taskFormData.adUrl || taskFormData.devices.length === 0) {
-      alert("Please fill in all required fields (Title, Description, Ad URL, and at least one target device)");
+    if (!taskFormData.title || !taskFormData.description || taskFormData.devices.length === 0) {
+      alert("Please fill in all required fields (Title, Description, and at least one target device)");
       return;
+    }
+
+    if (taskFormData.taskTypes.length === 0) {
+      alert("Please select at least one task type");
+      return;
+    }
+
+    // Validate ad URL based on mode
+    if (taskFormData.adUrlMode === "common") {
+      if (!taskFormData.commonAdUrl.trim()) {
+        alert("Please provide a common ad URL");
+        return;
+      }
+    } else {
+      const hasAnyTierUrl = taskFormData.tieredAdUrls.tier1.trim() || 
+                           taskFormData.tieredAdUrls.tier2.trim() || 
+                           taskFormData.tieredAdUrls.tier3.trim();
+      if (!hasAnyTierUrl) {
+        alert("Please provide at least one tier ad URL");
+        return;
+      }
     }
 
     if (taskFormData.targetTiers.length === 0) {
@@ -654,12 +687,14 @@ export default function Admin() {
       const taskPayload: any = {
         title: taskFormData.title,
         description: taskFormData.description,
-        ad_url: taskFormData.adUrl,
+        task_types: taskFormData.taskTypes, // Array of task types
+        ad_url_mode: taskFormData.adUrlMode,
+        common_ad_url: taskFormData.adUrlMode === 'common' ? taskFormData.commonAdUrl : null,
+        tiered_ad_urls: taskFormData.adUrlMode === 'tiered' ? taskFormData.tieredAdUrls : null,
         devices: taskFormData.devices,
         completion_time_seconds: taskFormData.completionTimeSeconds,
         excluded_browsers: taskFormData.excludedBrowsers,
         target_tiers: taskFormData.targetTiers,
-        task_type: taskFormData.taskType,
         status: "Active"
       };
 
@@ -3078,18 +3113,51 @@ Singapore,3.50,SG`;
               </div>
               
               <div className="space-y-2">
-                <Label className="text-gray-300">Task Type *</Label>
-                <select 
-                  className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-white text-sm focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20"
-                  value={taskFormData.taskType}
-                  onChange={(e) => setTaskFormData(prev => ({ ...prev, taskType: e.target.value }))}
-                >
-                  <option value="adult" className="bg-gray-800 text-white">🔞 NSFW Tasks</option>
-                  <option value="game" className="bg-gray-800 text-white">🎮 Game Tasks</option>
-                  <option value="minecraft" className="bg-gray-800 text-white">⛏️ Minecraft Tasks</option>
-                  <option value="roblox" className="bg-gray-800 text-white">🟦 Roblox Tasks</option>
-                  <option value="download" className="bg-gray-800 text-white">📥 Download Tasks</option>
-                </select>
+                <Label className="text-gray-300">Task Types *</Label>
+                <p className="text-gray-400 text-xs">Select the types of tasks this will appear in</p>
+                <div className="grid grid-cols-1 gap-3">
+                  {[
+                    { value: "adult", label: "NSFW Tasks", icon: "🔞", desc: "18+ content tasks for mature audiences" },
+                    { value: "game", label: "Game Tasks", icon: "🎮", desc: "General gaming related tasks and activities" },
+                    { value: "minecraft", label: "Minecraft Tasks", icon: "⛏️", desc: "Minecraft specific tasks and server activities" },
+                    { value: "roblox", label: "Roblox Tasks", icon: "🎯", desc: "Roblox related tasks and game experiences" },
+                    { value: "download", label: "Download Tasks", icon: "📥", desc: "Software and file download tasks" }
+                  ].map((option) => (
+                    <label
+                      key={option.value}
+                      className={`flex items-start space-x-3 p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
+                        taskFormData.taskTypes.includes(option.value) 
+                          ? "bg-emerald-500/10 border-emerald-500/30" 
+                          : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={taskFormData.taskTypes.includes(option.value)}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setTaskFormData(prev => ({
+                            ...prev,
+                            taskTypes: checked 
+                              ? [...prev.taskTypes, option.value]
+                              : prev.taskTypes.filter(t => t !== option.value)
+                          }));
+                        }}
+                        className="mt-0.5 rounded bg-white/5 border-white/10"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-lg">{option.icon}</span>
+                          <span className="text-white font-medium">{option.label}</span>
+                        </div>
+                        <p className="text-gray-400 text-xs mt-1">{option.desc}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                {taskFormData.taskTypes.length === 0 && (
+                  <p className="text-red-400 text-xs">⚠️ Please select at least one task type</p>
+                )}
               </div>
             </div>
             
@@ -3103,14 +3171,97 @@ Singapore,3.50,SG`;
               />
             </div>
             
-            <div className="space-y-2">
-              <Label className="text-gray-300">Ad URL *</Label>
-              <Input
-                className="bg-white/5 border-white/10 text-white"
-                placeholder="https://example.com/ad"
-                value={taskFormData.adUrl}
-                onChange={(e) => setTaskFormData(prev => ({ ...prev, adUrl: e.target.value }))}
-              />
+            {/* Ad URL Configuration */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-gray-300">Ad URL Configuration *</Label>
+                <p className="text-gray-400 text-xs">Choose how to configure ad URLs for different tiers</p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <label className={`flex items-start space-x-3 p-4 border rounded-lg cursor-pointer transition-colors ${
+                    taskFormData.adUrlMode === "common" 
+                      ? "border-emerald-500/50 bg-emerald-500/10" 
+                      : "border-white/10 bg-white/5 hover:bg-white/10"
+                  }`}>
+                    <input
+                      type="radio"
+                      name="adUrlMode"
+                      value="common"
+                      checked={taskFormData.adUrlMode === "common"}
+                      onChange={(e) => setTaskFormData(prev => ({ ...prev, adUrlMode: e.target.value as "common" | "tiered" }))}
+                      className="mt-1"
+                    />
+                    <div>
+                      <div className="text-white font-medium">Common Ad URL</div>
+                      <div className="text-gray-400 text-sm">Single ad URL for all geographic tiers</div>
+                    </div>
+                  </label>
+                  
+                  <label className={`flex items-start space-x-3 p-4 border rounded-lg cursor-pointer transition-colors ${
+                    taskFormData.adUrlMode === "tiered" 
+                      ? "border-blue-500/50 bg-blue-500/10" 
+                      : "border-white/10 bg-white/5 hover:bg-white/10"
+                  }`}>
+                    <input
+                      type="radio"
+                      name="adUrlMode"
+                      value="tiered"
+                      checked={taskFormData.adUrlMode === "tiered"}
+                      onChange={(e) => setTaskFormData(prev => ({ ...prev, adUrlMode: e.target.value as "common" | "tiered" }))}
+                      className="mt-1"
+                    />
+                    <div>
+                      <div className="text-white font-medium">Tiered Ad URLs</div>
+                      <div className="text-gray-400 text-sm">Different ad URLs for each geographic tier</div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Common Ad URL */}
+              {taskFormData.adUrlMode === "common" && (
+                <div className="space-y-2">
+                  <Label className="text-gray-300">Common Ad URL</Label>
+                  <Input
+                    className="bg-white/5 border-white/10 text-white"
+                    placeholder="https://example.com/ad"
+                    value={taskFormData.commonAdUrl}
+                    onChange={(e) => setTaskFormData(prev => ({ ...prev, commonAdUrl: e.target.value }))}
+                  />
+                </div>
+              )}
+
+              {/* Tiered Ad URLs */}
+              {taskFormData.adUrlMode === "tiered" && (
+                <div className="space-y-4">
+                  <Label className="text-gray-300">Tiered Ad URLs</Label>
+                  <div className="space-y-3">
+                    {Object.entries(taskFormData.tieredAdUrls).map(([tier, url]) => (
+                      <div key={tier} className="space-y-2">
+                        <Label className="text-gray-300 text-sm">
+                          {tier.toUpperCase()} - {
+                            tier === 'tier1' ? 'US, UK, CA, AU, DE, NL, SE, NO' :
+                            tier === 'tier2' ? 'FR, IT, ES, JP, KR, SG, HK' :
+                            'All other countries'
+                          }
+                        </Label>
+                        <Input
+                          className="bg-white/5 border-white/10 text-white"
+                          placeholder={`https://example.com/ad-${tier}`}
+                          value={url}
+                          onChange={(e) => setTaskFormData(prev => ({
+                            ...prev,
+                            tieredAdUrls: {
+                              ...prev.tieredAdUrls,
+                              [tier]: e.target.value
+                            }
+                          }))}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

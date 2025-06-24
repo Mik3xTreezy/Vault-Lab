@@ -34,12 +34,41 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   if (!(await isAdmin(req))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const body = await req.json();
-  const { title, description, ad_url, devices, completion_time_seconds, excluded_browsers, cpm_tier1, cpm_tier2, cpm_tier3, target_tiers, task_type, country_cpm, status } = body;
+  const { 
+    title, 
+    description, 
+    ad_url, 
+    task_types, 
+    ad_url_mode, 
+    common_ad_url, 
+    tiered_ad_urls,
+    devices, 
+    completion_time_seconds, 
+    excluded_browsers, 
+    cpm_tier1, 
+    cpm_tier2, 
+    cpm_tier3, 
+    target_tiers, 
+    task_type, 
+    country_cpm, 
+    status 
+  } = body;
+  
+  // Handle backward compatibility and new structure
+  const finalTaskTypes = task_types || (task_type ? [task_type] : ["adult"]);
+  const finalAdUrlMode = ad_url_mode || "common";
+  const finalCommonAdUrl = common_ad_url || ad_url || null;
+  const finalTieredAdUrls = tiered_ad_urls || null;
+  
   const { data, error } = await supabase.from("tasks").insert([
     { 
       title, 
       description, 
-      ad_url, 
+      ad_url: finalCommonAdUrl, // Keep for backward compatibility
+      task_types: finalTaskTypes,
+      ad_url_mode: finalAdUrlMode,
+      common_ad_url: finalCommonAdUrl,
+      tiered_ad_urls: finalTieredAdUrls,
       devices, 
       completion_time_seconds: completion_time_seconds || 60,
       excluded_browsers: excluded_browsers || [],
@@ -47,7 +76,7 @@ export async function POST(req: NextRequest) {
       cpm_tier2, 
       cpm_tier3, 
       target_tiers: target_tiers || ["tier1", "tier2", "tier3"],
-      task_type: task_type || "adult",
+      task_type: finalTaskTypes[0] || "adult", // Keep first task type for backward compatibility
       country_cpm, 
       status 
     }
