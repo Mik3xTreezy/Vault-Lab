@@ -14,18 +14,66 @@ export function generateWebhookToken(taskId: string, publisherId: string): strin
 
 // Decode webhook token to get task and publisher info
 export function decodeWebhookToken(token: string): { taskId: string; publisherId: string } | null {
-  try {
-    const decoded = Buffer.from(token, 'base64url').toString();
-    const parts = decoded.split('|');
-    if (parts.length < 2) {
-      console.error('[WEBHOOK] Invalid token format');
-      return null;
+  // Try multiple parsing strategies
+  const strategies = [
+    // Strategy 1: Clean and split on separators
+    (token: string) => {
+      let cleanToken = token.trim().replace(/\s+/g, '');
+      
+      const separators = ['.', '0test', 'test'];
+      for (const sep of separators) {
+        if (cleanToken.includes(sep)) {
+          const parts = cleanToken.split(sep);
+          for (const part of parts) {
+            if (part.length > 10 && part.length < 500) {
+              cleanToken = part;
+              break;
+            }
+          }
+          break;
+        }
+      }
+      
+      return cleanToken;
+    },
+    
+    // Strategy 2: Try to extract base64url-like substring
+    (token: string) => {
+      const base64urlPattern = /[A-Za-z0-9_-]{20,}/;
+      const match = token.match(base64urlPattern);
+      return match ? match[0] : token.trim();
+    },
+    
+    // Strategy 3: Just clean whitespace and use as-is
+    (token: string) => {
+      return token.trim().replace(/\s+/g, '');
     }
-    return { taskId: parts[0], publisherId: parts[1] };
-  } catch (error) {
-    console.error('[WEBHOOK] Error decoding token:', error);
-    return null;
+  ];
+  
+  console.log('[WEBHOOK] Original token length:', token.length);
+  console.log('[WEBHOOK] Original token:', token);
+  
+  for (let i = 0; i < strategies.length; i++) {
+    try {
+      const cleanToken = strategies[i](token);
+      console.log(`[WEBHOOK] Strategy ${i + 1} - cleaned token:`, cleanToken);
+      
+      const decoded = Buffer.from(cleanToken, 'base64url').toString();
+      const parts = decoded.split('|');
+      
+      if (parts.length >= 2 && parts[0] && parts[1]) {
+        console.log(`[WEBHOOK] Strategy ${i + 1} successful - decoded parts:`, parts.length);
+        return { taskId: parts[0], publisherId: parts[1] };
+      } else {
+        console.log(`[WEBHOOK] Strategy ${i + 1} failed - insufficient parts:`, parts.length);
+      }
+    } catch (error) {
+      console.log(`[WEBHOOK] Strategy ${i + 1} failed with error:`, error instanceof Error ? error.message : String(error));
+    }
   }
+  
+  console.error('[WEBHOOK] All decoding strategies failed for token:', token);
+  return null;
 }
 
 export async function GET(
@@ -47,6 +95,15 @@ export async function POST(
 async function handleWebhook(req: NextRequest, token: string) {
   try {
     console.log('[WEBHOOK] Received postback with token:', token);
+    console.log('[WEBHOOK] Token length:', token.length);
+    console.log('[WEBHOOK] Request method:', req.method);
+    console.log('[WEBHOOK] Request URL:', req.url);
+    
+    // Basic token validation
+    if (!token || token.length < 10 || token.length > 1000) {
+      console.error('[WEBHOOK] Token length invalid:', token.length);
+      return NextResponse.json({ error: "Invalid token length" }, { status: 400 });
+    }
     
     // Decode the token to get task and publisher info
     const tokenData = decodeWebhookToken(token);
