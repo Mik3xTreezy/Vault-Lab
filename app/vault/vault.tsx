@@ -16,8 +16,8 @@ import {
   Globe,
   TrendingUp,
   BarChart3,
-  Save,
   X,
+  Save,
 } from "lucide-react"
 import { Dialog, DialogContent, DialogTitle, DialogHeader } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
@@ -25,6 +25,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from "recharts"
 import { useUser } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
+import { motion } from "framer-motion"
 
 function MiniChart({ data }: { data: { views: number }[] }) {
   return (
@@ -215,13 +216,47 @@ export default function Vault() {
             <h1 className="text-3xl font-bold text-white mb-1">Vault</h1>
             <p className="text-gray-400 text-sm">{user?.emailAddresses?.[0]?.emailAddress || 'No email'}</p>
           </div>
-          <Button 
-            className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black font-medium"
-            onClick={() => router.push('/create')}
+          <motion.div
+            whileHover={{ scale: 1.02, y: -2 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ duration: 0.2 }}
           >
-            <Plus className="w-4 h-4 mr-2" />
-                            Create VaultLab locker
-          </Button>
+            <Button
+              className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black font-medium shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden group"
+              onClick={() => router.push("/create")}
+            >
+              {/* Shimmer effect */}
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12"
+                animate={{
+                  x: ['-100%', '200%'],
+                }}
+                transition={{
+                  duration: 2.5,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 1.5
+                }}
+              />
+              
+              <div className="relative flex items-center space-x-2">
+                <motion.div
+                  animate={{ 
+                    scale: [1, 1.2, 1],
+                    rotate: [0, 180, 360]
+                  }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                >
+                  <Plus className="w-4 h-4" />
+                </motion.div>
+                <span>Create Locker</span>
+              </div>
+            </Button>
+          </motion.div>
         </div>
 
         <div className="p-6 space-y-8">

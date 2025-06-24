@@ -257,12 +257,20 @@ export default function Create() {
               />
             </motion.div>
             <motion.h1 
-              className="text-3xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent mb-2"
+              className="text-3xl font-bold bg-gradient-to-r from-white via-emerald-200 to-emerald-400 bg-clip-text text-transparent mb-2 relative"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.3 }}
             >
               Locker Created Successfully!
+              
+              {/* Subtle underline animation */}
+              <motion.div
+                className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 h-0.5 bg-gradient-to-r from-emerald-400 to-green-500"
+                initial={{ width: "0%" }}
+                animate={{ width: "60%" }}
+                transition={{ duration: 1, delay: 0.8, ease: "easeOut" }}
+              />
             </motion.h1>
             <motion.p 
               className="text-gray-400"
@@ -582,12 +590,20 @@ export default function Create() {
             </motion.div>
 
             <motion.h1 
-              className="text-3xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent mb-2"
+              className="text-3xl font-bold bg-gradient-to-r from-white via-emerald-200 to-emerald-400 bg-clip-text text-transparent mb-2 relative"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.3 }}
             >
-              Create VaultLab Locker
+              Create Locker
+              
+              {/* Subtle underline animation */}
+              <motion.div
+                className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 h-0.5 bg-gradient-to-r from-emerald-400 to-green-500"
+                initial={{ width: "0%" }}
+                animate={{ width: "60%" }}
+                transition={{ duration: 1, delay: 0.8, ease: "easeOut" }}
+              />
             </motion.h1>
             <motion.p 
               className="text-gray-400 text-sm"

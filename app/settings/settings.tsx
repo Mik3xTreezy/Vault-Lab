@@ -7,6 +7,7 @@ import { LordIcon } from "@/components/ui/lordicon"
 import { LORDICON_COLORS } from "@/lib/lordicons"
 import { useAuth, useUser } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
+import { motion } from "framer-motion"
 
 export default function Settings() {
   const { signOut, isLoaded } = useAuth();
@@ -75,13 +76,44 @@ export default function Settings() {
             <h1 className="text-3xl font-bold text-white mb-1">Settings</h1>
             <p className="text-gray-400 text-sm">{user?.emailAddresses?.[0]?.emailAddress || 'No email'}</p>
           </div>
-          <Button 
-            className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black font-medium"
-            onClick={() => router.push('/create')}
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
-            <Plus className="w-4 h-4 mr-2" />
-                            Create VaultLab locker
-          </Button>
+            <Button 
+              className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black font-medium relative overflow-hidden"
+              onClick={() => router.push('/create')}
+            >
+              {/* Animated pulse effect */}
+              <motion.div
+                className="absolute inset-0 bg-white/10"
+                animate={{
+                  opacity: [0, 0.3, 0],
+                  scale: [1, 1.05, 1]
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              />
+              
+              <div className="relative flex items-center space-x-2">
+                <motion.div
+                  animate={{ rotate: [0, 90, 0] }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: 0.5
+                  }}
+                >
+                  <Plus className="w-4 h-4" />
+                </motion.div>
+                <span>Create Locker</span>
+              </div>
+            </Button>
+          </motion.div>
         </div>
 
         <div className="p-6 space-y-8">

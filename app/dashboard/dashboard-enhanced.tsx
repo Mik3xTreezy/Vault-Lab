@@ -24,6 +24,7 @@ import { useUser } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from 'recharts';
 import GeoMap from "./GeoMap";
+import { motion } from "framer-motion"
 
 export default function DashboardEnhanced() {
   const [timeRange, setTimeRange] = useState("28 Days")
@@ -284,13 +285,58 @@ export default function DashboardEnhanced() {
             >
               Refresh
             </Button>
-            <Button
-              className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black font-medium"
-              onClick={() => router.push("/create")}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Create VaultLab locker
-            </Button>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black font-medium relative overflow-hidden group"
+                onClick={() => router.push("/create")}
+              >
+                {/* Animated background shine effect */}
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12"
+                  animate={{
+                    x: ['-100%', '200%'],
+                  }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: 2
+                  }}
+                />
+                
+                {/* Button content */}
+                <div className="relative flex items-center space-x-2">
+                  <motion.div
+                    animate={{ rotate: [0, 90, 0] }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </motion.div>
+                  <span>Create Locker</span>
+                </div>
+                
+                {/* Pulsing glow effect */}
+                <motion.div
+                  className="absolute inset-0 rounded-md"
+                  animate={{
+                    boxShadow: [
+                      '0 0 0 0 rgba(16, 185, 129, 0)',
+                      '0 0 0 8px rgba(16, 185, 129, 0.1)',
+                      '0 0 0 0 rgba(16, 185, 129, 0)'
+                    ]
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                />
+              </Button>
+            </motion.div>
           </div>
         </div>
 
@@ -582,7 +628,9 @@ export default function DashboardEnhanced() {
                         </div>
                         <div className="flex items-center space-x-3">
                           <span className="text-emerald-400 text-sm font-semibold">{browser.percentage}</span>
-                          <div className="w-16 h-1 bg-slate-700 rounded-full overflow-full transition-all duration-300"
+                          <div className="w-16 h-1 bg-slate-700 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-emerald-400 rounded-full transition-all duration-300"
                               style={{ width: browser.percentage }}
                             />
                           </div>
