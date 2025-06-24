@@ -110,10 +110,9 @@ export default function Finance() {
     {
       name: "Bitcoin Cash",
       icon: (
-        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#22c55e">
-          <path d="M23.638 14.904c-1.602 6.43-8.113 10.34-14.542 8.736C2.67 22.05-1.244 15.525.362 9.105 1.962 2.67 8.475-1.243 14.9.358c6.43 1.605 10.342 8.115 8.738 14.546z"/>
-          <path d="M11.7 8.65c.26-.9-.55-1.39-1.49-1.71l.3-1.22-0.74-.18-.3 1.19c-.19-.05-.39-.09-.58-.14l.3-1.2-.74-.18-.3 1.22c-.16-.04-.31-.07-.46-.11l0 0-.1-2.52-.57-.14-.21.85c-.82-.19-1.71-.37-1.71-.37l-.2.8s.55.13.54.14c.3.07.36.27.35.42l-.35 1.42c.02 0 .05.01.08.02-.03-.01-.06-.01-.08-.02l-.49 1.97c-.04.1-.13.24-.35.19.01.01-.54-.14-.54-.14l-.38.86 1.61.4c.3.08.59.16.88.23l-.31 1.23.74.18.3-1.22c.2.05.39.1.58.15l-.3 1.21.74.18.31-1.23c1.27.24 2.23.14 2.63-.99.32-.91-.02-1.43-.67-1.77.48-.11.84-.42 1.01-1.06zm-1.8 2.52c-.23.93-1.78.43-2.28.3l.41-1.62c.5.13 2.11.38 1.87 1.32zm.23-2.53c-.21.84-1.51.41-1.93.31l.37-1.47c.42.1 1.78.29 1.56 1.16z" fill="#000"/>
-        </svg>
+        <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+          <span className="text-white font-bold text-sm">₿</span>
+        </div>
       ),
       color: "bg-green-500/20 border-green-500/30",
       iconColor: "text-green-400",
@@ -122,9 +121,9 @@ export default function Finance() {
     {
       name: "Binance",
       icon: (
-        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#f0b90b">
-          <path d="M16.624 13.9202l2.7175 2.7154-7.353 7.353-7.353-7.353 2.7175-2.7154 4.6355 4.6595 4.6356-4.6595zM12 0l8.9729 8.9729-2.7154 2.7175L12 5.4329 5.7424 11.6904 3.0271 8.9729 12 0zm0 8.9729L8.9729 12 12 15.0271 15.0271 12 12 8.9729zm-8.9729 2.7154L5.4329 12 3.0271 14.4058 0 11.6904l3.0271-2.7021z"/>
-        </svg>
+        <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center transform rotate-45">
+          <div className="w-3 h-3 bg-white rounded-sm"></div>
+        </div>
       ),
       color: "bg-yellow-500/20 border-yellow-500/30",
       iconColor: "text-yellow-400",
@@ -133,9 +132,9 @@ export default function Finance() {
     {
       name: "Litecoin",
       icon: (
-        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#345d9d">
-          <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm-1.92 17.618H6.006l1.252-5.421H6.205l.47-2.016h1.053l1.847-7.98h3.16l-1.565 6.766h1.32l-.47 2.016h-1.32l-.938 4.056h2.85l-.532 2.579z"/>
-        </svg>
+        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+          <span className="text-white font-bold text-sm">Ł</span>
+        </div>
       ),
       color: "bg-blue-500/20 border-blue-500/30",
       iconColor: "text-blue-400",
@@ -144,10 +143,9 @@ export default function Finance() {
     {
       name: "Bitcoin",
       icon: (
-        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#f7931a">
-          <path d="M23.638 14.904c-1.602 6.43-8.113 10.34-14.542 8.736C2.67 22.05-1.244 15.525.362 9.105 1.962 2.67 8.475-1.243 14.9.358c6.43 1.605 10.342 8.115 8.738 14.546z"/>
-          <path d="M11.7 8.65c.26-.9-.55-1.39-1.49-1.71l.3-1.22-0.74-.18-.3 1.19c-.19-.05-.39-.09-.58-.14l.3-1.2-.74-.18-.3 1.22c-.16-.04-.31-.07-.46-.11l0 0-.1-2.52-.57-.14-.21.85c-.82-.19-1.71-.37-1.71-.37l-.2.8s.55.13.54.14c.3.07.36.27.35.42l-.35 1.42c.02 0 .05.01.08.02-.03-.01-.06-.01-.08-.02l-.49 1.97c-.04.1-.13.24-.35.19.01.01-.54-.14-.54-.14l-.38.86 1.61.4c.3.08.59.16.88.23l-.31 1.23.74.18.3-1.22c.2.05.39.1.58.15l-.3 1.21.74.18.31-1.23c1.27.24 2.23.14 2.63-.99.32-.91-.02-1.43-.67-1.77.48-.11.84-.42 1.01-1.06zm-1.8 2.52c-.23.93-1.78.43-2.28.3l.41-1.62c.5.13 2.11.38 1.87 1.32zm.23-2.53c-.21.84-1.51.41-1.93.31l.37-1.47c.42.1 1.78.29 1.56 1.16z" fill="#fff"/>
-        </svg>
+        <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
+          <span className="text-white font-bold text-sm">₿</span>
+        </div>
       ),
       color: "bg-orange-500/20 border-orange-500/30",
       iconColor: "text-orange-400",
@@ -156,9 +154,9 @@ export default function Finance() {
     {
       name: "Ethereum ETH",
       icon: (
-        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#627eea">
-          <path d="M11.944 17.97L4.58 13.62 11.943 24l7.37-10.38-7.372 4.35h.003zM12.056 0L4.69 12.223l7.365 4.354 7.365-4.35L12.056 0z"/>
-        </svg>
+        <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
+          <div className="w-4 h-4 border-2 border-white transform rotate-45" style={{clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)'}}></div>
+        </div>
       ),
       color: "bg-purple-500/20 border-purple-500/30",
       iconColor: "text-purple-400",
@@ -167,10 +165,9 @@ export default function Finance() {
     {
       name: "USDC BEP20",
       icon: (
-        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#2775ca">
-          <path d="M12 24c6.627 0 12-5.373 12-12S18.627 0 12 0 0 5.373 0 12s5.373 12 12 12z"/>
-          <path d="M12.116 5.076c-1.215 0-2.189.985-2.189 2.2v1.51H8.54c-.12 0-.217.097-.217.217v1.31c0 .12.097.217.217.217h1.387v.87H8.54c-.12 0-.217.097-.217.217v1.31c0 .12.097.217.217.217h1.387v3.283c0 .12.097.217.217.217h1.31c.12 0 .217-.097.217-.217v-3.283h1.387c.12 0 .217-.097.217-.217v-1.31c0-.12-.097-.217-.217-.217h-1.387v-.87h1.387c.12 0 .217-.097.217-.217v-1.31c0-.12-.097-.217-.217-.217h-1.387v-1.51c0-1.215.985-2.2 2.2-2.2s2.2.985 2.2 2.2v.217c0 .12.097.217.217.217h1.31c.12 0 .217-.097.217-.217v-.217c0-2.067-1.683-3.75-3.75-3.75z" fill="#fff"/>
-        </svg>
+        <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+          <span className="text-white font-bold text-sm">$</span>
+        </div>
       ),
       color: "bg-blue-600/20 border-blue-600/30",
       iconColor: "text-blue-400",
@@ -179,9 +176,9 @@ export default function Finance() {
     {
       name: "Solana",
       icon: (
-        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#9945ff">
-          <path d="M3.9 12.94a.75.75 0 0 1 .53-.22h15.14c.3 0 .57-.24.57-.54a.54.54 0 0 0-.16-.38l-2.89-2.9a.75.75 0 0 1-.22-.53V5.25c0-.41.34-.75.75-.75s.75.34.75.75v2.87l2.89 2.9c.47.47.73 1.1.73 1.77 0 1.38-1.12 2.5-2.5 2.5H4.43c-.3 0-.57.24-.57.54 0 .14.06.28.16.38l2.89 2.9c.14.14.22.33.22.53v3.11c0 .41-.34.75-.75.75s-.75-.34-.75-.75v-2.87l-2.89-2.9A2.5 2.5 0 0 1 1.5 14.5c0-1.38 1.12-2.5 2.5-2.5h15.14c.3 0 .57-.24.57-.54a.54.54 0 0 0-.16-.38L16.66 8.2a.75.75 0 0 1-.22-.53V4.56c0-.41.34-.75.75-.75s.75.34.75.75v2.87l2.89 2.9c.47.47.73 1.1.73 1.77 0 1.38-1.12 2.5-2.5 2.5H3.43a.75.75 0 0 1-.53-1.28l2.89-2.9z"/>
-        </svg>
+        <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
+          <div className="w-4 h-1 bg-white rounded-full transform -rotate-12"></div>
+        </div>
       ),
       color: "bg-purple-600/20 border-purple-600/30",
       iconColor: "text-purple-400",
@@ -190,9 +187,9 @@ export default function Finance() {
     {
       name: "PayPal",
       icon: (
-        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#0070ba">
-          <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 0 0-.607-.541c-.013.076-.026.175-.041.26-.93 4.778-4.005 7.201-9.138 7.201H8.817l-1.355 8.588a.641.641 0 0 0 .633.74h4.180a.56.56 0 0 0 .554-.478l.231-1.463.442-2.801a.56.56 0 0 1 .554-.478h.35c3.784 0 6.75-1.54 7.616-5.998.362-1.856.2-3.406-.8-4.49z"/>
-        </svg>
+        <div className="w-8 h-8 bg-blue-700 rounded-lg flex items-center justify-center">
+          <span className="text-white font-bold text-sm">P</span>
+        </div>
       ),
       color: "bg-blue-700/20 border-blue-700/30",
       iconColor: "text-blue-400",
