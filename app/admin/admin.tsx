@@ -864,7 +864,10 @@ export default function Admin() {
           return;
         }
 
-        const data = lines.slice(1).map((line, index) => {
+        const data: any[] = [];
+        const errors: string[] = [];
+
+        lines.slice(1).forEach((line, index) => {
           const values = line.split(',').map(v => v.trim());
           const row: any = {};
           
@@ -872,24 +875,58 @@ export default function Admin() {
             row[header] = values[i] || '';
           });
 
-          // Validate CPM value
-          const cpmValue = parseFloat(row.cpm);
-          if (isNaN(cpmValue) || cpmValue < 0) {
-            throw new Error(`Invalid CPM value "${row.cpm}" on row ${index + 2}`);
+          // Skip rows with missing country names
+          if (!row.country || row.country.trim() === '') {
+            console.log(`[CSV PARSE] Skipping row ${index + 2}: empty country name`);
+            return;
           }
 
-          return {
-            country: row.country,
+          // Validate and clean CPM value
+          let cpmValue = parseFloat(row.cpm);
+          
+          // Handle floating point precision issues
+          if (!isNaN(cpmValue)) {
+            // Round to 4 decimal places to handle floating point precision
+            cpmValue = Math.round(cpmValue * 10000) / 10000;
+          }
+          
+          if (isNaN(cpmValue) || cpmValue < 0) {
+            errors.push(`Invalid CPM value "${row.cpm}" for country "${row.country}" on row ${index + 2}`);
+            return;
+          }
+
+          // Clean country name (remove extra whitespace, special characters that might cause JSON issues)  
+          const cleanCountry = row.country.trim().replace(/[^\w\s\-\.\(\)]/g, '');
+          
+          if (!cleanCountry) {
+            console.log(`[CSV PARSE] Skipping row ${index + 2}: country name becomes empty after cleaning`);
+            return;
+          }
+
+          data.push({
+            country: cleanCountry,
             cpm: cpmValue,
             countryCode: row.country_code || row.code || '', // Optional country code
             originalRow: index + 2
-          };
+          });
         });
 
+        if (errors.length > 0) {
+          setCsvError(`Errors found:\n${errors.join('\n')}`);
+          return;
+        }
+
+        if (data.length === 0) {
+          setCsvError("No valid data rows found after parsing. Please check your CSV format.");
+          return;
+        }
+
+        console.log(`[CSV PARSE] Successfully parsed ${data.length} rows`);
         setCsvData(data);
         setCsvPreview(data.slice(0, 10)); // Show first 10 rows for preview
         setCsvError("");
       } catch (error) {
+        console.error('[CSV PARSE] Error:', error);
         setCsvError(`Error parsing CSV: ${error instanceof Error ? error.message : 'Unknown error'}`);
         setCsvData([]);
         setCsvPreview([]);
@@ -915,19 +952,44 @@ export default function Admin() {
     setCsvError("");
 
     try {
+      // Clean and validate data before sending
+      const cleanedCpmData = csvData.map(item => ({
+        country: String(item.country).trim(),
+        cpm: Number(item.cpm),
+        countryCode: String(item.countryCode || '').trim(),
+        originalRow: item.originalRow
+      })).filter(item => 
+        item.country && 
+        !isNaN(item.cpm) && 
+        item.cpm >= 0
+      );
+
       const requestBody = {
         taskId: selectedTaskForCsv,
-        cpmData: csvData
+        cpmData: cleanedCpmData
       };
       
-      console.log('[CSV UPLOAD] Request body:', requestBody);
+      console.log('[CSV UPLOAD] Request body:', {
+        taskId: requestBody.taskId,
+        cpmDataLength: requestBody.cpmData.length,
+        sampleData: requestBody.cpmData.slice(0, 3)
+      });
+
+      // Test JSON stringification before sending
+      let jsonString;
+      try {
+        jsonString = JSON.stringify(requestBody);
+      } catch (jsonError) {
+        console.error('[CSV UPLOAD] JSON stringify error:', jsonError);
+        throw new Error(`Data contains invalid characters that cannot be converted to JSON: ${jsonError instanceof Error ? jsonError.message : 'Unknown error'}`);
+      }
 
       const response = await fetch('/api/tasks/csv-upload', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestBody)
+        body: jsonString
       });
 
       console.log('[CSV UPLOAD] Response status:', response.status);

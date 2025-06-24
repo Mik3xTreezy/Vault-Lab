@@ -58,7 +58,34 @@ const COUNTRY_CODE_MAP: { [key: string]: string } = {
 
 export async function POST(request: NextRequest) {
   try {
-    const { taskId, cpmData } = await request.json()
+    // Enhanced request body parsing with better error handling
+    let body;
+    let taskId;
+    let cpmData;
+    
+    try {
+      // First, get the raw text to debug potential issues
+      const rawBody = await request.text();
+      console.log('[CSV UPLOAD] Raw request body length:', rawBody.length);
+      console.log('[CSV UPLOAD] Raw request body preview:', rawBody.substring(0, 200));
+      
+      // Try to parse the JSON
+      body = JSON.parse(rawBody);
+      taskId = body.taskId;
+      cpmData = body.cpmData;
+    } catch (parseError) {
+      console.error('[CSV UPLOAD] JSON parsing error:', parseError);
+      console.error('[CSV UPLOAD] Request headers:', Object.fromEntries(request.headers.entries()));
+      
+      return NextResponse.json(
+        { 
+          message: `Invalid JSON format: ${parseError instanceof Error ? parseError.message : 'Unknown parsing error'}`,
+          details: 'Please ensure the request body is valid JSON'
+        },
+        { status: 400 }
+      )
+    }
+
     console.log('[CSV UPLOAD] Received request:', { taskId, cpmDataLength: cpmData?.length })
 
     if (!taskId || !cpmData || !Array.isArray(cpmData)) {
