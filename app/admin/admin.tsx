@@ -208,7 +208,13 @@ export default function Admin() {
 
     async function initFetchTasks() {
       console.log('[INIT FETCH TASKS] Starting initial task fetch...');
-      await fetchTasks();
+      try {
+        await fetchTasks();
+      } catch (error) {
+        console.error('[INIT FETCH TASKS] Error:', error);
+        setTasks([]);
+        setLoadingTasks(false);
+      }
     }
     initFetchTasks();
   }, [isLoaded, isSignedIn, user]);
@@ -343,7 +349,7 @@ export default function Admin() {
     }
   };
 
-  const updateTask = async (taskId: number, taskData: any) => {
+  const updateTask = async (taskId: string, taskData: any) => {
     setIsEditingTask(true);
     try {
       const res = await fetch("/api/tasks", {
@@ -373,7 +379,7 @@ export default function Admin() {
     }
   };
 
-  const deleteTask = async (taskId: number) => {
+  const deleteTask = async (taskId: string) => {
     if (!confirm("Are you sure you want to delete this task?")) return;
     try {
       console.log('[DELETE TASK] Attempting to delete task ID:', taskId);
@@ -1702,9 +1708,9 @@ export default function Admin() {
             <TableBody>
               {loadingTasks ? (
                 <TableRow><TableCell colSpan={6}>Loading...</TableCell></TableRow>
-              ) : tasks.length === 0 ? (
+              ) : !Array.isArray(tasks) || tasks.length === 0 ? (
                 <TableRow><TableCell colSpan={6}>No tasks found.</TableCell></TableRow>
-              ) : tasks.map((task) => (
+              ) : tasks.filter(task => task && task.id && task.title).map((task) => (
                 <TableRow key={task.id} className="border-white/10 hover:bg-white/5">
                   <TableCell>
                     <div>
@@ -1715,11 +1721,11 @@ export default function Admin() {
                   <TableCell>
                     <div className="space-y-2">
                     <div className="flex flex-wrap gap-1">
-                      {task.devices.map((device: string) => (
+                      {Array.isArray(task.devices) ? task.devices.map((device: string) => (
                         <span key={device} className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs">
                           {device}
                         </span>
-                      ))}
+                      )) : null}
                       </div>
                       <div className="flex items-center gap-2 text-xs">
                         <span className="text-gray-400">⏱️ {task.completion_time_seconds || 60}s</span>
@@ -1913,7 +1919,7 @@ export default function Admin() {
                         <input
                           type="text"
                           readOnly
-                          value={generateWebhookUrl(task.id, user?.id || 'demo')}
+                          value={generateWebhookUrl(String(task.id || ''), user?.id || 'demo')}
                           className="bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-gray-300 flex-1 max-w-[200px]"
                           onClick={(e) => (e.target as HTMLInputElement).select()}
                         />
