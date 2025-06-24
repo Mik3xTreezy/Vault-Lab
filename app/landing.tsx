@@ -201,7 +201,7 @@ export default function Landing() {
             transition={{ duration: 0.3 }}
           >
             <img 
-              src="/Logo-01.png" 
+              src="/Icon.png" 
               alt="VaultLab" 
               className="w-full h-full object-contain"
             />
