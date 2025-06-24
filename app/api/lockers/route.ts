@@ -15,21 +15,53 @@ export async function POST(req: NextRequest) {
   const user = await currentUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { title, destinationUrl, taskType } = await req.json();
+  const { 
+    title, 
+    description, 
+    destinationUrl, 
+    taskTypes, 
+    adUrlMode, 
+    commonAdUrl, 
+    tieredAdUrls 
+  } = await req.json();
+
   const shortId = generateShortId(5);
+  
+  // Prepare the ad URL configuration
+  let adUrlConfig = {};
+  if (adUrlMode === 'common') {
+    adUrlConfig = {
+      ad_url_mode: 'common',
+      common_ad_url: commonAdUrl,
+      tiered_ad_urls: null
+    };
+  } else {
+    adUrlConfig = {
+      ad_url_mode: 'tiered',
+      common_ad_url: null,
+      tiered_ad_urls: tieredAdUrls
+    };
+  }
+
   const { data, error } = await supabase
     .from('lockers')
     .insert([{ 
       id: shortId, 
       user_id: user.id, 
       title, 
+      description: description || null,
       destination_url: destinationUrl,
-      task_type: taskType || "adult"
+      task_types: taskTypes, // Array of task types
+      ...adUrlConfig
     }])
     .select()
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error('Error creating locker:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  
   return NextResponse.json(data);
 }
 

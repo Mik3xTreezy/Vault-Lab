@@ -54,7 +54,7 @@ interface LinkLockerProps {
   title?: string
   destinationUrl?: string
   lockerId: string
-  taskType?: string
+  taskType?: string | string[]
 }
 
 export default function LinkLocker({ title = "Premium Content Download", destinationUrl = "#", lockerId, taskType = "adult" }: LinkLockerProps) {
@@ -79,6 +79,45 @@ export default function LinkLocker({ title = "Premium Content Download", destina
       // Fallback to US/tier1 on error
       return { country: 'US', tier: 'tier1', isVpn: false, isProxy: false };
     }
+  };
+
+  // Helper function to get effective ad URL for a task
+  const getEffectiveAdUrl = async (task: any, userTier: string, deviceSpecificConfig: any) => {
+    // Priority order:
+    // 1. Device-specific override (highest priority)
+    // 2. Locker-level ad URL configuration
+    // 3. Task-level ad URL (fallback)
+    
+    if (deviceSpecificConfig && deviceSpecificConfig.adUrl) {
+      return { url: deviceSpecificConfig.adUrl, source: 'device-specific' };
+    }
+    
+    try {
+      // Fetch locker data to check ad URL configuration
+      const lockerRes = await fetch(`/api/lockers/${lockerId}`);
+      if (lockerRes.ok) {
+        const lockerData = await lockerRes.json();
+        
+        if (lockerData.ad_url_mode === 'common' && lockerData.common_ad_url) {
+          return { url: lockerData.common_ad_url, source: 'locker-common' };
+        } else if (lockerData.ad_url_mode === 'tiered' && lockerData.tiered_ad_urls) {
+          const tierUrls = lockerData.tiered_ad_urls;
+          if (tierUrls[userTier]) {
+            return { url: tierUrls[userTier], source: `locker-${userTier}` };
+          }
+          // Fallback to other tiers if current tier is not available
+          const fallbackUrl = tierUrls.tier1 || tierUrls.tier2 || tierUrls.tier3;
+          if (fallbackUrl) {
+            return { url: fallbackUrl, source: 'locker-fallback' };
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Could not fetch locker ad URL configuration:', error);
+    }
+    
+    // Fallback to task-level ad URL
+    return { url: task.ad_url, source: 'task-default' };
   };
 
   // Wait for user to be ready
@@ -127,13 +166,27 @@ export default function LinkLocker({ title = "Premium Content Download", destina
           console.log(`Excluded browsers: [${(task.excluded_browsers || []).join(', ')}]`);
           console.log(`Target devices: [${(task.devices || []).join(', ')}]`);
           
-          // Check task type matching
+          // Check task type matching - now support multiple task types
           const taskTypeToCheck = task.task_type || 'adult'; // Default to adult if not set
-          if (taskTypeToCheck !== taskType) {
-            console.log(`❌ EXCLUDED: Task type ${taskTypeToCheck} doesn't match locker requirement ${taskType}`);
+          
+          // Handle both single task type (string) and multiple task types (array)
+          let taskTypeMatches = false;
+          if (typeof taskType === 'string') {
+            // Single task type (legacy support)
+            taskTypeMatches = taskTypeToCheck === taskType;
+          } else if (Array.isArray(taskType)) {
+            // Multiple task types - check if task type is in the array
+            taskTypeMatches = taskType.includes(taskTypeToCheck);
+          } else {
+            // Fallback for unexpected formats
+            taskTypeMatches = taskTypeToCheck === 'adult';
+          }
+          
+          if (!taskTypeMatches) {
+            console.log(`❌ EXCLUDED: Task type ${taskTypeToCheck} doesn't match locker requirements ${Array.isArray(taskType) ? taskType.join(', ') : taskType}`);
             return false;
           } else {
-            console.log(`✅ Task type check passed: ${taskTypeToCheck} matches requirement`);
+            console.log(`✅ Task type check passed: ${taskTypeToCheck} matches requirements`);
           }
           
           // Check browser exclusions
@@ -191,32 +244,37 @@ export default function LinkLocker({ title = "Premium Content Download", destina
           return true;
         });
 
-        const formattedTasks: Task[] = filteredTasks.map((task: any) => {
-          // Check for device-specific overrides
-          const deviceTargetKey = `${userDevice}_${location.country}`;
-          const deviceSpecificConfig = deviceTargetingData[deviceTargetKey];
-          
-          // Use device-specific ad URL if available, otherwise use task default
-          const effectiveAdUrl = (deviceSpecificConfig && deviceSpecificConfig.adUrl) 
-            ? deviceSpecificConfig.adUrl 
-            : task.ad_url;
-          
-          console.log(`[TASK MAPPING] Task "${task.title}" - Using ad URL: ${effectiveAdUrl} ${deviceSpecificConfig?.adUrl ? '(device-specific)' : '(default)'}`);
-          
-          return {
-            id: task.id.toString(),
-            title: task.title,
-            description: task.description,
-            loadingText: "Completing task...",
-            icon: <Gift className="w-5 h-5" />,
-            completed: false,
-            loading: false,
-            adUrl: effectiveAdUrl,
-            completionTimeSeconds: task.completion_time_seconds || 60,
-            deviceSpecificCpm: deviceSpecificConfig?.cpm, // Store device-specific CPM for revenue calculation
-            action: () => handleTaskClick(task.id.toString()),
-          };
-        })
+        // Process tasks with async ad URL resolution
+        const formattedTasks: Task[] = await Promise.all(
+          filteredTasks.map(async (task: any) => {
+            // Check for device-specific overrides
+            const deviceTargetKey = `${userDevice}_${location.country}`;
+            const deviceSpecificConfig = deviceTargetingData[deviceTargetKey];
+            
+            // Get effective ad URL using helper function
+            const { url: effectiveAdUrl, source: urlSource } = await getEffectiveAdUrl(
+              task, 
+              location.tier, 
+              deviceSpecificConfig
+            );
+            
+            console.log(`[TASK MAPPING] Task "${task.title}" - Using ad URL: ${effectiveAdUrl} (${urlSource})`);
+            
+            return {
+              id: task.id.toString(),
+              title: task.title,
+              description: task.description,
+              loadingText: "Completing task...",
+              icon: <Gift className="w-5 h-5" />,
+              completed: false,
+              loading: false,
+              adUrl: effectiveAdUrl,
+              completionTimeSeconds: task.completion_time_seconds || 60,
+              deviceSpecificCpm: deviceSpecificConfig?.cpm, // Store device-specific CPM for revenue calculation
+              action: () => handleTaskClick(task.id.toString()),
+            };
+          })
+        )
 
         console.log(`Filtered tasks: ${filteredTasks.length}/${data.length} tasks shown for ${userBrowser} on ${userDevice}`);
         

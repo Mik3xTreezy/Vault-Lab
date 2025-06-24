@@ -47,7 +47,7 @@ export default function LockedLinkPage({ params }: { params: Promise<{ id: strin
       lockerId={id} 
       title={locker.title} 
       destinationUrl={locker.destination_url}
-      taskType={locker.task_type}
+      taskType={locker.task_types || locker.task_type || "adult"}
     />
   );
 } 
