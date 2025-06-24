@@ -52,12 +52,21 @@ import {
 
 const COLORS = ['#10b981', '#3b82f6', '#f59e42', '#6366f1', '#f43f5e', '#a3e635', '#fbbf24', '#818cf8'];
 
+// Helper function to convert base64 to base64url (browser-compatible)
+const toBase64Url = (str: string): string => {
+  return Buffer.from(str)
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+};
+
 // Helper function to generate webhook URL for a task
 const generateWebhookUrl = (taskId: string, publisherId: string): string => {
   // Generate token with pipe separator (same as webhook route)
   const data = `${taskId}|${publisherId}|${process.env.WEBHOOK_SECRET || 'default-secret'}`;
-  // Use Buffer.from to match the webhook route exactly
-  const token = Buffer.from(data).toString('base64url');
+  // Use browser-compatible base64url encoding
+  const token = toBase64Url(data);
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
   return `${baseUrl}/api/tasks/webhooks/${token}`;
 };
