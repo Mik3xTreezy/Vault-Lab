@@ -481,37 +481,31 @@ export default function Create() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.6 }}
     >
-      {/* Header with Logo and Navigation */}
+      {/* Back Button */}
       <motion.div
-        className="flex items-center justify-between w-full max-w-lg mx-auto mb-8"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
+        className="absolute top-6 left-6 z-50"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.6, delay: 0.1 }}
       >
-        <motion.div
-          className="flex items-center space-x-3"
-          whileHover={{ scale: 1.05 }}
-          transition={{ duration: 0.2 }}
-        >
-          <img 
-            src="/Icon.png" 
-            alt="VaultLab" 
-            className="w-8 h-8 object-contain"
-          />
-          <span className="text-xl font-semibold text-white">VaultLab</span>
-        </motion.div>
-        
-        <motion.div
+        <motion.button
+          onClick={() => router.push("/dashboard")}
+          className="flex items-center space-x-2 text-gray-400 hover:text-emerald-300 hover:bg-emerald-500/5 transition-all duration-300 px-4 py-2 rounded-lg border border-transparent hover:border-emerald-500/20"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
-          <button
-            onClick={() => router.push("/dashboard")}
-            className="text-gray-400 hover:text-emerald-300 hover:bg-emerald-500/5 transition-all duration-300 px-3 py-2 rounded-lg border border-transparent hover:border-emerald-500/20"
+          <motion.div
+            animate={{ x: [-2, 2, -2] }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
           >
-            ← Back to Dashboard
-          </button>
-        </motion.div>
+            <ArrowLeft className="w-4 h-4" />
+          </motion.div>
+          <span className="text-sm font-medium">Back to Dashboard</span>
+        </motion.button>
       </motion.div>
 
       {/* Background Effects */}
