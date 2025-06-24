@@ -63,6 +63,24 @@ export async function POST(request: NextRequest) {
     let taskId;
     let cpmData;
     
+    const contentType = request.headers.get('content-type') || '';
+    console.log('[CSV UPLOAD] Content-Type:', contentType);
+    
+    if (contentType.includes('multipart/form-data')) {
+      // Handle form data (this shouldn't be happening but let's detect it)
+      console.log('[CSV UPLOAD] ERROR: Received multipart/form-data instead of JSON');
+      console.log('[CSV UPLOAD] This indicates the frontend is sending a form submission instead of parsed CSV data');
+      
+      return NextResponse.json(
+        { 
+          message: 'Invalid request format. Expected JSON data with parsed CSV content, but received form data.',
+          details: 'The CSV file should be parsed on the frontend and sent as JSON data, not uploaded as a file.',
+          contentType: contentType
+        },
+        { status: 400 }
+      )
+    }
+    
     try {
       // First, get the raw text to debug potential issues
       const rawBody = await request.text();
@@ -80,7 +98,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { 
           message: `Invalid JSON format: ${parseError instanceof Error ? parseError.message : 'Unknown parsing error'}`,
-          details: 'Please ensure the request body is valid JSON'
+          details: 'Please ensure the request body is valid JSON with taskId and cpmData fields'
         },
         { status: 400 }
       )

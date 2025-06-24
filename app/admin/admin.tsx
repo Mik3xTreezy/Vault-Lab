@@ -2336,7 +2336,12 @@ Singapore,3.50,SG`;
                       Cancel
                     </Button>
                     <Button
-                      onClick={uploadCsvRates}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        uploadCsvRates();
+                      }}
                       disabled={!selectedTaskForCsv || csvData.length === 0 || uploadingCsv}
                       className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black font-medium disabled:from-gray-500 disabled:to-gray-600 disabled:text-gray-300"
                     >
