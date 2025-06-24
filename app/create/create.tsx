@@ -403,7 +403,7 @@ export default function Create() {
         <AnimatePresence>
           {showCopyNotification && (
             <motion.div 
-              className="fixed bottom-0 left-1/2 transform -translate-x-1/2 z-50 max-w-sm w-full px-4 pb-4"
+              className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pb-4"
               initial={{ opacity: 0, y: 100, scale: 0.8 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 100, scale: 0.8 }}
@@ -416,7 +416,7 @@ export default function Create() {
               layout
             >
               <motion.div 
-                className="bg-black/90 backdrop-blur-xl border border-emerald-500/30 rounded-xl px-4 py-3 shadow-2xl shadow-emerald-500/20 mx-auto"
+                className="bg-black/90 backdrop-blur-xl border border-emerald-500/30 rounded-xl px-4 py-3 shadow-2xl shadow-emerald-500/20"
                 whileHover={{ 
                   scale: 1.02,
                   borderColor: "rgba(16, 185, 129, 0.5)" 
@@ -443,7 +443,7 @@ export default function Create() {
                     <CheckCircle className="w-3 h-3 text-emerald-400" />
                   </motion.div>
                   <motion.span 
-                    className="text-white font-medium text-sm"
+                    className="text-white font-medium text-sm whitespace-nowrap"
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3, delay: 0.1 }}
