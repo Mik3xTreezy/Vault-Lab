@@ -76,14 +76,21 @@ export function ImpersonationComponent({
     setError(null)
 
     try {
+      console.log('[IMPERSONATE] Starting impersonation for:', targetUser);
+      console.log('[IMPERSONATE] Target user ID:', targetUser.clerk_user_id);
+      
+      const requestBody = {
+        targetUserId: targetUser.clerk_user_id
+      };
+      
+      console.log('[IMPERSONATE] Request body:', requestBody);
+
       const response = await fetch('/api/admin/impersonate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          targetUserId: targetUser.clerk_user_id
-        })
+        body: JSON.stringify(requestBody)
       })
 
       const data = await response.json()

@@ -1592,7 +1592,7 @@ export default function Admin() {
                               
                               <ImpersonationComponent
                                 targetUser={{
-                                  clerk_user_id: user.clerk_user_id,
+                                  clerk_user_id: user.id || user.clerk_user_id,
                                   email: user.email,
                                   full_name: user.full_name || user.email
                                 }}

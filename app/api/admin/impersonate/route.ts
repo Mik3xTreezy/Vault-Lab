@@ -26,8 +26,13 @@ export async function POST(request: NextRequest) {
 
     const { targetUserId } = await request.json()
 
+    console.log('[IMPERSONATE] Received request body:', { targetUserId })
+
     if (!targetUserId) {
-      return NextResponse.json({ error: 'Target user ID is required' }, { status: 400 })
+      return NextResponse.json({ 
+        error: 'Target user ID is required',
+        details: 'The targetUserId field must be provided and cannot be empty'
+      }, { status: 400 })
     }
 
     // Verify the target user exists in our database
