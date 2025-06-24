@@ -59,11 +59,11 @@ export function AppSidebar() {
   return (
     <Sidebar className="border-r border-white/10" collapsible="icon">
       <SidebarHeader className="p-4">
-        <div className="flex items-center justify-center w-8 h-8">
+        <div className="flex items-center justify-center w-10 h-10">
           <img 
-            src="/Icon.svg" 
+            src="/Icon.png" 
             alt="VaultLab Logo" 
-            className="w-full h-full object-contain"
+            className="w-8 h-8 object-contain"
           />
         </div>
       </SidebarHeader>

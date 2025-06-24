@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
+import { DashboardLayout } from "@/components/dashboard-layout"
 import Admin from "./admin"
 
 export default function AdminPage() {
@@ -8,5 +9,9 @@ export default function AdminPage() {
     document.title = "Admin - VaultLab";
   }, []);
 
-  return <Admin />
+  return (
+    <DashboardLayout>
+      <Admin />
+    </DashboardLayout>
+  )
 }

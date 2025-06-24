@@ -53,11 +53,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Sidebar */}
       <div className="w-16 bg-black/20 backdrop-blur-xl border-r border-white/10 flex flex-col items-center py-6 space-y-6 relative z-10">
         {/* Logo */}
-        <div className="w-8 h-8 flex items-center justify-center">
+        <div className="w-10 h-10 flex items-center justify-center mb-2">
           <img 
-            src="/Icon.svg" 
+            src="/Icon.png" 
             alt="VaultLab Logo" 
-            className="w-full h-full object-contain"
+            className="w-8 h-8 object-contain"
           />
         </div>
 

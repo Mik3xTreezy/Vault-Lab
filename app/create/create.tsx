@@ -476,11 +476,44 @@ export default function Create() {
 
   return (
     <motion.div 
-      className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900 text-white flex items-center justify-center p-6 relative overflow-hidden"
+      className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900 text-white flex flex-col p-6 relative overflow-hidden"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.6 }}
     >
+      {/* Header with Logo and Navigation */}
+      <motion.div
+        className="flex items-center justify-between w-full max-w-lg mx-auto mb-8"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.1 }}
+      >
+        <motion.div
+          className="flex items-center space-x-3"
+          whileHover={{ scale: 1.05 }}
+          transition={{ duration: 0.2 }}
+        >
+          <img 
+            src="/Icon.png" 
+            alt="VaultLab" 
+            className="w-8 h-8 object-contain"
+          />
+          <span className="text-xl font-semibold text-white">VaultLab</span>
+        </motion.div>
+        
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <button
+            onClick={() => router.push("/dashboard")}
+            className="text-gray-400 hover:text-emerald-300 hover:bg-emerald-500/5 transition-all duration-300 px-3 py-2 rounded-lg border border-transparent hover:border-emerald-500/20"
+          >
+            ← Back to Dashboard
+          </button>
+        </motion.div>
+      </motion.div>
+
       {/* Background Effects */}
       <div className="absolute inset-0 overflow-hidden">
         <motion.div 
@@ -533,302 +566,276 @@ export default function Create() {
         ))}
       </div>
 
-      <div className="max-w-lg w-full relative z-10">
-        {/* Header */}
-        <motion.div 
-          className="text-center mb-8"
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.1 }}
-        >
+      <div className="flex-1 flex items-center justify-center relative z-10">
+        <div className="max-w-lg w-full">
+          {/* Header */}
           <motion.div 
-            className="inline-flex items-center space-x-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full px-4 py-2 mb-6"
-            whileHover={{ 
-              backgroundColor: "rgba(255, 255, 255, 0.1)",
-              scale: 1.05 
-            }}
-            transition={{ duration: 0.2 }}
-          >
-            <Sparkles className="w-4 h-4 text-emerald-400" />
-            <span className="text-xs font-medium text-emerald-400 uppercase tracking-wider">Create Locker</span>
-          </motion.div>
-
-          <motion.h1 
-            className="text-3xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent mb-2"
-            initial={{ opacity: 0, y: 20 }}
+            className="text-center mb-8"
+            initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
+            transition={{ duration: 0.8, delay: 0.1 }}
           >
-            Create VaultLab Locker
-          </motion.h1>
-          <motion.p 
-            className="text-gray-400 text-sm"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
-          >
-            Transform any link into a monetized experience
-          </motion.p>
-        </motion.div>
-
-        {/* Form Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 30, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.8, delay: 0.7, type: "spring", stiffness: 100 }}
-        >
-          <Card className="bg-white/5 backdrop-blur-xl border-white/10">
-            <CardContent className="p-8">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Title Field */}
-                <motion.div 
-                  className="space-y-2"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6, delay: 0.9 }}
-                >
-                  <Label htmlFor="title" className="text-gray-300 font-medium">
-                    Locker Title
-                  </Label>
-                  <div className="relative">
-                    <motion.div
-                      whileFocus={{ scale: 1.02 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <Input
-                        id="title"
-                        type="text"
-                        placeholder="e.g., Premium Content Download"
-                        value={formData.title}
-                        onChange={(e) => handleInputChange("title", e.target.value)}
-                        className={`bg-white/5 border-white/10 text-white placeholder-gray-400 focus:border-emerald-500/50 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none transition-all duration-300 pl-12 ${
-                          errors.title ? "border-red-500/50" : ""
-                        }`}
-                        style={{ boxShadow: "none" }}
-                        required
-                        disabled={isLoading}
-                      />
-                    </motion.div>
-                    <motion.div 
-                      className="absolute left-4 top-1/2 transform -translate-y-1/2"
-                      whileHover={{ scale: 1.1 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <Link className="w-4 h-4 text-gray-400" />
-                    </motion.div>
-                  </div>
-                  <AnimatePresence>
-                    {errors.title && (
-                      <motion.p 
-                        className="text-red-400 text-sm"
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        {errors.title}
-                      </motion.p>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-
-                {/* Destination URL Field */}
-                <motion.div 
-                  className="space-y-2"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6, delay: 1.1 }}
-                >
-                  <Label htmlFor="destinationUrl" className="text-gray-300 font-medium">
-                    Destination URL
-                  </Label>
-                  <div className="relative">
-                    <motion.div
-                      whileFocus={{ scale: 1.02 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <Input
-                        id="destinationUrl"
-                        type="url"
-                        placeholder="https://example.com/your-content"
-                        value={formData.destinationUrl}
-                        onChange={(e) => handleInputChange("destinationUrl", e.target.value)}
-                        className={`bg-white/5 border-white/10 text-white placeholder-gray-400 focus:border-emerald-500/50 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none transition-all duration-300 pl-12 ${
-                          errors.destinationUrl ? "border-red-500/50" : ""
-                        }`}
-                        style={{ boxShadow: "none" }}
-                        required
-                        disabled={isLoading}
-                      />
-                    </motion.div>
-                    <motion.div 
-                      className="absolute left-4 top-1/2 transform -translate-y-1/2"
-                      whileHover={{ scale: 1.1 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <Globe className="w-4 h-4 text-gray-400" />
-                    </motion.div>
-                  </div>
-                  <AnimatePresence>
-                    {errors.destinationUrl && (
-                      <motion.p 
-                        className="text-red-400 text-sm"
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        {errors.destinationUrl}
-                      </motion.p>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-
-                {/* Task Type Selection */}
-                <motion.div 
-                  className="space-y-2"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6, delay: 1.3 }}
-                >
-                  <Label className="text-gray-300 font-medium">
-                    Task Type
-                  </Label>
-                  <p className="text-gray-400 text-xs">Select the type of tasks visitors will complete to unlock your content</p>
-                  
-                  <motion.select 
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white text-sm focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none transition-all duration-300 hover:bg-white/10 hover:border-white/20 cursor-pointer"
-                    value={formData.taskType}
-                    onChange={(e) => handleTaskTypeChange(e.target.value)}
-                    whileFocus={{ scale: 1.02 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <option value="adult" className="bg-gray-800 text-white py-2">Adult Tasks</option>
-                    <option value="game" className="bg-gray-800 text-white py-2">Game Tasks</option>
-                    <option value="minecraft" className="bg-gray-800 text-white py-2">Minecraft Tasks</option>
-                    <option value="roblox" className="bg-gray-800 text-white py-2">Roblox Tasks</option>
-                  </motion.select>
-                  
-                  <motion.div 
-                    className="mt-2 p-3 bg-white/5 rounded-lg border border-white/10"
-                    whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.1)" }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <p className="text-gray-300 text-xs">
-                      {formData.taskType === "adult" && "18+ content tasks for mature audiences"}
-                      {formData.taskType === "game" && "General gaming related tasks and activities"}
-                      {formData.taskType === "minecraft" && "Minecraft specific tasks and server activities"}
-                      {formData.taskType === "roblox" && "Roblox related tasks and game experiences"}
-                    </p>
-                  </motion.div>
-                </motion.div>
-
-                {/* Info Box */}
-                <motion.div 
-                  className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 1.5 }}
-                  whileHover={{ 
-                    backgroundColor: "rgba(16, 185, 129, 0.15)",
-                    borderColor: "rgba(16, 185, 129, 0.3)" 
-                  }}
-                >
-                  <div className="flex items-start space-x-3">
-                    <motion.div 
-                      className="w-5 h-5 bg-emerald-500/20 rounded-full flex items-center justify-center mt-0.5"
-                      animate={{ rotate: [0, 360] }}
-                      transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                    >
-                      <Sparkles className="w-3 h-3 text-emerald-400" />
-                    </motion.div>
-                    <div>
-                      <h4 className="text-emerald-400 font-medium text-sm mb-1">How it works</h4>
-                      <p className="text-gray-300 text-xs leading-relaxed">
-                        Users will complete tasks from your selected category to unlock access to your destination URL. You earn revenue from each completed task.
-                      </p>
-                    </div>
-                  </div>
-                </motion.div>
-
-                {/* Error Display */}
-                <AnimatePresence>
-                  {error && (
-                    <motion.div 
-                      className="bg-red-500/10 border border-red-500/20 rounded-lg p-4"
-                      initial={{ opacity: 0, scale: 0.9, y: -10 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.9, y: -10 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <p className="text-red-400 text-sm">{error}</p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {/* Submit Button */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 1.7 }}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black font-medium py-3 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isLoading ? (
-                      <div className="flex items-center justify-center space-x-2">
-                        <motion.div
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                        >
-                          <Loader2 className="w-4 h-4" />
-                        </motion.div>
-                        <span>Creating Locker...</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center space-x-2">
-                        <Lock className="w-4 h-4" />
-                        <span>Create Locker</span>
-                      </div>
-                    )}
-                  </Button>
-                </motion.div>
-              </form>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Back Button */}
-        <motion.div 
-          className="text-center mt-6"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 1.9 }}
-        >
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <Button
-              onClick={() => router.back()}
-              variant="ghost"
-              className="text-gray-400 hover:text-emerald-300 hover:bg-emerald-500/5 transition-all duration-300 hover:border-emerald-500/20 border border-transparent rounded-lg px-6 py-2"
+            <motion.div 
+              className="inline-flex items-center space-x-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full px-4 py-2 mb-6"
+              whileHover={{ 
+                backgroundColor: "rgba(255, 255, 255, 0.1)",
+                scale: 1.05 
+              }}
+              transition={{ duration: 0.2 }}
             >
-              <motion.div
-                className="flex items-center"
-                whileHover={{ x: -2 }}
-                transition={{ duration: 0.2 }}
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Dashboard
-              </motion.div>
-            </Button>
+              <Sparkles className="w-4 h-4 text-emerald-400" />
+              <span className="text-xs font-medium text-emerald-400 uppercase tracking-wider">Create Locker</span>
+            </motion.div>
+
+            <motion.h1 
+              className="text-3xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent mb-2"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+            >
+              Create VaultLab Locker
+            </motion.h1>
+            <motion.p 
+              className="text-gray-400 text-sm"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.5 }}
+            >
+              Transform any link into a monetized experience
+            </motion.p>
           </motion.div>
-        </motion.div>
+
+          {/* Form Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.7, type: "spring", stiffness: 100 }}
+          >
+            <Card className="bg-white/5 backdrop-blur-xl border-white/10">
+              <CardContent className="p-8">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Title Field */}
+                  <motion.div 
+                    className="space-y-2"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.6, delay: 0.9 }}
+                  >
+                    <Label htmlFor="title" className="text-gray-300 font-medium">
+                      Locker Title
+                    </Label>
+                    <div className="relative">
+                      <motion.div
+                        whileFocus={{ scale: 1.02 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <Input
+                          id="title"
+                          type="text"
+                          placeholder="e.g., Premium Content Download"
+                          value={formData.title}
+                          onChange={(e) => handleInputChange("title", e.target.value)}
+                          className={`bg-white/5 border-white/10 text-white placeholder-gray-400 focus:border-emerald-500/50 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none transition-all duration-300 pl-12 ${
+                            errors.title ? "border-red-500/50" : ""
+                          }`}
+                          style={{ boxShadow: "none" }}
+                          required
+                          disabled={isLoading}
+                        />
+                      </motion.div>
+                      <motion.div 
+                        className="absolute left-4 top-1/2 transform -translate-y-1/2"
+                        whileHover={{ scale: 1.1 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <Link className="w-4 h-4 text-gray-400" />
+                      </motion.div>
+                    </div>
+                    <AnimatePresence>
+                      {errors.title && (
+                        <motion.p 
+                          className="text-red-400 text-sm"
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          {errors.title}
+                        </motion.p>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+
+                  {/* Destination URL Field */}
+                  <motion.div 
+                    className="space-y-2"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.6, delay: 1.1 }}
+                  >
+                    <Label htmlFor="destinationUrl" className="text-gray-300 font-medium">
+                      Destination URL
+                    </Label>
+                    <div className="relative">
+                      <motion.div
+                        whileFocus={{ scale: 1.02 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <Input
+                          id="destinationUrl"
+                          type="url"
+                          placeholder="https://example.com/your-content"
+                          value={formData.destinationUrl}
+                          onChange={(e) => handleInputChange("destinationUrl", e.target.value)}
+                          className={`bg-white/5 border-white/10 text-white placeholder-gray-400 focus:border-emerald-500/50 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none transition-all duration-300 pl-12 ${
+                            errors.destinationUrl ? "border-red-500/50" : ""
+                          }`}
+                          style={{ boxShadow: "none" }}
+                          required
+                          disabled={isLoading}
+                        />
+                      </motion.div>
+                      <motion.div 
+                        className="absolute left-4 top-1/2 transform -translate-y-1/2"
+                        whileHover={{ scale: 1.1 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <Globe className="w-4 h-4 text-gray-400" />
+                      </motion.div>
+                    </div>
+                    <AnimatePresence>
+                      {errors.destinationUrl && (
+                        <motion.p 
+                          className="text-red-400 text-sm"
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          {errors.destinationUrl}
+                        </motion.p>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+
+                  {/* Task Type Selection */}
+                  <motion.div 
+                    className="space-y-2"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.6, delay: 1.3 }}
+                  >
+                    <Label className="text-gray-300 font-medium">
+                      Task Type
+                    </Label>
+                    <p className="text-gray-400 text-xs">Select the type of tasks visitors will complete to unlock your content</p>
+                    
+                    <motion.select 
+                      className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white text-sm focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 focus:outline-none transition-all duration-300 hover:bg-white/10 hover:border-white/20 cursor-pointer"
+                      value={formData.taskType}
+                      onChange={(e) => handleTaskTypeChange(e.target.value)}
+                      whileFocus={{ scale: 1.02 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <option value="adult" className="bg-gray-800 text-white py-2">Adult Tasks</option>
+                      <option value="game" className="bg-gray-800 text-white py-2">Game Tasks</option>
+                      <option value="minecraft" className="bg-gray-800 text-white py-2">Minecraft Tasks</option>
+                      <option value="roblox" className="bg-gray-800 text-white py-2">Roblox Tasks</option>
+                    </motion.select>
+                    
+                    <motion.div 
+                      className="mt-2 p-3 bg-white/5 rounded-lg border border-white/10"
+                      whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.1)" }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <p className="text-gray-300 text-xs">
+                        {formData.taskType === "adult" && "18+ content tasks for mature audiences"}
+                        {formData.taskType === "game" && "General gaming related tasks and activities"}
+                        {formData.taskType === "minecraft" && "Minecraft specific tasks and server activities"}
+                        {formData.taskType === "roblox" && "Roblox related tasks and game experiences"}
+                      </p>
+                    </motion.div>
+                  </motion.div>
+
+                  {/* Info Box */}
+                  <motion.div 
+                    className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 1.5 }}
+                    whileHover={{ 
+                      backgroundColor: "rgba(16, 185, 129, 0.15)",
+                      borderColor: "rgba(16, 185, 129, 0.3)" 
+                    }}
+                  >
+                    <div className="flex items-start space-x-3">
+                      <motion.div 
+                        className="w-5 h-5 bg-emerald-500/20 rounded-full flex items-center justify-center mt-0.5"
+                        animate={{ rotate: [0, 360] }}
+                        transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                      >
+                        <Sparkles className="w-3 h-3 text-emerald-400" />
+                      </motion.div>
+                      <div>
+                        <h4 className="text-emerald-400 font-medium text-sm mb-1">How it works</h4>
+                        <p className="text-gray-300 text-xs leading-relaxed">
+                          Users will complete tasks from your selected category to unlock access to your destination URL. You earn revenue from each completed task.
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* Error Display */}
+                  <AnimatePresence>
+                    {error && (
+                      <motion.div 
+                        className="bg-red-500/10 border border-red-500/20 rounded-lg p-4"
+                        initial={{ opacity: 0, scale: 0.9, y: -10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <p className="text-red-400 text-sm">{error}</p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Submit Button */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 1.7 }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Button
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-black font-medium py-3 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isLoading ? (
+                        <div className="flex items-center justify-center space-x-2">
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                          >
+                            <Loader2 className="w-4 h-4" />
+                          </motion.div>
+                          <span>Creating Locker...</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center space-x-2">
+                          <Lock className="w-4 h-4" />
+                          <span>Create Locker</span>
+                        </div>
+                      )}
+                    </Button>
+                  </motion.div>
+                </form>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
       </div>
     </motion.div>
   )
