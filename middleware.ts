@@ -17,6 +17,7 @@ const isPublicRoute = createRouteMatcher([
   '/api/device-targeting(.*)', // Device targeting API for admin
   '/api/ip-tracking(.*)', // IP tracking API for revenue validation
   '/api/referrals(.*)', // Referrals API for commission tracking
+  // NOTE: '/api/admin/impersonate' is NOT public - requires authentication
 ]);
 
 export const middleware = clerkMiddleware(async (auth, req) => {

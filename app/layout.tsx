@@ -2,6 +2,7 @@ import type React from "react"
 import "@/styles/globals.css"
 import { Providers } from "./providers"
 import { Alumni_Sans_Pinstripe } from "next/font/google"
+import { ImpersonationStatusBanner } from "@/components/admin-impersonation"
 
 const alumniSansPinstripe = Alumni_Sans_Pinstripe({ subsets: ["latin"], weight: ["400"] })
 
@@ -13,6 +14,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={alumniSansPinstripe.className}>
       <body>
+        <ImpersonationStatusBanner />
         <Providers>
           {children}
         </Providers>

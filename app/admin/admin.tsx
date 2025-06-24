@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useUser } from "@clerk/nextjs"
+import { ImpersonationComponent } from "@/components/admin-impersonation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -1561,6 +1562,50 @@ export default function Admin() {
                         >
                           <Edit className="w-4 h-4 text-blue-400" />
                         </Button>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="w-8 h-8 hover:bg-white/10"
+                              title="Login as User"
+                            >
+                              <Eye className="w-4 h-4 text-green-400" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="bg-black/90 backdrop-blur-xl border-white/10 text-white max-w-md">
+                            <DialogHeader>
+                              <DialogTitle className="text-xl font-bold">
+                                Admin User Impersonation
+                              </DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                                <h3 className="font-medium text-blue-400 mb-2">Target User</h3>
+                                <div className="space-y-1 text-sm">
+                                  <div><strong>Email:</strong> {user.email}</div>
+                                  <div><strong>Name:</strong> {user.full_name || 'Not set'}</div>
+                                  <div><strong>Balance:</strong> ${user.balance}</div>
+                                  <div><strong>Status:</strong> {user.status}</div>
+                                </div>
+                              </div>
+                              
+                              <ImpersonationComponent
+                                targetUser={{
+                                  clerk_user_id: user.clerk_user_id,
+                                  email: user.email,
+                                  full_name: user.full_name || user.email
+                                }}
+                                onImpersonationStart={() => {
+                                  console.log('Impersonation started for:', user.email)
+                                }}
+                                onImpersonationEnd={() => {
+                                  console.log('Impersonation ended for:', user.email)
+                                }}
+                              />
+                            </div>
+                          </DialogContent>
+                        </Dialog>
                         <Button 
                           variant="ghost" 
                           size="icon" 
