@@ -30,8 +30,11 @@ export const metadata = {
   description: 'Transform your content into premium revenue streams with VaultLab',
   generator: 'v0.dev',
   icons: {
-    icon: '/Icon.svg',
-    shortcut: '/Icon.png',
-    apple: '/Icon.png',
+    icon: [
+      { url: '/favicon.ico', sizes: '16x16', type: 'image/x-icon' },
+      { url: '/favicon.svg', type: 'image/svg+xml' }
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/favicon.svg',
   },
 };

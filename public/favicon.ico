@@ -1,0 +1,6 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="32" height="32" fill="white"/>
+  <!-- Modern angular V design -->
+  <path d="M2 3 L12 3 L16 24 L14 24 Z" fill="#00C851"/>
+  <path d="M20 3 L30 3 L18 24 L16 24 Z" fill="#00C851"/>
+</svg> 
